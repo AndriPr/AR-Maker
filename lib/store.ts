@@ -2,6 +2,26 @@ import { create } from 'zustand';
 
 export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel';
 
+export interface EduComponent {
+  id: string;
+  name: string;
+  actionTargetId?: string;
+  actionAnimation?: string;
+}
+
+export interface EduMaintenanceStep {
+  id: string;
+  instruction: string;
+  actionTargetId?: string;
+  actionAnimation?: string;
+}
+
+export interface EduMaintenanceTask {
+  id: string;
+  title: string;
+  steps: EduMaintenanceStep[];
+}
+
 export interface SceneElement {
   id: string;
   type: ElementType;
@@ -18,9 +38,8 @@ export interface SceneElement {
 
   // Edu Panel Properties
   panelTitle?: string;
-  panelDescription?: string;
-  healthStatus?: string;
-  userExperience?: string;
+  eduComponents?: EduComponent[];
+  eduMaintenanceTasks?: EduMaintenanceTask[];
 
   position: [number, number, number];
   rotation: [number, number, number];

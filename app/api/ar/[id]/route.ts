@@ -59,37 +59,52 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     // Generate HTML for Edu Panel (Dashboard)
     const eduPanels = elements.filter((el: any) => el.type === 'edu_panel');
-    const eduDashboardHtml = eduPanels.length > 0 ? `
-      <div id="edu-dashboard" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 20px; color: white; font-family: sans-serif; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); z-index: 10000; pointer-events: auto; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
-          <h2 style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #fbbf24; text-transform: uppercase;">${eduPanels[0].panelTitle || 'DASHBOARD EDUKASI'}</h2>
-          <div style="background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; border: 1px solid rgba(34, 197, 94, 0.3); white-space: nowrap;">${eduPanels[0].healthStatus || 'N/A'}</div>
+    const hasEduPanel = eduPanels.length > 0;
+    const panelTitle = hasEduPanel ? eduPanels[0].panelTitle || 'DASHBOARD' : '';
+    const eduComponents = hasEduPanel ? (eduPanels[0].eduComponents || []) : [];
+    const eduTasks = hasEduPanel ? (eduPanels[0].eduMaintenanceTasks || []) : [];
+
+    const eduDashboardHtml = hasEduPanel ? `
+      <div id="edu-dashboard" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 24px; color: white; font-family: sans-serif; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); z-index: 10000; pointer-events: auto; flex-direction: column; overflow: hidden; max-height: 80vh;">
+        
+        <!-- HEADER -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 16px;">
+          <h2 id="edu-title" style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #fbbf24; text-transform: uppercase; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${panelTitle}</h2>
+          <button id="edu-back-btn" style="display: none; background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.2s;">&lt; KEMBALI</button>
         </div>
         
-        <div style="margin-bottom: 16px;">
-          <h3 style="margin: 0 0 6px 0; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; letter-spacing: 0.5px;">Informasi Aset</h3>
-          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #e2e8f0;">${eduPanels[0].panelDescription || 'Belum ada deskripsi.'}</p>
-        </div>
+        <!-- CONTENT AREA -->
+        <div id="edu-content" style="overflow-y: auto; flex: 1; padding-right: 4px;">
+          <!-- MAIN MENU -->
+          <div id="edu-view-main" style="display: flex; flex-direction: column; gap: 12px;">
+            <button onclick="eduNav('components')" style="width: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 14px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <span>🗂️ Asset Info (Daftar Komponen)</span>
+              <span>&gt;</span>
+            </button>
+            <button onclick="eduNav('maintenance')" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 14px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <span>🔧 Tugas Maintenance</span>
+              <span>&gt;</span>
+            </button>
+          </div>
 
-        <div style="margin-bottom: 24px;">
-          <h3 style="margin: 0 0 6px 0; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; letter-spacing: 0.5px;">User Experience / Catatan</h3>
-          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 10px 12px; border-radius: 8px; font-size: 12px; border-left: 3px solid #60a5fa; color: #bfdbfe;">
-             ${eduPanels[0].userExperience || '-'}
+          <!-- COMPONENTS LIST -->
+          <div id="edu-view-components" style="display: none; flex-direction: column; gap: 10px;"></div>
+
+          <!-- MAINTENANCE LIST -->
+          <div id="edu-view-maintenance" style="display: none; flex-direction: column; gap: 10px;"></div>
+
+          <!-- STEP BY STEP VIEW -->
+          <div id="edu-view-step" style="display: none; flex-direction: column; gap: 16px;">
+            <div style="background: rgba(255,255,255,0.05); border-left: 4px solid #60a5fa; padding: 16px; border-radius: 8px;">
+              <h3 id="edu-step-title" style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: bold; letter-spacing: 0.5px;">LANGKAH 1 DARI X</h3>
+              <p id="edu-step-instruction" style="margin: 0; font-size: 14px; line-height: 1.6; color: #e2e8f0; font-weight: 500;">...</p>
+            </div>
+            
+            <button id="edu-step-next" onclick="eduNextStep()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+              Langkah Selanjutnya ➔
+            </button>
           </div>
         </div>
-
-        ${(eduPanels[0].actionTargetId && eduPanels[0].actionAnimation) ? `
-          <button 
-            onclick="playAnimation(${eduPanels[0].actionTargetId ? `'model-${eduPanels[0].actionTargetId}'` : 'null'}, '${eduPanels[0].actionAnimation.replace(/'/g, "\\'")}')"
-            style="width: 100%; background: linear-gradient(135deg, #3b82f6, #4f46e5); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transition: transform 0.1s;"
-            onmousedown="this.style.transform='scale(0.97)'"
-            onmouseup="this.style.transform='scale(1)'"
-            ontouchstart="this.style.transform='scale(0.97)'"
-            ontouchend="this.style.transform='scale(1)'"
-          >
-            🔧 MULAI MAINTENANCE
-          </button>
-        ` : ''}
       </div>
     ` : '';
 
@@ -134,6 +149,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             }
           </style>
           <script>
+            // Edu Panel State
+            const eduComponents = ${JSON.stringify(eduComponents)};
+            const eduTasks = ${JSON.stringify(eduTasks)};
+            let currentView = 'main'; // main, components, maintenance, step
+            let currentTask = null;
+            let currentStepIdx = 0;
+
             document.addEventListener("DOMContentLoaded", function() {
               const target = document.querySelector('[mindar-image-target]');
               const dashboard = document.getElementById('edu-dashboard');
@@ -141,7 +163,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               if (target && dashboard) {
                 target.addEventListener("targetFound", event => {
                   dashboard.style.display = 'flex';
-                  // Adding a tiny animation effect when it appears
                   dashboard.style.animation = 'fadeInUp 0.4s ease-out forwards';
                 });
                 target.addEventListener("targetLost", event => {
@@ -151,14 +172,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             });
 
             function playAnimation(modelId, animName) {
-              if (!modelId || !animName) {
-                alert("Tombol ini belum dihubungkan ke animasi 3D mana pun.");
-                return;
-              }
+              if (!modelId || !animName) return;
               const el = document.getElementById(modelId);
               if (el) {
                 el.removeAttribute('animation-mixer');
-                // Menggunakan format objek agar nama animasi yang mengandung karakter titik dua (:) tidak merusak parser A-Frame
                 setTimeout(() => {
                   el.setAttribute('animation-mixer', {
                     clip: animName,
@@ -167,6 +184,99 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                     crossFadeDuration: 0.2
                   });
                 }, 10);
+              }
+            }
+
+            function eduNav(view) {
+              currentView = view;
+              document.getElementById('edu-view-main').style.display = 'none';
+              document.getElementById('edu-view-components').style.display = 'none';
+              document.getElementById('edu-view-maintenance').style.display = 'none';
+              document.getElementById('edu-view-step').style.display = 'none';
+              
+              const backBtn = document.getElementById('edu-back-btn');
+              
+              if (view === 'main') {
+                backBtn.style.display = 'none';
+                document.getElementById('edu-view-main').style.display = 'flex';
+                document.getElementById('edu-title').innerText = '${panelTitle.replace(/'/g, "\\'")}';
+              } else {
+                backBtn.style.display = 'block';
+                backBtn.onclick = () => {
+                  if (view === 'step') eduNav('maintenance');
+                  else eduNav('main');
+                };
+              }
+
+              if (view === 'components') {
+                document.getElementById('edu-title').innerText = 'ASSET INFO';
+                const container = document.getElementById('edu-view-components');
+                container.innerHTML = '';
+                if (eduComponents.length === 0) container.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;">Belum ada komponen terdaftar.</p>';
+                eduComponents.forEach(comp => {
+                  const btn = document.createElement('button');
+                  btn.innerHTML = comp.name;
+                  btn.style.cssText = 'width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 14px; border-radius: 10px; text-align: left; font-size: 14px; cursor: pointer; transition: background 0.2s;';
+                  btn.onclick = () => {
+                    playAnimation(comp.actionTargetId ? 'model-'+comp.actionTargetId : null, comp.actionAnimation);
+                    btn.style.background = 'rgba(59, 130, 246, 0.4)';
+                    setTimeout(() => btn.style.background = 'rgba(255,255,255,0.05)', 300);
+                  };
+                  container.appendChild(btn);
+                });
+                container.style.display = 'flex';
+              }
+
+              if (view === 'maintenance') {
+                document.getElementById('edu-title').innerText = 'MAINTENANCE';
+                const container = document.getElementById('edu-view-maintenance');
+                container.innerHTML = '';
+                if (eduTasks.length === 0) container.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;">Belum ada tugas.</p>';
+                eduTasks.forEach((task) => {
+                  const btn = document.createElement('button');
+                  btn.innerHTML = '🔧 ' + task.title;
+                  btn.style.cssText = 'width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fbbf24; padding: 14px; border-radius: 10px; text-align: left; font-size: 14px; cursor: pointer; font-weight: bold;';
+                  btn.onclick = () => {
+                    currentTask = task;
+                    currentStepIdx = 0;
+                    eduNav('step');
+                  };
+                  container.appendChild(btn);
+                });
+                container.style.display = 'flex';
+              }
+
+              if (view === 'step') {
+                document.getElementById('edu-title').innerText = currentTask.title;
+                renderStep();
+                document.getElementById('edu-view-step').style.display = 'flex';
+              }
+            }
+
+            function renderStep() {
+              if (!currentTask || currentTask.steps.length === 0) return;
+              const step = currentTask.steps[currentStepIdx];
+              document.getElementById('edu-step-title').innerText = 'LANGKAH ' + (currentStepIdx + 1) + ' DARI ' + currentTask.steps.length;
+              document.getElementById('edu-step-instruction').innerText = step.instruction || '-';
+              
+              const nextBtn = document.getElementById('edu-step-next');
+              if (currentStepIdx === currentTask.steps.length - 1) {
+                nextBtn.innerText = '✅ Selesai';
+                nextBtn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+              } else {
+                nextBtn.innerText = 'Langkah Selanjutnya ➔';
+                nextBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+              }
+              
+              playAnimation(step.actionTargetId ? 'model-'+step.actionTargetId : null, step.actionAnimation);
+            }
+
+            function eduNextStep() {
+              if (currentStepIdx < currentTask.steps.length - 1) {
+                currentStepIdx++;
+                renderStep();
+              } else {
+                eduNav('maintenance');
               }
             }
           </script>

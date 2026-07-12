@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -637,85 +637,219 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           </p>
                           
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Judul Panel / Nama Komponen</label>
+                            <label className="text-xs text-gray-400">Judul Panel Utama</label>
                             <input 
                               type="text"
                               value={selectedElement.panelTitle || ''}
                               onChange={(e) => updateElement(selectedElement.id, { panelTitle: e.target.value })}
                               className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              placeholder="Misal: AIR BLOWER"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Deskripsi Aset (Asset Info)</label>
-                            <textarea 
-                              value={selectedElement.panelDescription || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { panelDescription: e.target.value })}
-                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner h-20 resize-none"
-                              placeholder="Fungsi utama komponen ini adalah..."
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Status Kesehatan (Health Status)</label>
-                            <input 
-                              type="text"
-                              value={selectedElement.healthStatus || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { healthStatus: e.target.value })}
-                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              placeholder="Misal: Optimal - 98%"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Catatan UX / Keamanan</label>
-                            <input 
-                              type="text"
-                              value={selectedElement.userExperience || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { userExperience: e.target.value })}
-                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              placeholder="Misal: Wajib gunakan APD"
+                              placeholder="Misal: MESIN MOTOR"
                             />
                           </div>
 
                           <div className="h-px bg-gray-800 my-4"></div>
-                          
-                          <h4 className="text-xs font-bold text-gray-400 uppercase">Aksi Maintenance</h4>
-                          <p className="text-[10px] text-gray-500 leading-tight">
-                            Animasi apa yang akan diputar saat tombol "Maintenance" diklik?
-                          </p>
 
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Target Model 3D</label>
-                            <select
-                              value={selectedElement.actionTargetId || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
-                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                          {/* Asset Information (Components) Builder */}
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                              <ListChecks size={14} /> Info Aset (Komponen)
+                            </h4>
+                            <button 
+                              onClick={() => {
+                                const newComps = [...(selectedElement.eduComponents || []), { id: crypto.randomUUID(), name: 'Komponen Baru' }];
+                                updateElement(selectedElement.id, { eduComponents: newComps });
+                              }}
+                              className="text-[10px] bg-pln-blue/20 text-pln-blue px-2 py-1 rounded border border-pln-blue/30 hover:bg-pln-blue/30 flex items-center gap-1"
                             >
-                              <option value="">-- Pilih Model --</option>
-                              {elements.filter(el => el.type === '3d_model').map(model => (
-                                <option key={model.id} value={model.id}>{model.name}</option>
-                              ))}
-                            </select>
+                              <Plus size={10} /> Tambah
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2 mt-2">
+                            {(!selectedElement.eduComponents || selectedElement.eduComponents.length === 0) && (
+                              <div className="text-[10px] text-gray-500 italic text-center py-2 bg-gray-800/50 rounded border border-gray-800 border-dashed">Belum ada komponen.</div>
+                            )}
+                            {selectedElement.eduComponents?.map((comp, idx) => (
+                              <div key={comp.id} className="bg-gray-800/80 border border-gray-700 rounded-lg p-2 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <input 
+                                    type="text"
+                                    value={comp.name}
+                                    onChange={(e) => {
+                                      const newComps = [...selectedElement.eduComponents!];
+                                      newComps[idx].name = e.target.value;
+                                      updateElement(selectedElement.id, { eduComponents: newComps });
+                                    }}
+                                    className="flex-1 bg-gray-900 border border-gray-600 rounded p-1 text-xs text-white outline-none focus:border-pln-blue"
+                                    placeholder="Nama Komponen"
+                                  />
+                                  <button 
+                                    onClick={() => {
+                                      const newComps = selectedElement.eduComponents!.filter(c => c.id !== comp.id);
+                                      updateElement(selectedElement.id, { eduComponents: newComps });
+                                    }}
+                                    className="text-red-400 hover:text-red-300 p-1"
+                                  ><Trash2 size={12} /></button>
+                                </div>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={comp.actionTargetId || ''}
+                                    onChange={(e) => {
+                                      const newComps = [...selectedElement.eduComponents!];
+                                      newComps[idx].actionTargetId = e.target.value;
+                                      newComps[idx].actionAnimation = '';
+                                      updateElement(selectedElement.id, { eduComponents: newComps });
+                                    }}
+                                    className="flex-1 bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-white outline-none"
+                                  >
+                                    <option value="">-- Target Model 3D --</option>
+                                    {elements.filter(el => el.type === '3d_model').map(model => (
+                                      <option key={model.id} value={model.id}>{model.name}</option>
+                                    ))}
+                                  </select>
+                                  {comp.actionTargetId && (
+                                    <select
+                                      value={comp.actionAnimation || ''}
+                                      onChange={(e) => {
+                                        const newComps = [...selectedElement.eduComponents!];
+                                        newComps[idx].actionAnimation = e.target.value;
+                                        updateElement(selectedElement.id, { eduComponents: newComps });
+                                      }}
+                                      className="flex-1 bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-white outline-none"
+                                    >
+                                      <option value="">-- Animasi --</option>
+                                      <option value="*">Semua (*)</option>
+                                      {elements.find(el => el.id === comp.actionTargetId)?.availableAnimations?.map(anim => (
+                                        <option key={anim} value={anim}>{anim}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
 
-                          {selectedElement.actionTargetId && (
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-xs text-gray-400">Pilih Animasi Pemeliharaan</label>
-                              <select
-                                value={selectedElement.actionAnimation || ''}
-                                onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
-                                className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              >
-                                <option value="">-- Pilih Animasi --</option>
-                                <option value="*">✨ Mainkan Semua Animasi Bersamaan (*)</option>
-                                {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
-                                  <option key={anim} value={anim}>{anim}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                          <div className="h-px bg-gray-800 my-4"></div>
+
+                          {/* Maintenance Tasks Builder */}
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                              <Wrench size={14} /> Tugas Maintenance
+                            </h4>
+                            <button 
+                              onClick={() => {
+                                const newTasks = [...(selectedElement.eduMaintenanceTasks || []), { id: crypto.randomUUID(), title: 'Tugas Baru', steps: [] }];
+                                updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                              }}
+                              className="text-[10px] bg-pln-yellow/20 text-pln-yellow px-2 py-1 rounded border border-pln-yellow/30 hover:bg-pln-yellow/30 flex items-center gap-1"
+                            >
+                              <Plus size={10} /> Tambah
+                            </button>
+                          </div>
+
+                          <div className="space-y-3 mt-2">
+                            {(!selectedElement.eduMaintenanceTasks || selectedElement.eduMaintenanceTasks.length === 0) && (
+                              <div className="text-[10px] text-gray-500 italic text-center py-2 bg-gray-800/50 rounded border border-gray-800 border-dashed">Belum ada tugas maintenance.</div>
+                            )}
+                            {selectedElement.eduMaintenanceTasks?.map((task, tIdx) => (
+                              <div key={task.id} className="bg-gray-800/60 border border-gray-700 rounded-lg p-2 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <input 
+                                    type="text"
+                                    value={task.title}
+                                    onChange={(e) => {
+                                      const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                      newTasks[tIdx].title = e.target.value;
+                                      updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                    }}
+                                    className="flex-1 bg-gray-900 border border-gray-600 rounded p-1 text-xs font-bold text-pln-yellow outline-none focus:border-pln-yellow"
+                                    placeholder="Judul Tugas (misal: Ganti RAM)"
+                                  />
+                                  <button 
+                                    onClick={() => {
+                                      const newTasks = selectedElement.eduMaintenanceTasks!.filter(t => t.id !== task.id);
+                                      updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                    }}
+                                    className="text-red-400 hover:text-red-300 p-1"
+                                  ><Trash2 size={12} /></button>
+                                </div>
+                                
+                                {/* Steps Builder */}
+                                <div className="pl-3 border-l-2 border-gray-700 space-y-2">
+                                  {task.steps.map((step, sIdx) => (
+                                    <div key={step.id} className="bg-gray-900/50 border border-gray-700 rounded p-2 space-y-1.5">
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-[10px] font-bold text-gray-500 bg-gray-800 px-1.5 rounded mt-0.5">{sIdx + 1}</span>
+                                        <textarea
+                                          value={step.instruction}
+                                          onChange={(e) => {
+                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                            newTasks[tIdx].steps[sIdx].instruction = e.target.value;
+                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                          }}
+                                          className="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-white outline-none focus:border-pln-blue min-h-[40px] resize-none"
+                                          placeholder="Instruksi langkah..."
+                                        />
+                                        <button 
+                                          onClick={() => {
+                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                            newTasks[tIdx].steps = newTasks[tIdx].steps.filter(s => s.id !== step.id);
+                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                          }}
+                                          className="text-red-400 hover:text-red-300 mt-1"
+                                        ><X size={12} /></button>
+                                      </div>
+                                      <div className="flex gap-2 pl-6">
+                                        <select
+                                          value={step.actionTargetId || ''}
+                                          onChange={(e) => {
+                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                            newTasks[tIdx].steps[sIdx].actionTargetId = e.target.value;
+                                            newTasks[tIdx].steps[sIdx].actionAnimation = '';
+                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                          }}
+                                          className="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-white outline-none"
+                                        >
+                                          <option value="">- Animasi Model -</option>
+                                          {elements.filter(el => el.type === '3d_model').map(model => (
+                                            <option key={model.id} value={model.id}>{model.name}</option>
+                                          ))}
+                                        </select>
+                                        {step.actionTargetId && (
+                                          <select
+                                            value={step.actionAnimation || ''}
+                                            onChange={(e) => {
+                                              const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                              newTasks[tIdx].steps[sIdx].actionAnimation = e.target.value;
+                                              updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                            }}
+                                            className="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-white outline-none"
+                                          >
+                                            <option value="">- Clip -</option>
+                                            <option value="*">Semua (*)</option>
+                                            {elements.find(el => el.id === step.actionTargetId)?.availableAnimations?.map(anim => (
+                                              <option key={anim} value={anim}>{anim}</option>
+                                            ))}
+                                          </select>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                  
+                                  <button 
+                                    onClick={() => {
+                                      const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                      newTasks[tIdx].steps.push({ id: crypto.randomUUID(), instruction: '' });
+                                      updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                    }}
+                                    className="text-[9px] text-gray-400 hover:text-white flex items-center gap-1 ml-1"
+                                  >
+                                    <Plus size={10} /> Tambah Langkah
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
