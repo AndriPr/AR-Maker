@@ -36,6 +36,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const removeElement = useEditorStore(state => state.removeElement);
   const duplicateElement = useEditorStore(state => state.duplicateElement);
   const updateElement = useEditorStore(state => state.updateElement);
+  const previewAnim = useEditorStore(state => state.previewAnimationData);
+  const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -602,14 +604,48 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
                             <Play size={12} className="text-pln-yellow"/> Animasi Bawaan Terdeteksi
                           </h4>
-                          <div className="flex flex-wrap gap-2">
+                          
+                          <div className="flex flex-col gap-2">
+                            <button 
+                              onClick={() => {
+                                if (previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === '*') {
+                                  setPreviewAnimationData(null);
+                                } else {
+                                  setPreviewAnimationData({ targetId: selectedElement.id, animationName: '*' });
+                                }
+                              }}
+                              className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
+                                previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === '*' 
+                                ? 'bg-pln-yellow/20 border-pln-yellow text-pln-yellow' 
+                                : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-300'
+                              }`}
+                            >
+                              <span>✨ Mainkan Semua Bersamaan</span>
+                              {previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === '*' ? <span className="text-[10px]">🛑 Stop</span> : <Play size={10} />}
+                            </button>
+
                             {selectedElement.availableAnimations.map(anim => (
-                              <span key={anim} className="bg-gray-800 border border-gray-700 text-xs px-2.5 py-1 rounded-md text-gray-300 font-medium">
-                                {anim}
-                              </span>
+                              <button 
+                                key={anim}
+                                onClick={() => {
+                                  if (previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim) {
+                                    setPreviewAnimationData(null);
+                                  } else {
+                                    setPreviewAnimationData({ targetId: selectedElement.id, animationName: anim });
+                                  }
+                                }}
+                                className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                                  previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim 
+                                  ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                                  : 'bg-gray-800/50 hover:bg-gray-700 border-gray-700/50 text-gray-400'
+                                }`}
+                              >
+                                <span className="truncate pr-2">{anim}</span>
+                                {previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim ? <span className="text-[10px]">🛑 Stop</span> : <Play size={10} />}
+                              </button>
                             ))}
                           </div>
-                          <p className="text-[10px] text-gray-500">Buat elemen "UI Button" untuk memicu animasi ini di AR.</p>
+                          <p className="text-[10px] text-gray-500">Klik tombol di atas untuk melihat *preview* animasi di kanvas. Buat "UI Button" untuk memicunya di AR.</p>
                         </div>
                       )}
                     </div>

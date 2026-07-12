@@ -25,10 +25,12 @@ interface EditorState {
   elements: SceneElement[];
   selectedId: string | null;
   targetImageUrl: string | null;
+  previewAnimationData: { targetId: string, animationName: string } | null;
   
   // Actions
   setElements: (elements: SceneElement[]) => void;
   setTargetImageUrl: (url: string | null) => void;
+  setPreviewAnimationData: (data: { targetId: string, animationName: string } | null) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
   updateElement: (id: string, updates: Partial<SceneElement>) => void;
   removeElement: (id: string) => void;
@@ -40,10 +42,12 @@ export const useEditorStore = create<EditorState>((set) => ({
   elements: [],
   selectedId: null,
   targetImageUrl: null,
+  previewAnimationData: null,
 
   setElements: (elements) => set({ elements }),
   
   setTargetImageUrl: (url) => set({ targetImageUrl: url }),
+  setPreviewAnimationData: (data) => set({ previewAnimationData: data }),
   
   addElement: (element) => set((state) => {
     const newId = crypto.randomUUID();

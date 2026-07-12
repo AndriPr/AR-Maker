@@ -2,17 +2,19 @@
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html } from '@react-three/drei';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
 function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
   const { scene, animations } = useGLTF(element.url) as any;
   const transformRef = useRef<any>(null);
+  const groupRef = useRef<THREE.Group>(null);
   
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const previewAnim = useEditorStore(state => state.previewAnimationData);
 
   const isSelected = selectedId === element.id;
   
@@ -68,19 +70,36 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     }
   }, [animations, element.id, element.availableAnimations, updateElement]);
 
+  const { actions } = useAnimations(animations, groupRef);
+
+  useEffect(() => {
+    if (previewAnim && previewAnim.targetId === element.id) {
+      if (previewAnim.animationName === '*') {
+        Object.values(actions).forEach(action => action?.reset().play());
+      } else {
+        const action = actions[previewAnim.animationName];
+        if (action) action.reset().play();
+      }
+    } else {
+      Object.values(actions).forEach(action => action?.stop());
+    }
+  }, [previewAnim, actions, element.id]);
+
   if (!clonedScene) return null;
 
   const primitiveObj = (
-    <primitive 
-      object={clonedScene} 
-      onClick={(e: any) => {
-        e.stopPropagation();
-        setSelectedId(element.id);
-      }}
-      onPointerMissed={(e: any) => {
-        if (e.type === 'click') setSelectedId(null);
-      }}
-    />
+    <group ref={groupRef}>
+      <primitive 
+        object={clonedScene} 
+        onClick={(e: any) => {
+          e.stopPropagation();
+          setSelectedId(element.id);
+        }}
+        onPointerMissed={(e: any) => {
+          if (e.type === 'click') setSelectedId(null);
+        }}
+      />
+    </group>
   );
 
   if (isSelected) {
