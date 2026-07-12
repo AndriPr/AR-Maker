@@ -291,11 +291,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 rotation: [0, 0, 0], 
                 scale: [1, 1, 1], 
                 panelTitle: 'NAMA KOMPONEN',
-                panelDescription: 'Deskripsi komponen ini...',
-                healthStatus: 'Optimal (100%)',
-                userExperience: 'Aman beroperasi',
-                actionTargetId: defaultTarget,
-                actionAnimation: defaultAnim
+                eduComponents: [],
+                eduMaintenanceTasks: []
               });
             }}
           >
