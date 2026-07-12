@@ -697,7 +697,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                       newComps[idx].actionAnimation = '';
                                       updateElement(selectedElement.id, { eduComponents: newComps });
                                     }}
-                                    className="flex-1 bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-white outline-none"
+                                    className="flex-1 min-w-0 text-ellipsis bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-white outline-none"
                                   >
                                     <option value="">-- Target Model 3D --</option>
                                     {elements.filter(el => el.type === '3d_model').map(model => (
@@ -712,7 +712,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                         newComps[idx].actionAnimation = e.target.value;
                                         updateElement(selectedElement.id, { eduComponents: newComps });
                                       }}
-                                      className="flex-1 bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-white outline-none"
+                                      className="flex-1 min-w-0 text-ellipsis bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-white outline-none"
                                     >
                                       <option value="">-- Animasi --</option>
                                       <option value="*">Semua (*)</option>
@@ -805,7 +805,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                             newTasks[tIdx].steps[sIdx].actionAnimation = '';
                                             updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
                                           }}
-                                          className="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-white outline-none"
+                                          className="flex-1 min-w-0 text-ellipsis bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-white outline-none"
                                         >
                                           <option value="">- Animasi Model -</option>
                                           {elements.filter(el => el.type === '3d_model').map(model => (
@@ -820,7 +820,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                               newTasks[tIdx].steps[sIdx].actionAnimation = e.target.value;
                                               updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
                                             }}
-                                            className="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-white outline-none"
+                                            className="flex-1 min-w-0 text-ellipsis bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-white outline-none"
                                           >
                                             <option value="">- Clip -</option>
                                             <option value="*">Semua (*)</option>
