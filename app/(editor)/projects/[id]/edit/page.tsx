@@ -128,7 +128,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           return;
         }
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image.prod.js';
+        script.src = 'https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.5/dist/mindar-image.prod.js';
         script.onload = () => resolve();
         script.onerror = () => reject(new Error("Gagal memuat Compiler"));
         document.head.appendChild(script);
