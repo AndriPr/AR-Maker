@@ -65,42 +65,47 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const eduTasks = hasEduPanel ? (eduPanels[0].eduMaintenanceTasks || []) : [];
 
     const eduDashboardHtml = hasEduPanel ? `
-      <div id="edu-dashboard" style="display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 20px; color: white; font-family: sans-serif; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7); z-index: 10000; pointer-events: auto; flex-direction: column; overflow: hidden; max-height: 40vh;">
+      <div id="edu-dashboard" style="display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 380px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 15px 20px 20px 20px; color: white; font-family: sans-serif; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7); z-index: 10000; pointer-events: auto; flex-direction: column; overflow: hidden; max-height: 45vh; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
         
+        <!-- DRAG HANDLE / TOGGLE -->
+        <div onclick="toggleEduPanel()" style="width: 100%; display: flex; justify-content: center; align-items: center; padding-bottom: 15px; cursor: pointer;">
+          <div style="width: 36px; height: 5px; background: rgba(255,255,255,0.4); border-radius: 10px;"></div>
+        </div>
+
         <!-- HEADER -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 16px;">
-          <h2 id="edu-title" style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #fbbf24; text-transform: uppercase; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${panelTitle}</h2>
+        <div id="edu-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 12px;">
+          <h2 id="edu-title" style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 1px; color: #fbbf24; text-transform: uppercase; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${panelTitle}</h2>
           <button id="edu-back-btn" style="display: none; background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.2s;">&lt; KEMBALI</button>
         </div>
         
         <!-- CONTENT AREA -->
-        <div id="edu-content" style="overflow-y: auto; flex: 1; padding-right: 4px;">
+        <div id="edu-content" style="overflow-y: auto; flex: 1; padding-right: 4px; display: block; transition: opacity 0.2s;">
           <!-- MAIN MENU -->
-          <div id="edu-view-main" style="display: flex; flex-direction: column; gap: 12px;">
-            <button onclick="eduNav('components')" style="width: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 14px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-              <span>🗂️ Asset Info (Daftar Komponen)</span>
+          <div id="edu-view-main" style="display: flex; flex-direction: column; gap: 10px;">
+            <button onclick="eduNav('components')" style="width: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 13px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <span>🗂️ Asset Info (Komponen)</span>
               <span>&gt;</span>
             </button>
-            <button onclick="eduNav('maintenance')" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 14px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <button onclick="eduNav('maintenance')" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 13px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
               <span>🔧 Tugas Maintenance</span>
               <span>&gt;</span>
             </button>
           </div>
 
           <!-- COMPONENTS LIST -->
-          <div id="edu-view-components" style="display: none; flex-direction: column; gap: 10px;"></div>
+          <div id="edu-view-components" style="display: none; flex-direction: column; gap: 8px;"></div>
 
           <!-- MAINTENANCE LIST -->
-          <div id="edu-view-maintenance" style="display: none; flex-direction: column; gap: 10px;"></div>
+          <div id="edu-view-maintenance" style="display: none; flex-direction: column; gap: 8px;"></div>
 
           <!-- STEP BY STEP VIEW -->
-          <div id="edu-view-step" style="display: none; flex-direction: column; gap: 16px;">
-            <div style="background: rgba(255,255,255,0.05); border-left: 4px solid #60a5fa; padding: 16px; border-radius: 8px;">
-              <h3 id="edu-step-title" style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: bold; letter-spacing: 0.5px;">LANGKAH 1 DARI X</h3>
-              <p id="edu-step-instruction" style="margin: 0; font-size: 14px; line-height: 1.6; color: #e2e8f0; font-weight: 500;">...</p>
+          <div id="edu-view-step" style="display: none; flex-direction: column; gap: 14px;">
+            <div style="background: rgba(255,255,255,0.05); border-left: 4px solid #60a5fa; padding: 14px; border-radius: 8px;">
+              <h3 id="edu-step-title" style="margin: 0 0 6px 0; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; letter-spacing: 0.5px;">LANGKAH 1 DARI X</h3>
+              <p id="edu-step-instruction" style="margin: 0; font-size: 13px; line-height: 1.5; color: #e2e8f0; font-weight: 500;">...</p>
             </div>
             
-            <button id="edu-step-next" onclick="eduNextStep()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+            <button id="edu-step-next" onclick="eduNextStep()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
               Langkah Selanjutnya ➔
             </button>
           </div>
@@ -155,6 +160,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             let currentView = 'main'; // main, components, maintenance, step
             let currentTask = null;
             let currentStepIdx = 0;
+            let isEduCollapsed = false;
+
+            function toggleEduPanel() {
+              isEduCollapsed = !isEduCollapsed;
+              const content = document.getElementById('edu-content');
+              const header = document.getElementById('edu-header');
+              if (isEduCollapsed) {
+                content.style.display = 'none';
+                header.style.marginBottom = '0';
+                header.style.paddingBottom = '0';
+                header.style.borderBottom = 'none';
+              } else {
+                content.style.display = 'block';
+                header.style.marginBottom = '12px';
+                header.style.paddingBottom = '12px';
+                header.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+              }
+            }
 
             document.addEventListener("DOMContentLoaded", function() {
               const target = document.querySelector('[mindar-image-target]');
