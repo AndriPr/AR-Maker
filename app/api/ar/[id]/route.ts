@@ -65,7 +65,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const eduTasks = hasEduPanel ? (eduPanels[0].eduMaintenanceTasks || []) : [];
 
     const eduDashboardHtml = hasEduPanel ? `
-      <div id="edu-dashboard" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 24px; color: white; font-family: sans-serif; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); z-index: 10000; pointer-events: auto; flex-direction: column; overflow: hidden; max-height: 80vh;">
+      <div id="edu-dashboard" style="display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 20px; color: white; font-family: sans-serif; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7); z-index: 10000; pointer-events: auto; flex-direction: column; overflow: hidden; max-height: 40vh;">
         
         <!-- HEADER -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 16px;">
@@ -282,8 +282,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           </script>
           <style>
             @keyframes fadeInUp {
-              from { opacity: 0; transform: translate(-50%, -45%); }
-              to { opacity: 1; transform: translate(-50%, -50%); }
+              from { opacity: 0; transform: translate(-50%, 30px); }
+              to { opacity: 1; transform: translate(-50%, 0); }
             }
           </style>
         </head>
