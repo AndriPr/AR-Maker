@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +18,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Mobile Panel States
+  const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [isRightPanelOpen, setRightPanelOpen] = useState(false);
   
   // Zustand Store
   const elements = useEditorStore(state => state.elements);
@@ -140,56 +144,86 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const selectedElement = elements.find(el => el.id === selectedId);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
       {/* Editor Header */}
-      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2 sm:px-4 shrink-0 z-30 relative">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Link href="/" className="text-gray-400 hover:text-white transition-colors p-1 sm:p-0">
             <ArrowLeft size={20} />
           </Link>
-          <div className="h-6 w-px bg-gray-700"></div>
-          <div>
-            <h1 className="text-sm font-bold text-white">{project?.title}</h1>
-            <p className="text-xs text-gray-400">
-              {lastSaved ? `Tersimpan otomatis ${lastSaved.toLocaleTimeString()}` : 'Belum ada perubahan'}
+          
+          <button 
+            onClick={() => setLeftPanelOpen(!isLeftPanelOpen)} 
+            className="md:hidden p-1.5 text-gray-400 hover:text-white bg-gray-800 rounded-md transition-colors"
+          >
+            <Layers size={18} />
+          </button>
+
+          <div className="hidden sm:block h-6 w-px bg-gray-700"></div>
+          <div className="hidden sm:block">
+            <h1 className="text-sm font-bold text-white truncate max-w-[150px]">{project?.title}</h1>
+            <p className="text-[10px] text-gray-400 truncate">
+              {lastSaved ? `Saved ${lastSaved.getHours()}:${lastSaved.getMinutes().toString().padStart(2, '0')}` : 'Belum disimpan'}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <button onClick={handleAddText} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700">
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <button onClick={handleAddText} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700">
             <Type size={14} />
-            Add Text
+            <span className="hidden sm:inline">Add Text</span>
           </button>
           
-          <div className="h-4 w-px bg-gray-700 mx-2"></div>
+          <div className="hidden sm:block h-4 w-px bg-gray-700 mx-1"></div>
 
-          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50">
+          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 text-[10px] sm:text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50">
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            Simpan Manual
+            <span className="hidden sm:inline sm:ml-2">Simpan Manual</span>
           </button>
-          <button onClick={handlePublish} disabled={saving} className="flex items-center gap-2 px-4 py-1.5 text-sm font-bold bg-pln-blue hover:bg-pln-blue-dark text-white rounded-lg transition-colors disabled:opacity-50">
-            <Play size={16} />
-            Publish & Preview
+          
+          <button onClick={handlePublish} disabled={saving} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 text-[10px] sm:text-sm font-bold bg-pln-blue hover:bg-pln-blue-dark text-white rounded-lg transition-colors disabled:opacity-50">
+            <Play size={14} />
+            <span className="hidden sm:inline">Publish & Preview</span>
+            <span className="sm:hidden">Publish</span>
+          </button>
+
+          <button 
+            onClick={() => setRightPanelOpen(!isRightPanelOpen)} 
+            className="md:hidden p-1.5 text-gray-400 hover:text-white bg-gray-800 rounded-md transition-colors ml-1"
+          >
+            <Settings size={18} />
           </button>
         </div>
       </header>
 
       {/* Editor Body */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         
+        {/* Mobile Overlays */}
+        {(isLeftPanelOpen || isRightPanelOpen) && (
+          <div 
+            className="absolute inset-0 bg-black/60 z-10 md:hidden" 
+            onClick={() => { setLeftPanelOpen(false); setRightPanelOpen(false); }}
+          />
+        )}
+
         {/* Left Sidebar */}
-        <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0">
-          <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-            <Layers size={14} />
-            Scene Hierarchy
+        <aside className={`absolute md:static top-0 bottom-0 left-0 z-20 w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+          <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-400 uppercase flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Layers size={14} />
+              Scene Hierarchy
+            </div>
+            <button className="md:hidden text-gray-500 hover:text-white" onClick={() => setLeftPanelOpen(false)}>
+              <PanelLeftClose size={16} />
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             <div 
               className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm border cursor-pointer transition-colors ${
                 selectedId === null ? 'bg-blue-900/40 border-pln-blue text-white' : 'bg-gray-800 border-gray-700 text-gray-200 hover:border-gray-600'
               }`}
-              onClick={() => setSelectedId(null)}
+              onClick={() => { setSelectedId(null); if(window.innerWidth < 768) setLeftPanelOpen(false); }}
             >
               <ImageIcon size={16} className="text-blue-400 shrink-0" />
               <span className="truncate">Marker Image</span>
@@ -198,7 +232,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             {elements.map(el => (
               <div 
                 key={el.id}
-                onClick={() => setSelectedId(el.id)}
+                onClick={() => { setSelectedId(el.id); if(window.innerWidth < 768) setLeftPanelOpen(false); }}
                 className={`flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer transition-colors pl-6 border ${
                   selectedId === el.id ? 'bg-blue-900/40 border-pln-blue text-white' : 'bg-gray-800/50 border-gray-700/50 text-gray-300 hover:border-gray-600'
                 }`}
@@ -209,7 +243,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
-                  <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300">
+                  <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1">
                     <Trash2 size={12} />
                   </button>
                 )}
@@ -241,14 +275,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     }
                     if (asset.type === '3d_model') {
                       addElement({
-                        type: '3d_model',
-                        name: asset.name,
-                        url: asset.file_url,
-                        position: [0, 0, 0],
-                        rotation: [0, 0, 0],
-                        scale: [1, 1, 1]
+                         type: '3d_model',
+                         name: asset.name,
+                         url: asset.file_url,
+                         position: [0, 0, 0],
+                         rotation: [0, 0, 0],
+                         scale: [1, 1, 1]
                       });
                     }
+                    if(window.innerWidth < 768) setLeftPanelOpen(false);
                   }}
                   className={`aspect-square rounded-md border flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-gray-800 border-gray-700 hover:border-gray-500`}
                 >
@@ -273,42 +308,47 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         </aside>
 
         {/* 3D Viewport Area */}
-        <main className="flex-1 relative flex flex-col">
+        <main className="flex-1 relative flex flex-col bg-black min-w-0">
           {/* Toolbar */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-sm border border-gray-700 rounded-lg flex p-1 shadow-xl z-10 gap-1">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur-md border border-gray-700 rounded-full flex p-1 shadow-2xl z-0 gap-1">
             <button 
               onClick={() => setTransformMode('translate')} 
-              className={`p-2 rounded-md transition-colors ${transformMode === 'translate' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+              className={`p-2.5 sm:p-2 rounded-full transition-all ${transformMode === 'translate' ? 'bg-pln-blue text-white shadow-inner' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
               title="Geser (Translate)"
             >
               <Move size={18} />
             </button>
             <button 
               onClick={() => setTransformMode('rotate')} 
-              className={`p-2 rounded-md transition-colors ${transformMode === 'rotate' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+              className={`p-2.5 sm:p-2 rounded-full transition-all ${transformMode === 'rotate' ? 'bg-pln-blue text-white shadow-inner' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
               title="Putar (Rotate)"
             >
               <RotateCw size={18} />
             </button>
             <button 
               onClick={() => setTransformMode('scale')} 
-              className={`p-2 rounded-md transition-colors ${transformMode === 'scale' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+              className={`p-2.5 sm:p-2 rounded-full transition-all ${transformMode === 'scale' ? 'bg-pln-blue text-white shadow-inner' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
               title="Perbesar/Kecil (Scale)"
             >
               <Maximize size={18} />
             </button>
           </div>
           
-          <div className="w-full h-full relative overflow-hidden bg-black">
+          <div className="w-full h-full relative overflow-hidden">
             <EditorViewport transformMode={transformMode} />
           </div>
         </main>
 
         {/* Right Sidebar */}
-        <aside className="w-72 bg-gray-900 border-l border-gray-800 flex flex-col shrink-0">
-          <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-            <Settings size={14} />
-            Properties
+        <aside className={`absolute md:static top-0 bottom-0 right-0 z-20 w-72 bg-gray-900 border-l border-gray-800 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0`}>
+          <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-400 uppercase flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Settings size={14} />
+              Properties
+            </div>
+            <button className="md:hidden text-gray-500 hover:text-white" onClick={() => setRightPanelOpen(false)}>
+              <PanelRightClose size={16} />
+            </button>
           </div>
           
           <div className="p-4 space-y-6 overflow-y-auto">
@@ -320,7 +360,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   Target Image (Marker)
                   <button className="text-red-400 text-xs hover:underline" onClick={() => setTargetImageUrl(null)}>Clear</button>
                 </h3>
-                <div className="aspect-video bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center overflow-hidden relative">
+                <div className="aspect-video bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center overflow-hidden relative shadow-inner">
                   {targetImageUrl ? (
                     <img src={targetImageUrl} className="w-full h-full object-cover" />
                   ) : (
@@ -340,33 +380,33 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   </h3>
                   
                   <div className="space-y-4">
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1.5">
                       <label className="text-xs text-gray-400">Nama Elemen</label>
                       <input 
                         type="text" 
                         value={selectedElement.name}
                         onChange={(e) => updateElement(selectedElement.id, { name: e.target.value })}
-                        className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors"
                       />
                     </div>
 
                     {selectedElement.type === '3d_text' && (
                       <>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-gray-400">Konten Teks</label>
                           <textarea 
                             value={selectedElement.content}
                             onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue h-20"
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue h-24 resize-none transition-colors"
                           />
                         </div>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-gray-400">Warna Teks</label>
                           <input 
                             type="color" 
                             value={selectedElement.color || '#ffffff'}
                             onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded h-8 outline-none cursor-pointer"
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg h-10 outline-none cursor-pointer p-1"
                           />
                         </div>
                       </>
@@ -374,7 +414,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-800"></div>
+                <div className="h-px bg-gray-800 my-2"></div>
 
                 <div>
                   <h3 className="text-sm font-bold text-gray-200 mb-3">Transform</h3>
@@ -407,7 +447,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                       }}
                     />
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-3 text-center">Tarik garis navigasi 3D di viewport untuk mengubah.</p>
+                  <p className="text-[10px] text-gray-500 mt-4 text-center">
+                    Tarik panah/lingkaran navigasi 3D di viewport untuk mengubah letak secara langsung.
+                  </p>
                 </div>
               </>
             )}
@@ -421,18 +463,18 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
 function TransformRow({ label, values, onChange }: { label: string, values: number[], onChange: (index: number, val: number) => void }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-gray-500 w-12">{label}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+      <span className="text-xs text-gray-500 sm:w-12">{label}</span>
       <div className="flex gap-1 flex-1">
         {['X', 'Y', 'Z'].map((axis, i) => (
-          <div key={axis} className="flex items-center bg-gray-800 rounded flex-1 overflow-hidden border border-gray-700 focus-within:border-pln-blue">
-            <span className="text-[10px] text-gray-500 px-1.5 bg-gray-800/50 border-r border-gray-700/50">{axis}</span>
+          <div key={axis} className="flex items-center bg-gray-800 rounded-md flex-1 overflow-hidden border border-gray-700 focus-within:border-pln-blue transition-colors">
+            <span className="text-[10px] text-gray-500 px-1.5 bg-gray-800/50 border-r border-gray-700/50 font-medium">{axis}</span>
             <input 
               type="number" 
               step="0.1"
               value={Number(values[i]).toFixed(2)} 
               onChange={(e) => onChange(i, parseFloat(e.target.value) || 0)}
-              className="w-full bg-transparent text-xs text-white px-1 py-1 outline-none text-center" 
+              className="w-full bg-transparent text-[11px] text-white px-1 py-1.5 outline-none text-center" 
             />
           </div>
         ))}
