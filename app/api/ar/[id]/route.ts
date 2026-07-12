@@ -35,7 +35,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }
       
       if (el.type === '3d_text') {
-        return `<a-text value="${el.content || 'Text'}" color="${el.color || '#ffffff'}" position="${posStr}" rotation="${rotStr}" scale="${scaleStr}" align="center"></a-text>`;
+        // Escape HTML entities to prevent breaking the HTML structure
+        const safeContent = (el.content || 'Text')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+        
+        return `<a-text value="${safeContent}" color="${el.color || '#ffffff'}" position="${posStr}" rotation="${rotStr}" scale="${scaleStr}" align="center" side="double" width="5"></a-text>`;
       }
 
       return '';
