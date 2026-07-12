@@ -577,6 +577,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                       className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
                                     >
                                       <option value="">-- Pilih Animasi --</option>
+                                      <option value="*">✨ Mainkan Semua Animasi Bersamaan (*)</option>
                                       {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
                                         <option key={anim} value={anim}>{anim}</option>
                                       ))}
