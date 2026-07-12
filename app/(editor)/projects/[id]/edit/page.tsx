@@ -253,7 +253,28 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <Type size={14} />
             <span className="hidden sm:inline">Add Text</span>
           </button>
-          
+
+          <button 
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700"
+            onClick={() => {
+              const animatedModels = elements.filter(el => el.type === '3d_model' && el.availableAnimations && el.availableAnimations.length > 0);
+              const defaultTarget = animatedModels.length > 0 ? animatedModels[0].id : '';
+              const defaultAnim = animatedModels.length > 0 && animatedModels[0].availableAnimations ? animatedModels[0].availableAnimations[0] : '';
+              addElement({ 
+                type: 'ui_button', 
+                name: 'Tombol Aksi', 
+                position: [0, -1, 0], 
+                rotation: [0, 0, 0], 
+                scale: [1, 1, 1], 
+                buttonText: 'Mulai Animasi',
+                actionTargetId: defaultTarget,
+                actionAnimation: defaultAnim
+              });
+            }}
+          >
+            <MousePointerClick size={14} />
+            <span className="hidden sm:inline">Add Button</span>
+          </button>
           <div className="hidden sm:block h-4 w-px bg-gray-700 mx-1"></div>
 
           <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 text-[10px] sm:text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50">
