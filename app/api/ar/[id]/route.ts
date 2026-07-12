@@ -50,9 +50,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     // Generate HTML for UI Buttons
     const uiButtons = elements
-      .filter((el: any) => el.type === 'ui_button' && el.actionTargetId && el.actionAnimation)
+      .filter((el: any) => el.type === 'ui_button')
       .map((el: any) => {
-        return `<button class="ar-action-btn" onclick="playAnimation('model-${el.actionTargetId}', '${el.actionAnimation}')">${el.buttonText || 'Action'}</button>`;
+        const targetStr = el.actionTargetId ? `'model-${el.actionTargetId}'` : 'null';
+        const animStr = el.actionAnimation ? `'${el.actionAnimation.replace(/'/g, "\\'")}'` : 'null';
+        return `<button class="ar-action-btn" onclick="playAnimation(${targetStr}, ${animStr})">${el.buttonText || 'Tombol'}</button>`;
       }).join('\n        ');
 
     const htmlContent = `
@@ -97,12 +99,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           </style>
           <script>
             function playAnimation(modelId, animName) {
+              if (!modelId || !animName) {
+                alert("Tombol ini belum dihubungkan ke animasi 3D mana pun.");
+                return;
+              }
               const el = document.getElementById(modelId);
               if (el) {
                 el.removeAttribute('animation-mixer');
-                // Force a small delay to allow attribute removal to register before adding it back
+                // Menggunakan format objek agar nama animasi yang mengandung karakter titik dua (:) tidak merusak parser A-Frame
                 setTimeout(() => {
-                  el.setAttribute('animation-mixer', 'clip: ' + animName + '; loop: once; clampWhenFinished: true; crossFadeDuration: 0.2');
+                  el.setAttribute('animation-mixer', {
+                    clip: animName,
+                    loop: 'once',
+                    clampWhenFinished: true,
+                    crossFadeDuration: 0.2
+                  });
                 }, 10);
               }
             }
