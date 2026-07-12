@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button';
+export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel';
 
 export interface SceneElement {
   id: string;
@@ -15,6 +15,12 @@ export interface SceneElement {
   buttonText?: string;            // For UI button
   actionTargetId?: string;        // The ID of the model to animate
   actionAnimation?: string;       // The name of the animation to play
+
+  // Edu Panel Properties
+  panelTitle?: string;
+  panelDescription?: string;
+  healthStatus?: string;
+  userExperience?: string;
 
   position: [number, number, number];
   rotation: [number, number, number];

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -277,6 +277,31 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <MousePointerClick size={14} />
             <span className="hidden sm:inline">Add Button</span>
           </button>
+
+          <button 
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold bg-pln-yellow/20 hover:bg-pln-yellow/30 text-pln-yellow border border-pln-yellow/50 rounded-lg transition-colors"
+            onClick={() => {
+              const animatedModels = elements.filter(el => el.type === '3d_model' && el.availableAnimations && el.availableAnimations.length > 0);
+              const defaultTarget = animatedModels.length > 0 ? animatedModels[0].id : '';
+              const defaultAnim = animatedModels.length > 0 && animatedModels[0].availableAnimations ? animatedModels[0].availableAnimations[0] : '';
+              addElement({ 
+                type: 'edu_panel', 
+                name: 'Edu Dashboard', 
+                position: [0, 0, 0], 
+                rotation: [0, 0, 0], 
+                scale: [1, 1, 1], 
+                panelTitle: 'NAMA KOMPONEN',
+                panelDescription: 'Deskripsi komponen ini...',
+                healthStatus: 'Optimal (100%)',
+                userExperience: 'Aman beroperasi',
+                actionTargetId: defaultTarget,
+                actionAnimation: defaultAnim
+              });
+            }}
+          >
+            <LayoutDashboard size={14} />
+            <span className="hidden sm:inline">Add Panel</span>
+          </button>
           <div className="hidden sm:block h-4 w-px bg-gray-700 mx-1"></div>
 
           <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 text-[10px] sm:text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50">
@@ -355,6 +380,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   {el.type === '3d_model' && <Box size={14} className="text-purple-400 shrink-0" />}
                   {el.type === '3d_text' && <Type size={14} className="text-green-400 shrink-0" />}
                   {el.type === 'ui_button' && <MousePointerClick size={14} className="text-blue-400 shrink-0" />}
+                  {el.type === 'edu_panel' && <LayoutDashboard size={14} className="text-pln-yellow shrink-0" />}
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
@@ -488,7 +514,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               <>
                 <div>
                   <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center justify-between">
-                    {selectedElement.type === '3d_model' ? '3D Model' : selectedElement.type === '3d_text' ? '3D Text' : 'UI Button'}
+                    {selectedElement.type === '3d_model' ? '3D Model' : 
+                     selectedElement.type === '3d_text' ? '3D Text' : 
+                     selectedElement.type === 'edu_panel' ? 'Edu Dashboard' : 'UI Button'}
                     <div className="flex gap-3">
                       <button className="text-blue-400 text-xs hover:underline flex items-center gap-1" onClick={() => duplicateElement(selectedElement.id)}><Copy size={12}/> Duplikat</button>
                       <button className="text-red-400 text-xs hover:underline flex items-center gap-1" onClick={() => removeElement(selectedElement.id)}><Trash2 size={12}/> Hapus</button>
@@ -594,6 +622,99 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                 </div>
                               )}
                             </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Edu Panel Specific Properties */}
+                      {selectedElement.type === 'edu_panel' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-pln-yellow uppercase flex items-center gap-2">
+                            <LayoutDashboard size={14} /> Edu Panel Konten
+                          </h4>
+                          <p className="text-[10px] text-gray-500 leading-tight">
+                            Panel ini akan melayang di layar AR saat audiens memindai gambar.
+                          </p>
+                          
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Judul Panel / Nama Komponen</label>
+                            <input 
+                              type="text"
+                              value={selectedElement.panelTitle || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { panelTitle: e.target.value })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                              placeholder="Misal: AIR BLOWER"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Deskripsi Aset (Asset Info)</label>
+                            <textarea 
+                              value={selectedElement.panelDescription || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { panelDescription: e.target.value })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner h-20 resize-none"
+                              placeholder="Fungsi utama komponen ini adalah..."
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Status Kesehatan (Health Status)</label>
+                            <input 
+                              type="text"
+                              value={selectedElement.healthStatus || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { healthStatus: e.target.value })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                              placeholder="Misal: Optimal - 98%"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Catatan UX / Keamanan</label>
+                            <input 
+                              type="text"
+                              value={selectedElement.userExperience || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { userExperience: e.target.value })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                              placeholder="Misal: Wajib gunakan APD"
+                            />
+                          </div>
+
+                          <div className="h-px bg-gray-800 my-4"></div>
+                          
+                          <h4 className="text-xs font-bold text-gray-400 uppercase">Aksi Maintenance</h4>
+                          <p className="text-[10px] text-gray-500 leading-tight">
+                            Animasi apa yang akan diputar saat tombol "Maintenance" diklik?
+                          </p>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Target Model 3D</label>
+                            <select
+                              value={selectedElement.actionTargetId || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                            >
+                              <option value="">-- Pilih Model --</option>
+                              {elements.filter(el => el.type === '3d_model').map(model => (
+                                <option key={model.id} value={model.id}>{model.name}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {selectedElement.actionTargetId && (
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs text-gray-400">Pilih Animasi Pemeliharaan</label>
+                              <select
+                                value={selectedElement.actionAnimation || ''}
+                                onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
+                                className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                              >
+                                <option value="">-- Pilih Animasi --</option>
+                                <option value="*">✨ Mainkan Semua Animasi Bersamaan (*)</option>
+                                {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
+                                  <option key={anim} value={anim}>{anim}</option>
+                                ))}
+                              </select>
+                            </div>
                           )}
                         </div>
                       )}
