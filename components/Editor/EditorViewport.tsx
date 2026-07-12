@@ -1,0 +1,216 @@
+"use client";
+
+import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text } from '@react-three/drei';
+import * as THREE from 'three';
+import { useEditorStore } from '@/lib/store';
+
+function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const { scene } = useGLTF(element.url) as any;
+  const transformRef = useRef<any>(null);
+  
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+
+  const isSelected = selectedId === element.id;
+  
+  const clonedScene = useMemo(() => {
+    if (!scene) return null;
+    const clone = scene.clone();
+    try {
+      const box = new THREE.Box3().setFromObject(clone);
+      const center = box.getCenter(new THREE.Vector3());
+      clone.position.x += (clone.position.x - center.x);
+      clone.position.y += (clone.position.y - center.y);
+      clone.position.z += (clone.position.z - center.z);
+      
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      if (maxDim > 5) {
+        const s = 3 / maxDim;
+        clone.scale.set(s, s, s);
+      }
+    } catch (e) {
+      console.error("Failed to process GLTF", e);
+    }
+    return clone;
+  }, [scene]);
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; // dragging started
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  if (!clonedScene) return null;
+
+  const primitiveObj = (
+    <primitive 
+      object={clonedScene} 
+      onClick={(e: any) => {
+        e.stopPropagation();
+        setSelectedId(element.id);
+      }}
+      onPointerMissed={(e: any) => {
+        if (e.type === 'click') setSelectedId(null);
+      }}
+    />
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+      >
+        {primitiveObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {primitiveObj}
+    </group>
+  );
+}
+
+function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; // dragging started
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const textObj = (
+    <Text 
+      color={element.color || "#ffffff"} 
+      fontSize={0.5} 
+      maxWidth={5} 
+      lineHeight={1}
+      letterSpacing={0.02} 
+      textAlign="center" 
+      font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff" 
+      anchorX="center" 
+      anchorY="middle"
+      onClick={(e: any) => {
+        e.stopPropagation();
+        setSelectedId(element.id);
+      }}
+      onPointerMissed={(e: any) => {
+        if (e.type === 'click') setSelectedId(null);
+      }}
+    >
+      {element.content}
+    </Text>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+      >
+        {textObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {textObj}
+    </group>
+  );
+}
+
+
+function TargetImage({ url }: { url: string }) {
+  const texture = useTexture(url);
+  const img = texture.image as any;
+  const aspect = img ? img.width / img.height : 1;
+  const width = 3;
+  const height = width / aspect;
+
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial map={texture} side={THREE.DoubleSide} transparent opacity={0.8} />
+    </mesh>
+  );
+}
+
+export default function EditorViewport({ transformMode = 'translate' }: { transformMode?: 'translate' | 'rotate' | 'scale' }) {
+  const targetImageUrl = useEditorStore(state => state.targetImageUrl);
+  const elements = useEditorStore(state => state.elements);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+
+  return (
+    <div className="w-full h-full bg-gray-900 relative">
+      <Canvas camera={{ position: [0, 3, 5], fov: 50 }} onPointerMissed={() => setSelectedId(null)}>
+        <color attach="background" args={['#111827']} />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
+        
+        <Grid infiniteGrid fadeDistance={20} sectionColor="#4b5563" cellColor="#374151" position={[0, -0.02, 0]} />
+        
+        <Suspense fallback={null}>
+          {targetImageUrl && <TargetImage url={targetImageUrl} />}
+          
+          {elements.map(el => {
+            if (el.type === '3d_model') {
+              return <ModelElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === '3d_text') {
+              return <TextElement key={el.id} element={el} mode={transformMode} />;
+            }
+            return null;
+          })}
+        </Suspense>
+
+        <OrbitControls makeDefault />
+      </Canvas>
+    </div>
+  );
+}

@@ -1,0 +1,147 @@
+"use client";
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { Image, Box, ArrowRight, Loader2 } from 'lucide-react';
+
+export default function NewProjectPage() {
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [trackingType, setTrackingType] = useState('image_tracking');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Silakan login terlebih dahulu.");
+
+      // Insert new project to database
+      const { data, error: dbError } = await supabase
+        .from('ar_projects')
+        .insert({
+          user_id: session.user.id,
+          title: title,
+          tracking_type: trackingType,
+          is_published: false
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // Redirect to editor
+      if (data) {
+        router.push(`/projects/${data.id}/edit`);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6 mt-10">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Buat Proyek AR Baru</h1>
+        <p className="text-gray-500 mt-2">Pilih jenis pelacakan (tracking) dan beri nama proyek Anda.</p>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-sm font-medium">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+        
+        {/* Nama Proyek */}
+        <div className="mb-8">
+          <label className="block text-sm font-bold text-gray-700 mb-2">Nama Proyek</label>
+          <input 
+            type="text" 
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Misal: Brosur Interaktif V1" 
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-lg font-medium"
+            required
+            autoFocus
+          />
+        </div>
+
+        {/* Tipe Tracking */}
+        <div className="mb-8">
+          <label className="block text-sm font-bold text-gray-700 mb-4">Pilih Tipe Tracking</label>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Image Tracking Option */}
+            <label className={`cursor-pointer border-2 rounded-2xl p-6 flex items-start gap-4 transition-all ${trackingType === 'image_tracking' ? 'border-pln-blue bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'}`}>
+              <input 
+                type="radio" 
+                name="tracking_type" 
+                value="image_tracking" 
+                checked={trackingType === 'image_tracking'}
+                onChange={() => setTrackingType('image_tracking')}
+                className="hidden"
+              />
+              <div className={`p-3 rounded-xl ${trackingType === 'image_tracking' ? 'bg-pln-blue text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <Image size={24} />
+              </div>
+              <div>
+                <h3 className={`font-bold text-lg mb-1 ${trackingType === 'image_tracking' ? 'text-pln-blue-dark' : 'text-gray-900'}`}>Image Tracking</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Objek 3D akan muncul di atas gambar spesifik (marker) seperti kartu nama, brosur, atau poster.
+                </p>
+              </div>
+            </label>
+
+            {/* Surface Tracking Option */}
+            <label className={`cursor-pointer border-2 rounded-2xl p-6 flex items-start gap-4 transition-all opacity-50 bg-gray-50`}>
+              <input 
+                type="radio" 
+                name="tracking_type" 
+                value="surface_tracking" 
+                disabled
+                className="hidden"
+              />
+              <div className={`p-3 rounded-xl bg-gray-200 text-gray-400`}>
+                <Box size={24} />
+              </div>
+              <div>
+                <h3 className={`font-bold text-lg mb-1 text-gray-500`}>Surface Tracking <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full ml-2">Segera Hadir</span></h3>
+                <p className="text-sm text-gray-400 leading-relaxed">
+                  Letakkan objek 3D di permukaan datar dunia nyata seperti lantai atau meja (WebXR).
+                </p>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t border-gray-100">
+          <button 
+            type="submit" 
+            disabled={loading || !title.trim()}
+            className="flex items-center gap-2 px-8 py-3 bg-pln-yellow hover:bg-pln-yellow-hover text-gray-900 font-bold rounded-xl transition-colors disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="animate-spin" size={20} /> : (
+              <>
+                Lanjutkan ke Editor
+                <ArrowRight size={20} />
+              </>
+            )}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  );
+}
