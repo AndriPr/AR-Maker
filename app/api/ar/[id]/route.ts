@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const elements = project.scene_data?.elements || [];
-    const mindFileUrl = project.mind_file_url || "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/example/image-tracking/assets/card-example/card.mind";
+    const mindFileUrl = project.mind_file_url || "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/examples/image-tracking/assets/card-example/card.mind";
 
     const assetItems = elements
       .filter((el: any) => el.type === '3d_model' && el.url)
