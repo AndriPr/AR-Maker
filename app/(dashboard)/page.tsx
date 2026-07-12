@@ -1,16 +1,18 @@
 "use client";
 
-import { Image, Box, Play, Edit3, Trash2, Plus } from 'lucide-react';
+import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function Dashboard() {
   const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -94,6 +96,7 @@ export default function Dashboard() {
             icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
             onRename={() => handleRename(project.id, project.title)}
             onDelete={() => handleDelete(project.id, project.title)}
+            onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
           />
         ))}
 
@@ -105,11 +108,78 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* QR Code Modal */}
+      {qrModalData && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col relative">
+            <button 
+              onClick={() => setQrModalData(null)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors p-1 bg-gray-100 hover:bg-gray-200 rounded-full"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="p-8 flex flex-col items-center pt-10">
+              <h2 className="text-xl font-bold text-gray-900 text-center mb-1 line-clamp-1">{qrModalData.title}</h2>
+              <p className="text-xs text-gray-500 text-center mb-6">
+                Scan menggunakan kamera HP
+              </p>
+              
+              <div className="bg-white p-2 rounded-2xl border-2 border-gray-100 shadow-inner mb-6" id="qr-code-dashboard">
+                <QRCodeSVG 
+                  value={`${window.location.origin}/ar-viewer/${qrModalData.id}`} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+
+              <div className="flex flex-col w-full gap-2">
+                <button 
+                  onClick={() => {
+                    const svg = document.querySelector('#qr-code-dashboard svg');
+                    if (!svg) return;
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+                    const img = new Image();
+                    img.onload = () => {
+                      canvas.width = img.width;
+                      canvas.height = img.height;
+                      ctx?.drawImage(img, 0, 0);
+                      const pngFile = canvas.toDataURL("image/png");
+                      const downloadLink = document.createElement("a");
+                      downloadLink.download = `QR-${qrModalData.title.replace(/\s+/g, '-')}.png`;
+                      downloadLink.href = `${pngFile}`;
+                      downloadLink.click();
+                    };
+                    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors"
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+                
+                <Link 
+                  href={`/ar-viewer/${qrModalData.id}`}
+                  target="_blank"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-pln-blue hover:bg-pln-blue-dark text-white rounded-xl font-bold transition-colors"
+                >
+                  <ExternalLink size={16} />
+                  Buka AR Viewer
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ProjectCard({ id, title, type, date, status, views, icon, onRename, onDelete }: any) {
+function ProjectCard({ id, title, type, date, status, views, icon, onRename, onDelete, onShowQR }: any) {
   return (
     <Link href={`/projects/${id}/edit`} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
       <div className="h-32 bg-gray-100 relative group-hover:bg-gray-200 transition-colors flex items-center justify-center">
@@ -121,6 +191,15 @@ function ProjectCard({ id, title, type, date, status, views, icon, onRename, onD
           >
             <Edit3 size={16} />
           </button>
+          {status === 'Published' && (
+            <button 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShowQR(); }} 
+              className="p-1 hover:text-green-500 transition-colors"
+              title="Tampilkan QR Code"
+            >
+              <QrCode size={16} />
+            </button>
+          )}
           <button 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }} 
             className="p-1 hover:text-red-500 transition-colors"
