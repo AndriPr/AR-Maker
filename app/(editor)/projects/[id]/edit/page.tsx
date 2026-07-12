@@ -508,47 +508,68 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                       {/* UI Button Specific Properties */}
                       {selectedElement.type === 'ui_button' && (
                         <div className="space-y-4 pt-4 border-t border-gray-800">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase">Interactivity</h4>
+                          <h4 className="text-xs font-bold text-gray-400 uppercase">Interaktivitas Tombol</h4>
+                          <p className="text-[10px] text-gray-500 leading-tight">
+                            Tombol ini akan muncul di layar HP saat AR digunakan. Anda bisa mengaturnya untuk memutar animasi pada model 3D.
+                          </p>
                           
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Label Tombol</label>
+                            <label className="text-xs text-gray-400">Teks pada Tombol</label>
                             <input 
                               type="text"
                               value={selectedElement.buttonText || ''}
                               onChange={(e) => updateElement(selectedElement.id, { buttonText: e.target.value })}
                               className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              placeholder="Misal: Mulai Animasi"
+                              placeholder="Misal: Buka Mesin"
                             />
                           </div>
 
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-gray-400">Target Model 3D</label>
-                            <select
-                              value={selectedElement.actionTargetId || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
-                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                            >
-                              <option value="">-- Pilih Model --</option>
-                              {elements.filter(el => el.type === '3d_model').map(model => (
-                                <option key={model.id} value={model.id}>{model.name}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {selectedElement.actionTargetId && (
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-xs text-gray-400">Pilih Animasi (Otomatis)</label>
-                              <select
-                                value={selectedElement.actionAnimation || ''}
-                                onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
-                                className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              >
-                                <option value="">-- Pilih Animasi --</option>
-                                {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
-                                  <option key={anim} value={anim}>{anim}</option>
-                                ))}
-                              </select>
+                          {elements.filter(el => el.type === '3d_model').length === 0 ? (
+                            <div className="bg-pln-yellow/10 border border-pln-yellow/30 p-3 rounded-lg">
+                              <p className="text-[10px] text-pln-yellow font-medium">
+                                💡 Anda belum memasukkan Model 3D ke dalam Editor. Masukkan model 3D terlebih dahulu agar tombol ini bisa menggerakkannya!
+                              </p>
                             </div>
+                          ) : (
+                            <>
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs text-gray-400">Pilih Model 3D yang akan Bergerak</label>
+                                <select
+                                  value={selectedElement.actionTargetId || ''}
+                                  onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
+                                  className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                                >
+                                  <option value="">-- Pilih Model --</option>
+                                  {elements.filter(el => el.type === '3d_model').map(model => (
+                                    <option key={model.id} value={model.id}>{model.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {selectedElement.actionTargetId && (
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-xs text-gray-400">Pilih Animasi yang Diputar</label>
+                                  {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.length ? (
+                                    <select
+                                      value={selectedElement.actionAnimation || ''}
+                                      onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
+                                      className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                                    >
+                                      <option value="">-- Pilih Animasi --</option>
+                                      {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
+                                        <option key={anim} value={anim}>{anim}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <div className="bg-red-500/10 border border-red-500/30 p-2 rounded-lg">
+                                      <p className="text-[10px] text-red-400">
+                                        Model yang Anda pilih tidak memiliki animasi bawaan. Silakan gunakan file .glb lain yang beranimasi.
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       )}
