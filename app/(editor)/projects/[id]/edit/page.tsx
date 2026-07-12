@@ -33,7 +33,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const addElement = useEditorStore(state => state.addElement);
-  const addElement = useEditorStore(state => state.addElement);
   const removeElement = useEditorStore(state => state.removeElement);
   const duplicateElement = useEditorStore(state => state.duplicateElement);
   const updateElement = useEditorStore(state => state.updateElement);
