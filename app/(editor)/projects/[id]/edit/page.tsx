@@ -569,11 +569,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           <p className="text-[10px] text-gray-500">Buat elemen "UI Button" untuk memicu animasi ini di AR.</p>
                         </div>
                       )}
-                      
                     </div>
                   </div>
-                </div>
-
                 <div className="h-px bg-gray-800 my-2"></div>
 
                 <div>
