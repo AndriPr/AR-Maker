@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_text' | 'image' | 'video';
+export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button';
 
 export interface SceneElement {
   id: string;
@@ -9,6 +9,13 @@ export interface SceneElement {
   url?: string;         // For models, images, videos
   content?: string;     // For text
   color?: string;       // For text
+  
+  // Interactivity Properties
+  availableAnimations?: string[]; // Extracted from 3D model GLTF
+  buttonText?: string;            // For UI button
+  actionTargetId?: string;        // The ID of the model to animate
+  actionAnimation?: string;       // The name of the animation to play
+
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -331,6 +331,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 <div className="flex items-center gap-2 overflow-hidden">
                   {el.type === '3d_model' && <Box size={14} className="text-purple-400 shrink-0" />}
                   {el.type === '3d_text' && <Type size={14} className="text-green-400 shrink-0" />}
+                  {el.type === 'ui_button' && <MousePointerClick size={14} className="text-blue-400 shrink-0" />}
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
@@ -464,7 +465,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               <>
                 <div>
                   <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center justify-between">
-                    {selectedElement.type === '3d_model' ? '3D Model' : '3D Text'}
+                    {selectedElement.type === '3d_model' ? '3D Model' : selectedElement.type === '3d_text' ? '3D Text' : 'UI Button'}
                     <div className="flex gap-3">
                       <button className="text-blue-400 text-xs hover:underline flex items-center gap-1" onClick={() => duplicateElement(selectedElement.id)}><Copy size={12}/> Duplikat</button>
                       <button className="text-red-400 text-xs hover:underline flex items-center gap-1" onClick={() => removeElement(selectedElement.id)}><Trash2 size={12}/> Hapus</button>
@@ -504,6 +505,72 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                         </div>
                       </>
                     )}
+                      {/* UI Button Specific Properties */}
+                      {selectedElement.type === 'ui_button' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase">Interactivity</h4>
+                          
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Label Tombol</label>
+                            <input 
+                              type="text"
+                              value={selectedElement.buttonText || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { buttonText: e.target.value })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                              placeholder="Misal: Mulai Animasi"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Target Model 3D</label>
+                            <select
+                              value={selectedElement.actionTargetId || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
+                              className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                            >
+                              <option value="">-- Pilih Model --</option>
+                              {elements.filter(el => el.type === '3d_model').map(model => (
+                                <option key={model.id} value={model.id}>{model.name}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {selectedElement.actionTargetId && (
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs text-gray-400">Pilih Animasi (Otomatis)</label>
+                              <select
+                                value={selectedElement.actionAnimation || ''}
+                                onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
+                                className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                              >
+                                <option value="">-- Pilih Animasi --</option>
+                                {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
+                                  <option key={anim} value={anim}>{anim}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 3D Model Animations Display */}
+                      {selectedElement.type === '3d_model' && selectedElement.availableAnimations && selectedElement.availableAnimations.length > 0 && (
+                        <div className="space-y-3 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <Play size={12} className="text-pln-yellow"/> Animasi Bawaan Terdeteksi
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedElement.availableAnimations.map(anim => (
+                              <span key={anim} className="bg-gray-800 border border-gray-700 text-xs px-2.5 py-1 rounded-md text-gray-300 font-medium">
+                                {anim}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-gray-500">Buat elemen "UI Button" untuk memicu animasi ini di AR.</p>
+                        </div>
+                      )}
+                      
+                    </div>
                   </div>
                 </div>
 

@@ -2,12 +2,12 @@
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text } from '@react-three/drei';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
 function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
-  const { scene } = useGLTF(element.url) as any;
+  const { scene, animations } = useGLTF(element.url) as any;
   const transformRef = useRef<any>(null);
   
   const updateElement = useEditorStore(state => state.updateElement);
@@ -56,6 +56,17 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
       return () => controls.removeEventListener('dragging-changed', callback);
     }
   }, [isSelected, element.id, updateElement]);
+
+  useEffect(() => {
+    // Extract available animations from the GLTF model
+    if (animations && animations.length > 0) {
+      const animNames = animations.map((a: any) => a.name);
+      // Only update if it has changed to prevent infinite loops
+      if (JSON.stringify(element.availableAnimations) !== JSON.stringify(animNames)) {
+        updateElement(element.id, { availableAnimations: animNames });
+      }
+    }
+  }, [animations, element.id, element.availableAnimations, updateElement]);
 
   if (!clonedScene) return null;
 
@@ -165,6 +176,65 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
   );
 }
 
+function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; 
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const buttonObj = (
+    <group 
+      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+    >
+      <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
+        <div className={`px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-2xl whitespace-nowrap cursor-pointer select-none border border-white/20 ${isSelected ? 'ring-4 ring-pln-yellow scale-105 transition-transform' : ''}`}>
+          👆 {element.buttonText || 'Tombol Aksi'}
+        </div>
+      </Html>
+      {/* Invisible hitbox */}
+      <mesh visible={false} scale={[2, 0.8, 0.1]}>
+         <boxGeometry />
+         <meshBasicMaterial />
+      </mesh>
+    </group>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls ref={transformRef} mode={mode} position={element.position} rotation={element.rotation} scale={element.scale}>
+        {buttonObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {buttonObj}
+    </group>
+  );
+}
+
 
 function TargetImage({ url }: { url: string }) {
   const texture = useTexture(url);
@@ -213,6 +283,9 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             }
             if (el.type === '3d_text') {
               return <TextElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === 'ui_button') {
+              return <UIButtonElement key={el.id} element={el} mode={transformMode} />;
             }
             return null;
           })}
