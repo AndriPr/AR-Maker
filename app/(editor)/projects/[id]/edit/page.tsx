@@ -146,8 +146,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       {/* Editor Header */}
-      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2 sm:px-4 shrink-0 z-30 relative">
-        <div className="flex items-center gap-2 sm:gap-4">
+      <header className="bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2 sm:px-4 shrink-0 z-30 relative min-h-14 pt-[env(safe-area-inset-top)] pb-2">
+        <div className="flex items-center gap-2 sm:gap-4 mt-2">
           <Link href="/" className="text-gray-400 hover:text-white transition-colors p-1 sm:p-0">
             <ArrowLeft size={20} />
           </Link>
@@ -168,7 +168,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           </div>
         </div>
         
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 mt-2">
           <button onClick={handleAddText} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700">
             <Type size={14} />
             <span className="hidden sm:inline">Add Text</span>
