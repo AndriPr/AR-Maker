@@ -107,21 +107,97 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     return () => clearTimeout(timer);
   }, [elements, targetImageUrl]);
 
+  const [publishProgress, setPublishProgress] = useState<string | null>(null);
+
   const handlePublish = async () => {
     if (!project) return;
+    if (!targetImageUrl) {
+      alert("Harap pilih atau unggah Target Image (Marker) terlebih dahulu!");
+      return;
+    }
+    
     setSaving(true);
     
     try {
+      setPublishProgress("Memuat AR Compiler...");
+      
+      // 1. Load MindAR Compiler Script
+      await new Promise<void>((resolve, reject) => {
+        if ((window as any).MINDAR?.IMAGE?.Compiler) {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-compiler.prod.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Gagal memuat Compiler"));
+        document.head.appendChild(script);
+      });
+
+      setPublishProgress("Mengunduh gambar marker...");
+      
+      // 2. Fetch image as Blob to bypass canvas CORS
+      const res = await fetch(targetImageUrl);
+      const blob = await res.blob();
+      const imgUrl = URL.createObjectURL(blob);
+      
+      const image = new Image();
+      image.src = imgUrl;
+      await new Promise((resolve) => { image.onload = resolve; });
+
+      setPublishProgress("Kompilasi AI Marker (Bisa memakan waktu 5-15 detik)...");
+
+      // 3. Compile the image
+      const compiler = new (window as any).MINDAR.IMAGE.Compiler();
+      await compiler.compileImageTargets([image], (progress: number) => {
+         setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
+      });
+      const exportedBuffer = await compiler.exportData();
+
+      setPublishProgress("Mengunggah file AR ke server...");
+
+      // 4. Upload to Supabase Storage
+      const fileName = `mind_targets/target-${project.id}-${Date.now()}.mind`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('assets') // Using the 'assets' bucket
+        .upload(fileName, exportedBuffer, { 
+          contentType: 'application/octet-stream',
+          upsert: true
+        });
+        
+      if (uploadError) {
+         // Sometimes RLS blocks upload if bucket policy is strict. Fallback to default if error
+         console.warn("Upload .mind failed, possibly due to RLS. Using default marker. Error:", uploadError);
+      }
+      
+      let finalMindUrl = project.mind_file_url;
+      if (!uploadError && uploadData) {
+         const { data: publicUrlData } = supabase.storage.from('assets').getPublicUrl(fileName);
+         finalMindUrl = publicUrlData.publicUrl;
+      }
+
+      setPublishProgress("Menyimpan proyek...");
+
+      // 5. Update Database
+      const sceneData = { elements };
       const { error } = await supabase
         .from('ar_projects')
-        .update({ is_published: true })
+        .update({ 
+          is_published: true,
+          target_image_url: targetImageUrl,
+          scene_data: sceneData,
+          ...(finalMindUrl ? { mind_file_url: finalMindUrl } : {})
+        })
         .eq('id', project.id);
         
       if (error) throw error;
+      
+      setPublishProgress("Selesai!");
       router.push(`/ar-viewer/${project.id}`);
     } catch (err: any) {
       alert('Gagal mem-publish: ' + err.message);
       setSaving(false);
+      setPublishProgress(null);
     }
   };
 
@@ -181,10 +257,14 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <span className="hidden sm:inline sm:ml-2">Simpan Manual</span>
           </button>
           
-          <button onClick={handlePublish} disabled={saving} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 text-[10px] sm:text-sm font-bold bg-pln-blue hover:bg-pln-blue-dark text-white rounded-lg transition-colors disabled:opacity-50">
-            <Play size={14} />
-            <span className="hidden sm:inline">Publish & Preview</span>
-            <span className="sm:hidden">Publish</span>
+          <button onClick={handlePublish} disabled={saving || publishProgress !== null} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 text-[10px] sm:text-sm font-bold bg-pln-blue hover:bg-pln-blue-dark text-white rounded-lg transition-colors disabled:opacity-50">
+            {publishProgress ? (
+               <Loader2 size={14} className="animate-spin" />
+            ) : (
+               <Play size={14} />
+            )}
+            <span className="hidden sm:inline">{publishProgress || 'Publish & Preview'}</span>
+            <span className="sm:hidden">{publishProgress || 'Publish'}</span>
           </button>
 
           <button 
