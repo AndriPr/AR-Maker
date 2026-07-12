@@ -1,28 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, use } from 'react';
+import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-const MindARViewer = dynamic(() => import('@/components/AR/MindARViewer'), { 
-  ssr: false, 
-  loading: () => <div className="text-white text-center p-10 font-bold animate-pulse">Memuat AR Engine...</div>
-});
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default function ARViewer({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const [project, setProject] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const sceneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Fetch Project Data
     const fetchProject = async () => {
       try {
         const { data, error } = await supabase
           .from('ar_projects')
-          .select('*, assets(*)')
+          .select('*')
           .eq('id', unwrappedParams.id)
           .single();
 
@@ -38,18 +32,11 @@ export default function ARViewer({ params }: { params: Promise<{ id: string }> }
     fetchProject();
   }, [unwrappedParams.id]);
 
-  useEffect(() => {
-    // 2. Initialize AR Engine when project is loaded
-    if (!project || !sceneRef.current) return;
-
-    // TODO: Initialize MindAR (Image Tracking) or WebXR (Surface Tracking)
-    // Here we will inject A-Frame / MindAR scripts dynamically 
-    // to avoid Next.js SSR issues with browser-only libraries.
-
-  }, [project]);
-
   if (error) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white p-4 text-center">{error}</div>;
+    return <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4 text-center">
+      <p className="text-red-400 mb-4">{error}</p>
+      <Link href="/" className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Kembali ke Dashboard</Link>
+    </div>;
   }
 
   if (!project) {
@@ -62,26 +49,34 @@ export default function ARViewer({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-black relative">
+    <div className="h-[100dvh] w-screen overflow-hidden bg-black relative flex flex-col">
       {/* UI Overlay */}
-      <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-center pointer-events-none">
-        <div className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-full font-medium text-sm border border-gray-700">
-          {project.title}
+      <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none pt-[env(safe-area-inset-top)]">
+        <div className="flex gap-2 items-center pointer-events-auto">
+           <Link href={`/projects/${project.id}/edit`} className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-colors border border-gray-700">
+             <ArrowLeft size={16} />
+           </Link>
+           <div className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-full font-medium text-sm border border-gray-700 line-clamp-1 max-w-[150px]">
+             {project.title}
+           </div>
         </div>
-        <div className="bg-pln-blue text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg shadow-blue-900/50">
+        <div className="bg-pln-blue text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-blue-900/50 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
           AR Active
         </div>
       </div>
 
-      {/* AR Container */}
-      <div ref={sceneRef} className="w-full h-full">
+      {/* AR Container using real URL iframe to fix iOS Camera Permissions */}
+      <div className="w-full flex-1">
         {project.tracking_type === 'image_tracking' ? (
-           <MindARViewer 
-             mindFileUrl={project.mind_file_url || "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/example/image-tracking/assets/card-example/card.mind"} 
-             elements={project.scene_data?.elements || []} 
+           <iframe 
+             src={`/api/ar/${project.id}`} 
+             allow="camera; gyroscope; accelerometer; magnetometer; display-capture; xr-spatial-tracking"
+             className="w-full h-full border-none"
+             title="AR Experience"
            />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+          <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-gray-900">
             <p className="mb-2 text-center text-sm px-8">Surface Tracking (WebXR) belum diimplementasikan di versi preview ini.</p>
           </div>
         )}
