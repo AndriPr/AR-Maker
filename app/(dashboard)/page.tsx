@@ -38,8 +38,21 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: string, title: string) => {
+  const handleDelete = async (id: string, title: string, mindFileUrl?: string) => {
     if (confirm(`Apakah Anda yakin ingin menghapus proyek "${title}"?`)) {
+      // Hapus file .mind dari storage jika ada
+      if (mindFileUrl) {
+        try {
+          const urlParts = mindFileUrl.split('/public/assets/');
+          if (urlParts.length > 1) {
+            const filePath = urlParts[1];
+            await supabase.storage.from('assets').remove([filePath]);
+          }
+        } catch (e) {
+          console.error("Gagal menghapus file .mind:", e);
+        }
+      }
+      
       await supabase.from('ar_projects').delete().eq('id', id);
       fetchData();
     }
@@ -95,7 +108,7 @@ export default function Dashboard() {
             views={project.views}
             icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
             onRename={() => handleRename(project.id, project.title)}
-            onDelete={() => handleDelete(project.id, project.title)}
+            onDelete={() => handleDelete(project.id, project.title, project.mind_file_url)}
             onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
           />
         ))}
