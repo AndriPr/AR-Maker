@@ -25,6 +25,7 @@ interface EditorState {
   addElement: (element: Omit<SceneElement, 'id'>) => void;
   updateElement: (id: string, updates: Partial<SceneElement>) => void;
   removeElement: (id: string) => void;
+  duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
 }
 
@@ -55,6 +56,28 @@ export const useEditorStore = create<EditorState>((set) => ({
     elements: state.elements.filter((el) => el.id !== id),
     selectedId: state.selectedId === id ? null : state.selectedId
   })),
+
+  duplicateElement: (id) => set((state) => {
+    const elToDuplicate = state.elements.find((el) => el.id === id);
+    if (!elToDuplicate) return state;
+    
+    const newId = crypto.randomUUID();
+    const duplicatedElement = {
+      ...elToDuplicate,
+      id: newId,
+      name: `${elToDuplicate.name} (Copy)`,
+      position: [
+        elToDuplicate.position[0] + 0.5,
+        elToDuplicate.position[1] - 0.5,
+        elToDuplicate.position[2]
+      ] as [number, number, number]
+    };
+    
+    return {
+      elements: [...state.elements, duplicatedElement],
+      selectedId: newId
+    };
+  }),
 
   setSelectedId: (id) => set({ selectedId: id }),
 }));

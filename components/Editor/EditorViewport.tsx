@@ -188,12 +188,21 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
-      <Canvas camera={{ position: [0, 3, 5], fov: 50 }} onPointerMissed={() => setSelectedId(null)}>
-        <color attach="background" args={['#111827']} />
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
+      <Canvas camera={{ position: [0, 4, 8], fov: 45 }} onPointerMissed={() => setSelectedId(null)}>
+        <color attach="background" args={['#0f172a']} />
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[10, 20, 10]} intensity={1.8} castShadow />
+        <spotLight position={[-10, 10, -10]} intensity={1.2} color="#818cf8" />
         
-        <Grid infiniteGrid fadeDistance={20} sectionColor="#4b5563" cellColor="#374151" position={[0, -0.02, 0]} />
+        <Grid 
+          infiniteGrid 
+          fadeDistance={40} 
+          sectionColor="#1e3a8a" 
+          sectionSize={1}
+          cellColor="#0f172a" 
+          cellSize={0.2}
+          position={[0, -0.02, 0]} 
+        />
         
         <Suspense fallback={null}>
           {targetImageUrl && <TargetImage url={targetImageUrl} />}

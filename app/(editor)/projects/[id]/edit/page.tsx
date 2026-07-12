@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -33,7 +33,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const addElement = useEditorStore(state => state.addElement);
+  const addElement = useEditorStore(state => state.addElement);
   const removeElement = useEditorStore(state => state.removeElement);
+  const duplicateElement = useEditorStore(state => state.duplicateElement);
   const updateElement = useEditorStore(state => state.updateElement);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
@@ -223,9 +225,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const selectedElement = elements.find(el => el.id === selectedId);
 
   return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden">
-      {/* Editor Header */}
-      <header className="bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2 sm:px-4 shrink-0 z-30 relative min-h-14 pt-[env(safe-area-inset-top)] pb-2">
+    <div className="h-[100dvh] flex flex-col overflow-hidden bg-black relative">
+      {/* Editor Header - Float Top */}
+      <header className="absolute top-0 left-0 right-0 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800/50 flex items-center justify-between px-2 sm:px-4 shrink-0 z-50 min-h-14 pt-[env(safe-area-inset-top)] pb-2 shadow-sm">
         <div className="flex items-center gap-2 sm:gap-4 mt-2">
           <Link href="/" className="text-gray-400 hover:text-white transition-colors p-1 sm:p-0">
             <ArrowLeft size={20} />
@@ -279,8 +281,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         </div>
       </header>
 
-      {/* Editor Body */}
-      <div className="flex-1 flex overflow-hidden relative">
+      {/* Fullscreen 3D Viewport Area */}
+      <main className="absolute inset-0 z-0">
+        <div className="w-full h-full relative">
+          <EditorViewport transformMode={transformMode} />
+        </div>
+      </main>
+
+      {/* Editor Body Overlay */}
+      <div className="flex-1 flex overflow-hidden absolute inset-0 z-10 pointer-events-none mt-14">
         
         {/* Mobile Overlays */}
         {(isLeftPanelOpen || isRightPanelOpen) && (
@@ -290,8 +299,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           />
         )}
 
-        {/* Left Sidebar */}
-        <aside className={`absolute md:static top-0 bottom-0 left-0 z-20 w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+        {/* Left Sidebar (Hierarchy) */}
+        <aside className={`pointer-events-auto absolute md:absolute top-4 bottom-4 left-4 z-20 w-64 bg-gray-900/75 backdrop-blur-xl border border-gray-700/50 rounded-2xl flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'} md:translate-x-0 overflow-hidden`}>
           <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-400 uppercase flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Layers size={14} />
@@ -326,9 +335,14 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
-                  <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1">
-                    <Trash2 size={12} />
-                  </button>
+                  <div className="flex items-center">
+                    <button onClick={(e) => { e.stopPropagation(); duplicateElement(el.id); }} className="text-blue-400 hover:text-blue-300 p-1" title="Duplicate">
+                      <Copy size={12} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1" title="Hapus">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -342,7 +356,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           </div>
           
           {/* Asset Library Panel */}
-          <div className="h-1/2 border-t border-gray-800 flex flex-col">
+          <div className="h-1/2 border-t border-gray-700/50 flex flex-col bg-gray-900/40">
             <div className="p-3 border-b border-gray-800 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-400 uppercase">My Assets</span>
               <Link href="/assets" target="_blank" className="text-xs text-pln-blue hover:underline">Manage</Link>
@@ -390,40 +404,33 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           </div>
         </aside>
 
-        {/* 3D Viewport Area */}
-        <main className="flex-1 relative flex flex-col bg-black min-w-0">
-          {/* Toolbar */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur-md border border-gray-700 rounded-full flex p-1 shadow-2xl z-0 gap-1">
-            <button 
-              onClick={() => setTransformMode('translate')} 
-              className={`p-2.5 sm:p-2 rounded-full transition-all ${transformMode === 'translate' ? 'bg-pln-blue text-white shadow-inner' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-              title="Geser (Translate)"
-            >
-              <Move size={18} />
-            </button>
-            <button 
-              onClick={() => setTransformMode('rotate')} 
-              className={`p-2.5 sm:p-2 rounded-full transition-all ${transformMode === 'rotate' ? 'bg-pln-blue text-white shadow-inner' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-              title="Putar (Rotate)"
-            >
-              <RotateCw size={18} />
-            </button>
-            <button 
-              onClick={() => setTransformMode('scale')} 
-              className={`p-2.5 sm:p-2 rounded-full transition-all ${transformMode === 'scale' ? 'bg-pln-blue text-white shadow-inner' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-              title="Perbesar/Kecil (Scale)"
-            >
-              <Maximize size={18} />
-            </button>
-          </div>
-          
-          <div className="w-full h-full relative overflow-hidden">
-            <EditorViewport transformMode={transformMode} />
-          </div>
-        </main>
+        {/* Toolbar Transform (Floating Center) */}
+        <div className="pointer-events-auto absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1.5">
+          <button 
+            onClick={() => setTransformMode('translate')} 
+            className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'translate' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+            title="Geser (Translate)"
+          >
+            <Move size={18} />
+          </button>
+          <button 
+            onClick={() => setTransformMode('rotate')} 
+            className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'rotate' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+            title="Putar (Rotate)"
+          >
+            <RotateCw size={18} />
+          </button>
+          <button 
+            onClick={() => setTransformMode('scale')} 
+            className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'scale' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+            title="Perbesar/Kecil (Scale)"
+          >
+            <Maximize size={18} />
+          </button>
+        </div>
 
-        {/* Right Sidebar */}
-        <aside className={`absolute md:static top-0 bottom-0 right-0 z-20 w-72 bg-gray-900 border-l border-gray-800 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0`}>
+        {/* Right Sidebar (Properties) */}
+        <aside className={`pointer-events-auto absolute md:absolute top-4 bottom-4 right-4 z-20 w-72 bg-gray-900/75 backdrop-blur-xl border border-gray-700/50 rounded-2xl flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-[120%]'} md:translate-x-0 overflow-hidden`}>
           <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-400 uppercase flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Settings size={14} />
@@ -459,7 +466,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 <div>
                   <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center justify-between">
                     {selectedElement.type === '3d_model' ? '3D Model' : '3D Text'}
-                    <button className="text-red-400 text-xs hover:underline" onClick={() => removeElement(selectedElement.id)}>Hapus</button>
+                    <div className="flex gap-3">
+                      <button className="text-blue-400 text-xs hover:underline flex items-center gap-1" onClick={() => duplicateElement(selectedElement.id)}><Copy size={12}/> Duplikat</button>
+                      <button className="text-red-400 text-xs hover:underline flex items-center gap-1" onClick={() => removeElement(selectedElement.id)}><Trash2 size={12}/> Hapus</button>
+                    </div>
                   </h3>
                   
                   <div className="space-y-4">
@@ -480,7 +490,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           <textarea 
                             value={selectedElement.content}
                             onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue h-24 resize-none transition-colors"
+                            className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-3 text-sm text-white outline-none focus:border-pln-blue h-28 resize-none transition-colors shadow-inner font-medium"
+                            placeholder="Ketik sesuatu..."
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
