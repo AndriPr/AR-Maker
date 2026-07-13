@@ -1,6 +1,6 @@
 "use client";
 
-import { UploadCloud, Box, Image as ImageIcon, Trash2, Link as LinkIcon, Search, Filter, Loader2 } from 'lucide-react';
+import { UploadCloud, Box, Image as ImageIcon, Trash2, Link as LinkIcon, Search, Filter, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
