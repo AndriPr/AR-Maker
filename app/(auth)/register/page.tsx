@@ -139,33 +139,6 @@ export default function RegisterPage() {
         </button>
       </form>
 
-      <div className="mt-6 flex items-center justify-between">
-        <hr className="w-full border-gray-200" />
-        <span className="p-2 text-xs text-gray-400 font-bold w-full text-center">ATAU DAFTAR DENGAN</span>
-        <hr className="w-full border-gray-200" />
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-4">
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => handleOAuthLogin('google')}
-          className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50"
-        >
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-          Google
-        </button>
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => handleOAuthLogin('azure')}
-          className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50"
-        >
-          <img src="https://www.svgrepo.com/show/475666/microsoft-color.svg" alt="Microsoft" className="w-5 h-5" />
-          Microsoft
-        </button>
-      </div>
-
       <div className="mt-8 text-center text-sm text-gray-600">
         Sudah punya akun?{' '}
         <Link href="/login" className="font-bold text-pln-blue hover:text-pln-blue-dark">
