@@ -134,13 +134,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                 this.isVisible = false;
                 this.initialScale = this.el.object3D.scale.clone();
                 this.scaleFactor = 1;
-                this.initialDistance = null;
-                this.previousTouch = null;
-                
-                this.el.sceneEl.addEventListener("targetFound", () => { this.isVisible = true; });
-                this.el.sceneEl.addEventListener("targetLost", () => { this.isVisible = false; });
-                
                 this.el.sceneEl.addEventListener("loaded", () => {
+                  this.initialDistance = null;
+                  this.previousTouch = null;
+                  
+                  const targetEl = this.el.sceneEl.querySelector('[mindar-image-target]');
+                  if (targetEl) {
+                    targetEl.addEventListener("targetFound", () => { this.isVisible = true; });
+                    targetEl.addEventListener("targetLost", () => { this.isVisible = false; });
+                  }
+                  
                   const canvas = this.el.sceneEl.canvas;
                   canvas.addEventListener("touchstart", (e) => {
                     if (e.touches.length === 1) this.previousTouch = e.touches[0];
