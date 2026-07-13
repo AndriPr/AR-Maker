@@ -36,6 +36,8 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
   const handleOAuthLogin = async (provider: 'google' | 'azure') => {
     setLoading(true);
     setError(null);
