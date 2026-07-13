@@ -54,7 +54,7 @@ export default function AnalyticsPage() {
       .gte('created_at', sevenDaysAgo.toISOString());
 
     const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const chartData = [];
+    const chartData: any[] = [];
     
     // Inisialisasi 7 hari terakhir dengan 0 views
     for (let i = 6; i >= 0; i--) {
