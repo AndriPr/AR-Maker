@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, Menu, X, Check, CheckCircle2 } from 'lucide-react';
+import { Bell, Menu, X, Check, CheckCircle2, Moon, Sun } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from 'next-themes';
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -12,8 +13,11 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [profileName, setProfileName] = useState("Admin PLN");
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState("");
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchUserAndNotifs();
   }, []);
 
@@ -65,14 +69,24 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         {/* Global search removed as requested */}
       </div>
       
-      <div className="flex items-center gap-3 sm:gap-6 ml-2 sm:ml-4 relative">
+      <div className="flex items-center gap-2 sm:gap-6">
+        
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hidden sm:block"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+        )}
+
         <button 
           onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
-          className={`relative p-2 rounded-full transition-colors hidden sm:block ${isNotifOpen ? 'bg-pln-blue text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+          className={`relative p-2 rounded-full transition-colors hidden sm:block ${isNotifOpen ? 'bg-pln-blue text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
         >
           <Bell size={20} />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
           )}
         </button>
 

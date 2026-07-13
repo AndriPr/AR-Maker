@@ -1,6 +1,6 @@
 "use client";
 
-import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon } from 'lucide-react';
+import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -11,6 +11,8 @@ export default function Dashboard() {
   const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -32,6 +34,7 @@ export default function Dashboard() {
       .from('ar_projects')
       .select('*')
       .eq('user_id', session.user.id)
+      .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -45,22 +48,9 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: string, title: string, mindFileUrl?: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus proyek "${title}"?`)) {
-      // Hapus file .mind dari storage jika ada
-      if (mindFileUrl) {
-        try {
-          const urlParts = mindFileUrl.split('/public/assets/');
-          if (urlParts.length > 1) {
-            const filePath = urlParts[1];
-            await supabase.storage.from('assets').remove([filePath]);
-          }
-        } catch (e) {
-          console.error("Gagal menghapus file .mind:", e);
-        }
-      }
-      
-      await supabase.from('ar_projects').delete().eq('id', id);
+  const handleDelete = async (id: string, title: string) => {
+    if (confirm(`Apakah Anda yakin ingin memindahkan proyek "${title}" ke Tong Sampah?`)) {
+      await supabase.from('ar_projects').update({ is_deleted: true }).eq('id', id);
       fetchData();
     }
   };
@@ -71,6 +61,19 @@ export default function Dashboard() {
       await supabase.from('ar_projects').update({ title: newTitle }).eq('id', id);
       fetchData();
     }
+  };
+
+  const handleDuplicate = async (project: any) => {
+    setLoading(true);
+    const newProject = {
+      ...project,
+      id: undefined,
+      created_at: undefined,
+      title: `${project.title} (Copy)`,
+      views: 0
+    };
+    await supabase.from('ar_projects').insert([newProject]);
+    fetchData();
   };
 
   if (loading) {
@@ -89,13 +92,30 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900">My Projects</h1>
           <p className="text-gray-500 text-sm mt-1">Kelola dan edit pengalaman Augmented Reality Anda.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
+          >
+            <option value="all">Semua Status</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
+          >
+            <option value="newest">Terbaru</option>
+            <option value="popular">Terpopuler (Views)</option>
+          </select>
           <input 
             type="text" 
             placeholder="Cari proyek..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none w-full md:w-auto"
+            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none w-full sm:w-auto"
           />
         </div>
       </div>
@@ -113,6 +133,8 @@ export default function Dashboard() {
         {/* Dynamic Projects Grid */}
         {projects
           .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+          .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
+          .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0))
           .map((project) => (
           <ProjectCard 
             key={project.id}
@@ -125,7 +147,8 @@ export default function Dashboard() {
             icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
             targetImageUrl={project.target_image_url}
             onRename={() => handleRename(project.id, project.title)}
-            onDelete={() => handleDelete(project.id, project.title, project.mind_file_url)}
+            onDuplicate={() => handleDuplicate(project)}
+            onDelete={() => handleDelete(project.id, project.title)}
             onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
           />
         ))}
@@ -209,7 +232,7 @@ export default function Dashboard() {
   );
 }
 
-function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, onRename, onDelete, onShowQR }: any) {
+function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, onRename, onDuplicate, onDelete, onShowQR }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleCopyLink = (e: any) => {
@@ -277,6 +300,12 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
           >
             <Edit3 size={14} /> Ganti Nama
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDuplicate(); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
+          >
+            <Copy size={14} /> Gandakan Proyek
           </button>
           {status === 'Published' && (
             <>

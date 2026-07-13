@@ -11,6 +11,8 @@ export default function AssetLibraryPage() {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewModal, setPreviewModal] = useState<{ url: string, name: string, type: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAssets = async () => {
@@ -36,8 +38,8 @@ export default function AssetLibraryPage() {
     fetchAssets();
   }, [router]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | any) => {
+    const file = e.target?.files?.[0] || e.dataTransfer?.files?.[0];
     if (!file) return;
 
     setUploading(true);
@@ -111,8 +113,30 @@ export default function AssetLibraryPage() {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e as any);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div 
+      className={`space-y-6 ${isDragging ? 'border-2 border-pln-blue border-dashed rounded-3xl p-4 bg-blue-50/50' : 'p-4'}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Asset Library</h1>
@@ -155,19 +179,22 @@ export default function AssetLibraryPage() {
           {assets.map((asset) => (
             <div key={asset.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col group relative">
               <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <button className="bg-white p-1.5 rounded-md text-gray-500 hover:text-pln-blue shadow-sm" onClick={() => navigator.clipboard.writeText(asset.file_url)} title="Copy URL">
+                <button className="bg-white p-1.5 rounded-md text-gray-500 hover:text-pln-blue shadow-sm" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(asset.file_url); }} title="Copy URL">
                   <LinkIcon size={14} />
                 </button>
-                <button className="bg-white p-1.5 rounded-md text-gray-500 hover:text-red-500 shadow-sm" onClick={() => handleDelete(asset.id, asset.file_url)} title="Hapus Aset">
+                <button className="bg-white p-1.5 rounded-md text-red-500 hover:bg-red-50 shadow-sm" onClick={(e) => { e.stopPropagation(); handleDelete(asset.id, asset.file_url); }} title="Hapus">
                   <Trash2 size={14} />
                 </button>
               </div>
               
-              <div className="bg-gray-50 rounded-xl h-24 mb-3 flex items-center justify-center border border-dashed border-gray-200 overflow-hidden relative">
+              <div 
+                className="h-24 bg-gray-50 rounded-xl mb-3 flex items-center justify-center relative overflow-hidden cursor-pointer"
+                onClick={() => setPreviewModal({ url: asset.file_url, name: asset.name, type: asset.type })}
+              >
                 {asset.type === 'image' ? (
-                   <img src={asset.file_url} alt={asset.name} className="w-full h-full object-cover" />
+                  <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${asset.file_url})` }}></div>
                 ) : (
-                   <Box size={32} className="text-purple-500" />
+                  <Box size={32} className="text-purple-400 group-hover:scale-110 transition-transform" />
                 )}
               </div>
               
@@ -186,6 +213,37 @@ export default function AssetLibraryPage() {
                <p className="text-sm">Silakan upload model 3D atau gambar Anda.</p>
              </div>
           )}
+        </div>
+      )}
+
+      {/* 3D Preview Modal */}
+      {previewModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPreviewModal(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col relative" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-900">{previewModal.name}</h3>
+              <button onClick={() => setPreviewModal(null)} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="w-full h-[60vh] bg-gray-100 flex items-center justify-center relative">
+              {previewModal.type === '3d_model' ? (
+                // @ts-ignore
+                <model-viewer 
+                  src={previewModal.url} 
+                  auto-rotate 
+                  camera-controls 
+                  ar 
+                  shadow-intensity="1"
+                  style={{ width: '100%', height: '100%', backgroundColor: '#f3f4f6' }}
+                >
+                {/* @ts-ignore */}
+                </model-viewer>
+              ) : (
+                <img src={previewModal.url} alt={previewModal.name} className="max-w-full max-h-full object-contain" />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
