@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
 
@@ -32,6 +33,11 @@ export default function Dashboard() {
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
+
+    if (error) {
+      setFetchError(error.message);
+      console.error("Fetch error:", error);
+    }
 
     if (data) {
       setProjects(data);
@@ -73,6 +79,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {fetchError && (
+        <div className="bg-red-50 text-red-500 p-4 rounded-xl border border-red-200">
+          <strong>Error Fetching Projects:</strong> {fetchError}
+        </div>
+      )}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Projects</h1>
