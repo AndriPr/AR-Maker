@@ -10,6 +10,7 @@ import { QRCodeSVG } from 'qrcode.react';
 export default function Dashboard() {
   const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
@@ -81,6 +82,8 @@ export default function Dashboard() {
           <input 
             type="text" 
             placeholder="Cari proyek..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none w-full md:w-auto"
           />
         </div>
@@ -97,7 +100,9 @@ export default function Dashboard() {
         </Link>
 
         {/* Dynamic Projects Grid */}
-        {projects.map((project) => (
+        {projects
+          .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+          .map((project) => (
           <ProjectCard 
             key={project.id}
             id={project.id}
