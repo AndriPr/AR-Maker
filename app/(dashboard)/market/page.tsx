@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Store, DownloadCloud, Loader2, CheckCircle2 } from 'lucide-react';
+import { Store, DownloadCloud, Loader2, CheckCircle2, Box } from 'lucide-react';
 
 const MOCK_MARKET_ASSETS = [
   {
@@ -122,6 +122,7 @@ const MOCK_MARKET_ASSETS = [
 export default function MarketPage() {
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importedIds, setImportedIds] = useState<string[]>([]);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const handleImport = async (asset: any) => {
     setImportingId(asset.id);
@@ -171,18 +172,30 @@ export default function MarketPage() {
           const isImported = importedIds.includes(asset.id);
 
           return (
-            <div key={asset.id} className="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col group relative overflow-hidden">
-              <div className="h-48 bg-gray-50 rounded-2xl mb-4 relative overflow-hidden">
-                <div className="w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity">
-                  {/* @ts-ignore */}
-                  <model-viewer 
-                    src={asset.url} 
-                    auto-rotate 
-                    camera-controls="false"
-                    style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
-                  >
-                  {/* @ts-ignore */}
-                  </model-viewer>
+            <div 
+              key={asset.id} 
+              className="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col group relative overflow-hidden"
+              onMouseEnter={() => setHoveredId(asset.id)}
+              onMouseLeave={() => setHoveredId(null)}
+            >
+              <div className="h-48 bg-gray-50 rounded-2xl mb-4 relative overflow-hidden flex items-center justify-center">
+                <div className="w-full h-full absolute inset-0 pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity">
+                  {hoveredId === asset.id ? (
+                    /* @ts-ignore */
+                    <model-viewer 
+                      src={asset.url} 
+                      auto-rotate 
+                      camera-controls="false"
+                      style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+                    >
+                    {/* @ts-ignore */}
+                    </model-viewer>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
+                      <Box size={40} className="group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] font-bold text-gray-400">Hover to Preview</span>
+                    </div>
+                  )}
                 </div>
                 <div className="absolute top-2 left-2 bg-white/80 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-bold text-gray-700 uppercase tracking-wider">
                   {asset.category}
