@@ -13,18 +13,8 @@ export default function AnalyticsPage() {
     drafts: 0,
   });
   const [topProjects, setTopProjects] = useState<any[]>([]);
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Data statis untuk mensimulasikan pengunjung harian
-  const mockWeeklyData = [
-    { name: 'Sen', views: 120 },
-    { name: 'Sel', views: 200 },
-    { name: 'Rab', views: 150 },
-    { name: 'Kam', views: 300 },
-    { name: 'Jum', views: 250 },
-    { name: 'Sab', views: 400 },
-    { name: 'Min', views: 350 },
-  ];
 
   useEffect(() => {
     fetchStats();
@@ -51,6 +41,43 @@ export default function AnalyticsPage() {
       const sorted = [...projects].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
       setTopProjects(sorted);
     }
+
+    // Hitung data tren 7 hari terakhir
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data: viewsData, error: viewsError } = await supabase
+      .from('project_views')
+      .select('created_at')
+      .eq('user_id', session.user.id)
+      .gte('created_at', sevenDaysAgo.toISOString());
+
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const chartData = [];
+    
+    // Inisialisasi 7 hari terakhir dengan 0 views
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      chartData.push({
+        dateStr: d.toISOString().split('T')[0], // yyyy-mm-dd
+        name: days[d.getDay()],
+        views: 0
+      });
+    }
+
+    if (viewsData && !viewsError) {
+      viewsData.forEach((v: any) => {
+        const dateStr = v.created_at.split('T')[0];
+        const dayEntry = chartData.find(c => c.dateStr === dateStr);
+        if (dayEntry) {
+          dayEntry.views += 1;
+        }
+      });
+    }
+    
+    setWeeklyData(chartData);
     setLoading(false);
   };
 
@@ -114,11 +141,11 @@ export default function AnalyticsPage() {
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-900">Tren Pengunjung (7 Hari Terakhir)</h3>
-            <p className="text-xs text-gray-500">Data purwarupa (Mock Data)</p>
+            <p className="text-xs text-gray-500">Data real-time (Live)</p>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockWeeklyData}>
+              <LineChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />

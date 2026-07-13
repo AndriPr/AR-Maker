@@ -16,14 +16,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return new NextResponse('Project not found', { status: 404 });
     }
 
-    // Increment views asynchronously
-    supabase
-      .from('ar_projects')
-      .update({ views: (project.views || 0) + 1 })
-      .eq('id', id)
-      .then(({ error }) => {
-        if (error) console.error("Failed to increment views:", error);
-      });
+    // Increment views and log to project_views asynchronously
+    Promise.all([
+      supabase.from('ar_projects').update({ views: (project.views || 0) + 1 }).eq('id', id),
+      supabase.from('project_views').insert({ project_id: id, user_id: project.user_id })
+    ]).catch(err => console.error("Failed to update analytics:", err));
 
     const elements = project.scene_data?.elements || [];
     const mindFileUrl = project.mind_file_url || "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/examples/image-tracking/assets/card-example/card.mind";
