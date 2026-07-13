@@ -194,7 +194,16 @@ export default function AssetLibraryPage() {
                 {asset.type === 'image' ? (
                   <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${asset.file_url})` }}></div>
                 ) : (
-                  <Box size={32} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                  <div className="w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity">
+                    {/* @ts-ignore */}
+                    <model-viewer 
+                      src={asset.file_url} 
+                      auto-rotate 
+                      style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+                    >
+                    {/* @ts-ignore */}
+                    </model-viewer>
+                  </div>
                 )}
               </div>
               
