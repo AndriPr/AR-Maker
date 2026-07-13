@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const scaleStr = `${el.scale[0]} ${el.scale[1]} ${el.scale[2]}`;
 
       if (el.type === '3d_model') {
-        return `<a-gltf-model id="model-${el.id}" src="#asset-${el.id}" position="${posStr}" rotation="${rotStr}" scale="${scaleStr}"></a-gltf-model>`;
+        return `<a-gltf-model id="model-${el.id}" src="#asset-${el.id}" position="${posStr}" rotation="${rotStr}" scale="${scaleStr}" gesture-handler></a-gltf-model>`;
       }
       
       if (el.type === '3d_text') {
@@ -121,6 +121,65 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
           <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
           <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+          <script>
+            AFRAME.registerComponent('gesture-handler', {
+              schema: {
+                enabled: { default: true },
+                rotationFactor: { default: 5 },
+                minScale: { default: 0.1 },
+                maxScale: { default: 10 }
+              },
+              init: function () {
+                this.isVisible = false;
+                this.initialScale = this.el.object3D.scale.clone();
+                this.scaleFactor = 1;
+                this.initialDistance = null;
+                this.previousTouch = null;
+                
+                this.el.sceneEl.addEventListener("targetFound", () => { this.isVisible = true; });
+                this.el.sceneEl.addEventListener("targetLost", () => { this.isVisible = false; });
+                
+                this.el.sceneEl.addEventListener("loaded", () => {
+                  const canvas = this.el.sceneEl.canvas;
+                  canvas.addEventListener("touchstart", (e) => {
+                    if (e.touches.length === 1) this.previousTouch = e.touches[0];
+                    if (e.touches.length === 2) this.initialDistance = this.getDistance(e.touches);
+                  });
+                  canvas.addEventListener("touchmove", (e) => {
+                    if (!this.isVisible || !this.data.enabled) return;
+                    if (e.touches.length === 1 && this.previousTouch) {
+                      const deltaX = e.touches[0].clientX - this.previousTouch.clientX;
+                      const deltaY = e.touches[0].clientY - this.previousTouch.clientY;
+                      this.el.object3D.rotation.y += deltaX * (this.data.rotationFactor / 1000);
+                      this.el.object3D.rotation.x += deltaY * (this.data.rotationFactor / 1000);
+                      this.previousTouch = e.touches[0];
+                    } else if (e.touches.length === 2 && this.initialDistance) {
+                      const currentDistance = this.getDistance(e.touches);
+                      const scaleRatio = currentDistance / this.initialDistance;
+                      this.initialDistance = currentDistance;
+                      this.scaleFactor *= scaleRatio;
+                      this.scaleFactor = Math.max(this.data.minScale, Math.min(this.data.maxScale, this.scaleFactor));
+                      this.el.object3D.scale.set(
+                        this.scaleFactor * this.initialScale.x,
+                        this.scaleFactor * this.initialScale.y,
+                        this.scaleFactor * this.initialScale.z
+                      );
+                    }
+                  });
+                  canvas.addEventListener("touchend", (e) => {
+                    if (e.touches.length < 2) this.initialDistance = null;
+                    if (e.touches.length === 0) this.previousTouch = null;
+                    if (e.touches.length === 1) this.previousTouch = e.touches[0];
+                  });
+                });
+              },
+              getDistance: function(touches) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+              }
+            });
+          </script>
           <style>
             body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent; }
             #ui-layer {
