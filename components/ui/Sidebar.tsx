@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Trash2 } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Trash2, Store } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {
@@ -43,6 +43,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
         >
           <FolderOpen size={20} />
           Asset Library
+        </Link>
+        <Link 
+          href="/market" 
+          onClick={onClose}
+          className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-colors ${pathname === '/market' ? 'bg-purple-50 text-purple-600' : 'text-gray-500 hover:text-purple-600 hover:bg-gray-50'}`}
+        >
+          <Store size={20} />
+          Marketplace
         </Link>
         <Link 
           href="/analytics" 
