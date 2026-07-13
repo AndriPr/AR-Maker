@@ -384,7 +384,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           </div>
           ${eduDashboardHtml}
           <a-scene 
-            mindar-image="imageTargetSrc: ${mindFileUrl}; autoStart: true; uiLoading: yes; uiError: yes; filterMinCF: 0.00001; filterBeta: 0.0001; missTolerance: 60; warmupTolerance: 5;" 
+            mindar-image="imageTargetSrc: ${mindFileUrl}; autoStart: true; uiLoading: yes; uiError: yes; missTolerance: 60;" 
             color-space="sRGB" 
             renderer="colorManagement: true, physicallyCorrectLights, antialias: true" 
             vr-mode-ui="enabled: false" 
