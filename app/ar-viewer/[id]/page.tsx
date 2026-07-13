@@ -48,20 +48,32 @@ export default function ARViewer({ params }: { params: Promise<{ id: string }> }
     );
   }
 
+  const brandColor = project.brand_color || '#00A2E9';
+
   return (
     <div className="h-[100dvh] w-screen overflow-hidden bg-black relative flex flex-col">
       {/* UI Overlay */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none pt-[env(safe-area-inset-top)]">
-        <div className="flex gap-2 items-center pointer-events-auto">
-           <Link href={`/projects/${project.id}/edit`} className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-colors border border-gray-700">
-             <ArrowLeft size={16} />
-           </Link>
-           <div className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-full font-medium text-sm border border-gray-700 line-clamp-1 max-w-[150px]">
-             {project.title}
+        <div className="flex flex-col gap-2 pointer-events-auto">
+           {project.brand_logo_url && (
+             <div className="bg-white/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-white/20 mb-1 w-max">
+               <img src={project.brand_logo_url} alt="Brand Logo" className="h-8 object-contain" />
+             </div>
+           )}
+           <div className="flex gap-2 items-center">
+             <Link href={`/projects/${project.id}/edit`} className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-colors border border-gray-700">
+               <ArrowLeft size={16} />
+             </Link>
+             <div className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-full font-medium text-sm border border-gray-700 line-clamp-1 max-w-[150px]">
+               {project.title}
+             </div>
            </div>
         </div>
-        <div className="bg-pln-blue text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-blue-900/50 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+        <div 
+          className="text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 pointer-events-auto"
+          style={{ backgroundColor: brandColor, boxShadow: `0 4px 14px 0 ${brandColor}80` }}
+        >
+          <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
           AR Active
         </div>
       </div>

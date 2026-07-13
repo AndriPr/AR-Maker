@@ -41,6 +41,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
+  // White-Label State
+  const [brandColor, setBrandColor] = useState('#00A2E9');
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
+  
   const fetchEditorData = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -57,6 +61,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     if (projData) {
       setProject(projData);
       setTargetImageUrl(projData.target_image_url);
+      setBrandColor(projData.brand_color || '#00A2E9');
+      setBrandLogoUrl(projData.brand_logo_url || null);
       
       // Load scene data from JSONB
       if (projData.scene_data && projData.scene_data.elements) {
@@ -89,7 +95,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         .from('ar_projects')
         .update({
           target_image_url: targetImageUrl,
-          scene_data: sceneData
+          scene_data: sceneData,
+          brand_color: brandColor,
+          brand_logo_url: brandLogoUrl
         })
         .eq('id', project.id);
         
@@ -191,6 +199,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           is_published: true,
           target_image_url: targetImageUrl,
           scene_data: sceneData,
+          brand_color: brandColor,
+          brand_logo_url: brandLogoUrl,
           ...(finalMindUrl ? { mind_file_url: finalMindUrl } : {})
         })
         .eq('id', project.id);
@@ -491,17 +501,77 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             
             {/* Target Image Info (Shown when no element is selected) */}
             {selectedId === null && (
-              <div>
-                <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center justify-between">
-                  Target Image (Marker)
-                  <button className="text-red-400 text-xs hover:underline" onClick={() => setTargetImageUrl(null)}>Clear</button>
-                </h3>
-                <div className="aspect-video bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center overflow-hidden relative shadow-inner">
-                  {targetImageUrl ? (
-                    <img src={targetImageUrl} className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon size={32} className="text-gray-600" />
-                  )}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center justify-between">
+                    Target Image (Marker)
+                    <button className="text-red-400 text-xs hover:underline" onClick={() => setTargetImageUrl(null)}>Clear</button>
+                  </h3>
+                  <div className="aspect-video bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center overflow-hidden relative shadow-inner">
+                    {targetImageUrl ? (
+                      <img src={targetImageUrl} className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon size={32} className="text-gray-600" />
+                    )}
+                  </div>
+                </div>
+
+                {/* White-Label Branding */}
+                <div className="pt-4 border-t border-gray-800">
+                  <h3 className="text-sm font-bold text-gray-200 mb-3">White-Label Branding</h3>
+                  <p className="text-xs text-gray-400 mb-4">Kustomisasi halaman AR Viewer dengan logo dan warna Anda sendiri.</p>
+                  
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400 flex justify-between">
+                        Warna Utama (Tema)
+                        <span className="font-mono text-[10px] bg-gray-800 px-1 rounded">{brandColor}</span>
+                      </label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="color" 
+                          value={brandColor}
+                          onChange={(e) => {
+                            setBrandColor(e.target.value);
+                            handleSave(true); // auto-save branding
+                          }}
+                          className="w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer"
+                        />
+                        <button 
+                          onClick={() => { setBrandColor('#00A2E9'); handleSave(true); }}
+                          className="text-[10px] text-gray-400 hover:text-white px-2 py-1 bg-gray-800 rounded-md border border-gray-700"
+                        >
+                          Reset Default
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400 flex justify-between">
+                        Logo Perusahaan
+                        {brandLogoUrl && <button className="text-red-400 text-[10px] hover:underline" onClick={() => { setBrandLogoUrl(null); handleSave(true); }}>Hapus</button>}
+                      </label>
+                      <div className="h-16 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center overflow-hidden p-2 relative shadow-inner">
+                        {brandLogoUrl ? (
+                          <img src={brandLogoUrl} className="max-h-full max-w-full object-contain" />
+                        ) : (
+                          <span className="text-[10px] text-gray-500">Belum ada logo</span>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const url = prompt('Masukkan URL gambar Logo Anda (.png transparan direkomendasikan):', brandLogoUrl || '');
+                          if (url !== null) {
+                            setBrandLogoUrl(url);
+                            handleSave(true);
+                          }
+                        }}
+                        className="text-[10px] text-center w-full py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors border border-gray-700 mt-1"
+                      >
+                        {brandLogoUrl ? 'Ubah URL Logo' : 'Set URL Logo'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
