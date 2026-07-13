@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Trash2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {
@@ -52,18 +52,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
           <BarChart3 size={20} />
           Analytics
         </Link>
+        <Link 
+          href="/trash" 
+          onClick={onClose}
+          className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-colors ${pathname === '/trash' ? 'bg-red-50 text-red-500' : 'text-gray-500 hover:text-red-500 hover:bg-gray-50'}`}
+        >
+          <Trash2 size={20} />
+          Tong Sampah
+        </Link>
       </nav>
 
       <div className="p-4 mt-auto border-t border-gray-50">
-        <div className="px-4 py-3 mb-2 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-pln-yellow flex items-center justify-center text-xs font-bold shrink-0">
-            U
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">User Account</p>
-            <p className="text-xs text-gray-500 truncate">Free Plan</p>
-          </div>
-        </div>
         <button className="flex items-center gap-3 px-4 py-2 w-full text-gray-500 hover:text-red-500 hover:bg-red-50 font-medium rounded-xl transition-colors">
           <LogOut size={18} />
           Log Out
