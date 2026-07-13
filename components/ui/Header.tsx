@@ -41,6 +41,13 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     }
   };
 
+  // Auto-fetch when bell is opened to get latest data
+  useEffect(() => {
+    if (isNotifOpen) {
+      fetchUserAndNotifs();
+    }
+  }, [isNotifOpen]);
+
   const handleSaveProfile = async () => {
     if (!tempName.trim()) return;
     setProfileName(tempName);
