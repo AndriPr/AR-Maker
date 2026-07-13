@@ -7,6 +7,8 @@ export interface EduComponent {
   name: string;
   actionTargetId?: string;
   actionAnimation?: string;
+  showTargetId?: string;
+  hideTargetId?: string;
 }
 
 export interface EduMaintenanceStep {
@@ -14,6 +16,8 @@ export interface EduMaintenanceStep {
   instruction: string;
   actionTargetId?: string;
   actionAnimation?: string;
+  showTargetId?: string;
+  hideTargetId?: string;
 }
 
 export interface EduMaintenanceTask {
@@ -44,6 +48,8 @@ export interface SceneElement {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
+  
+  visibilityMode?: 'visible' | 'hidden'; // For 3D models toggling
 }
 
 interface EditorState {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -722,6 +722,36 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                     </select>
                                   )}
                                 </div>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={comp.showTargetId || ''}
+                                    onChange={(e) => {
+                                      const newComps = [...selectedElement.eduComponents!];
+                                      newComps[idx].showTargetId = e.target.value;
+                                      updateElement(selectedElement.id, { eduComponents: newComps });
+                                    }}
+                                    className="flex-1 min-w-0 text-ellipsis bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-green-400 outline-none"
+                                  >
+                                    <option value="">- Munculkan Model -</option>
+                                    {elements.filter(el => el.type === '3d_model').map(model => (
+                                      <option key={model.id} value={model.id}>{model.name}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={comp.hideTargetId || ''}
+                                    onChange={(e) => {
+                                      const newComps = [...selectedElement.eduComponents!];
+                                      newComps[idx].hideTargetId = e.target.value;
+                                      updateElement(selectedElement.id, { eduComponents: newComps });
+                                    }}
+                                    className="flex-1 min-w-0 text-ellipsis bg-gray-900 border border-gray-600 rounded p-1 text-[10px] text-red-400 outline-none"
+                                  >
+                                    <option value="">- Sembunyikan Model -</option>
+                                    {elements.filter(el => el.type === '3d_model').map(model => (
+                                      <option key={model.id} value={model.id}>{model.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -830,6 +860,36 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                           </select>
                                         )}
                                       </div>
+                                      <div className="flex gap-2 pl-6">
+                                        <select
+                                          value={step.showTargetId || ''}
+                                          onChange={(e) => {
+                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                            newTasks[tIdx].steps[sIdx].showTargetId = e.target.value;
+                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                          }}
+                                          className="flex-1 min-w-0 text-ellipsis bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-green-400 outline-none"
+                                        >
+                                          <option value="">- Munculkan Model -</option>
+                                          {elements.filter(el => el.type === '3d_model').map(model => (
+                                            <option key={model.id} value={model.id}>{model.name}</option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          value={step.hideTargetId || ''}
+                                          onChange={(e) => {
+                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                            newTasks[tIdx].steps[sIdx].hideTargetId = e.target.value;
+                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                          }}
+                                          className="flex-1 min-w-0 text-ellipsis bg-gray-800 border border-gray-700 rounded p-1 text-[9px] text-red-400 outline-none"
+                                        >
+                                          <option value="">- Sembunyikan Model -</option>
+                                          {elements.filter(el => el.type === '3d_model').map(model => (
+                                            <option key={model.id} value={model.id}>{model.name}</option>
+                                          ))}
+                                        </select>
+                                      </div>
                                     </div>
                                   ))}
                                   
@@ -846,6 +906,29 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 3D Model Visibility Options */}
+                      {selectedElement.type === '3d_model' && (
+                        <div className="space-y-3 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <Eye size={12} className="text-pln-blue"/> Visibilitas Awal
+                          </h4>
+                          <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-700">
+                            <button
+                              onClick={() => updateElement(selectedElement.id, { visibilityMode: 'visible' })}
+                              className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors ${selectedElement.visibilityMode !== 'hidden' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white'}`}
+                            >
+                              Tampil (Main)
+                            </button>
+                            <button
+                              onClick={() => updateElement(selectedElement.id, { visibilityMode: 'hidden' })}
+                              className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors ${selectedElement.visibilityMode === 'hidden' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white'}`}
+                            >
+                              Sembunyi (Second)
+                            </button>
                           </div>
                         </div>
                       )}

@@ -31,7 +31,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const scaleStr = `${el.scale[0]} ${el.scale[1]} ${el.scale[2]}`;
 
       if (el.type === '3d_model') {
-        return `<a-gltf-model id="model-${el.id}" src="#asset-${el.id}" position="${posStr}" rotation="${rotStr}" scale="${scaleStr}" gesture-handler></a-gltf-model>`;
+        const visibilityAttr = el.visibilityMode === 'hidden' ? 'visible="false"' : '';
+        return `<a-gltf-model id="model-${el.id}" src="#asset-${el.id}" position="${posStr}" rotation="${rotStr}" scale="${scaleStr}" ${visibilityAttr} gesture-handler></a-gltf-model>`;
       }
       
       if (el.type === '3d_text') {
@@ -301,6 +302,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                   btn.style.cssText = 'width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 14px; border-radius: 10px; text-align: left; font-size: 14px; cursor: pointer; transition: background 0.2s;';
                   btn.onclick = () => {
                     playAnimation(comp.actionTargetId ? 'model-'+comp.actionTargetId : null, comp.actionAnimation);
+                    if (comp.showTargetId) { const el = document.getElementById('model-'+comp.showTargetId); if(el) el.setAttribute('visible', 'true'); }
+                    if (comp.hideTargetId) { const el = document.getElementById('model-'+comp.hideTargetId); if(el) el.setAttribute('visible', 'false'); }
                     btn.style.background = 'rgba(59, 130, 246, 0.4)';
                     setTimeout(() => btn.style.background = 'rgba(255,255,255,0.05)', 300);
                   };
@@ -350,6 +353,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                 nextBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
               }
               
+              if (step.showTargetId) { const el = document.getElementById('model-'+step.showTargetId); if(el) el.setAttribute('visible', 'true'); }
+              if (step.hideTargetId) { const el = document.getElementById('model-'+step.hideTargetId); if(el) el.setAttribute('visible', 'false'); }
+
               playAnimation(step.actionTargetId ? 'model-'+step.actionTargetId : null, step.actionAnimation);
             }
 
