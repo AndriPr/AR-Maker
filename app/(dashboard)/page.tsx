@@ -56,6 +56,14 @@ export default function Dashboard() {
   const handleDelete = async (id: string, title: string) => {
     if (confirm(`Apakah Anda yakin ingin memindahkan proyek "${title}" ke Tong Sampah?`)) {
       await supabase.from('ar_projects').update({ is_deleted: true }).eq('id', id);
+      
+      // Kirim Notifikasi
+      supabase.from('notifications').insert({
+        user_id: user?.id,
+        title: 'Proyek Dihapus',
+        message: `Proyek '${title}' telah dipindahkan ke Tong Sampah.`
+      }).then();
+
       fetchData();
     }
   };
@@ -78,6 +86,14 @@ export default function Dashboard() {
       views: 0
     };
     await supabase.from('ar_projects').insert([newProject]);
+
+    // Kirim Notifikasi
+    supabase.from('notifications').insert({
+      user_id: user?.id,
+      title: 'Proyek Digandakan',
+      message: `Berhasil menduplikasi proyek '${project.title}'.`
+    }).then();
+
     fetchData();
   };
 

@@ -86,6 +86,13 @@ export default function AssetLibraryPage() {
 
       if (dbError) throw dbError;
 
+      // Kirim Notifikasi
+      supabase.from('notifications').insert({
+        user_id: session.user.id,
+        title: 'Aset Baru Diunggah',
+        message: `File '${file.name}' berhasil ditambahkan ke Asset Library.`
+      }).then();
+
       alert("File berhasil diunggah!");
       fetchAssets(); // Refresh list
     } catch (error: any) {

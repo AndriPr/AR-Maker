@@ -53,6 +53,13 @@ export default function NewProjectPage() {
 
       if (dbError) throw dbError;
 
+      // Create Notification (Fire and forget)
+      supabase.from('notifications').insert({
+        user_id: session.user.id,
+        title: 'Proyek Baru Dibuat',
+        message: `Proyek '${title}' berhasil ditambahkan ke ruang kerja Anda.`
+      }).then();
+
       // Redirect to editor
       if (data) {
         router.push(`/projects/${data.id}/edit`);
