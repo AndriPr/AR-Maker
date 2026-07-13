@@ -9,6 +9,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm1',
     name: 'Robot Animasi',
     url: 'https://modelviewer.dev/shared-assets/models/RobotExpressive.glb',
+    cover: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=600&auto=format&fit=crop',
     category: 'Karakter',
     size: '1.2 MB'
   },
@@ -16,6 +17,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm2',
     name: 'Astronot',
     url: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+    cover: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=600&auto=format&fit=crop',
     category: 'Karakter',
     size: '2.5 MB'
   },
@@ -23,6 +25,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm3',
     name: 'Helm Tempur',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb',
+    cover: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600&auto=format&fit=crop',
     category: 'Aksesoris',
     size: '3.1 MB'
   },
@@ -30,6 +33,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm4',
     name: 'Bebek Karet',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb',
+    cover: 'https://images.unsplash.com/photo-1589419163274-0f2c42171c66?q=80&w=600&auto=format&fit=crop',
     category: 'Mainan',
     size: '0.1 MB'
   },
@@ -37,6 +41,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm5',
     name: 'Rubah',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF-Binary/Fox.glb',
+    cover: 'https://images.unsplash.com/photo-1516934024742-b461fba47600?q=80&w=600&auto=format&fit=crop',
     category: 'Hewan',
     size: '1.1 MB'
   },
@@ -44,6 +49,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm6',
     name: 'Botol Minum',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/WaterBottle/glTF-Binary/WaterBottle.glb',
+    cover: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=600&auto=format&fit=crop',
     category: 'Produk',
     size: '1.5 MB'
   },
@@ -51,6 +57,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm7',
     name: 'Mobil Mainan',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/ToyCar/glTF-Binary/ToyCar.glb',
+    cover: 'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?q=80&w=600&auto=format&fit=crop',
     category: 'Kendaraan',
     size: '5.2 MB'
   },
@@ -58,6 +65,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm8',
     name: 'Korset Klasik',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Corset/glTF-Binary/Corset.glb',
+    cover: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=600&auto=format&fit=crop',
     category: 'Pakaian',
     size: '4.8 MB'
   },
@@ -65,6 +73,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm9',
     name: 'Radio Boombox',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoomBox/glTF-Binary/BoomBox.glb',
+    cover: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop',
     category: 'Elektronik',
     size: '2.8 MB'
   },
@@ -72,6 +81,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm10',
     name: 'Alpukat',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb',
+    cover: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?q=80&w=600&auto=format&fit=crop',
     category: 'Makanan',
     size: '0.9 MB'
   },
@@ -79,6 +89,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm11',
     name: 'Lentera Antik',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb',
+    cover: 'https://images.unsplash.com/photo-1516246843873-9d12356b6fab?q=80&w=600&auto=format&fit=crop',
     category: 'Furnitur',
     size: '2.1 MB'
   },
@@ -86,6 +97,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm12',
     name: 'Kamera Vintage',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/AntiqueCamera/glTF-Binary/AntiqueCamera.glb',
+    cover: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600&auto=format&fit=crop',
     category: 'Elektronik',
     size: '3.3 MB'
   },
@@ -93,6 +105,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm13',
     name: 'Truk Susu',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb',
+    cover: 'https://images.unsplash.com/photo-1587284428055-e45f94d93ee4?q=80&w=600&auto=format&fit=crop',
     category: 'Kendaraan',
     size: '4.1 MB'
   },
@@ -100,6 +113,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm14',
     name: 'Robot Anatomi',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF-Binary/BrainStem.glb',
+    cover: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600&auto=format&fit=crop',
     category: 'Karakter',
     size: '1.9 MB'
   },
@@ -107,6 +121,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm15',
     name: 'Buggy Offroad',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Buggy/glTF-Binary/Buggy.glb',
+    cover: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=600&auto=format&fit=crop',
     category: 'Kendaraan',
     size: '6.4 MB'
   },
@@ -114,6 +129,7 @@ const MOCK_MARKET_ASSETS = [
     id: 'm16',
     name: 'Mesin Gearbox',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/GearboxAssy/glTF-Binary/GearboxAssy.glb',
+    cover: 'https://images.unsplash.com/photo-1537151377170-9c19a791bbea?q=80&w=600&auto=format&fit=crop',
     category: 'Mesin',
     size: '2.4 MB'
   }
@@ -191,9 +207,15 @@ export default function MarketPage() {
                     {/* @ts-ignore */}
                     </model-viewer>
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
-                      <Box size={40} className="group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-bold text-gray-400">Hover to Preview</span>
+                    <div className="w-full h-full relative">
+                      <img 
+                        src={asset.cover} 
+                        alt={asset.name} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Box size={40} className="text-white drop-shadow-md mb-2" />
+                      </div>
                     </div>
                   )}
                 </div>
