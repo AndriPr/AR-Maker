@@ -3,15 +3,28 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BarChart3, Eye, FolderRoot, CheckCircle2 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState({
     totalProjects: 0,
     totalViews: 0,
     published: 0,
-    drafts: 0
+    drafts: 0,
   });
+  const [topProjects, setTopProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Data statis untuk mensimulasikan pengunjung harian
+  const mockWeeklyData = [
+    { name: 'Sen', views: 120 },
+    { name: 'Sel', views: 200 },
+    { name: 'Rab', views: 150 },
+    { name: 'Kam', views: 300 },
+    { name: 'Jum', views: 250 },
+    { name: 'Sab', views: 400 },
+    { name: 'Min', views: 350 },
+  ];
 
   useEffect(() => {
     fetchStats();
@@ -33,6 +46,10 @@ export default function AnalyticsPage() {
         published: projects.filter(p => p.is_published).length,
         drafts: projects.filter(p => !p.is_published).length,
       });
+
+      // Ambil 5 proyek dengan views tertinggi
+      const sorted = [...projects].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
+      setTopProjects(sorted);
     }
     setLoading(false);
   };
@@ -88,6 +105,65 @@ export default function AnalyticsPage() {
           </div>
           <p className="text-4xl font-black text-gray-900">{stats.drafts}</p>
         </div>
+      </div>
+
+      {/* Bagian Grafik */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        
+        {/* Grafik Garis - Tren Mingguan */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Tren Pengunjung (7 Hari Terakhir)</h3>
+            <p className="text-xs text-gray-500">Data purwarupa (Mock Data)</p>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={mockWeeklyData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="views" 
+                  stroke="#005C9A" 
+                  strokeWidth={4} 
+                  dot={{ r: 4, fill: '#005C9A', strokeWidth: 0 }} 
+                  activeDot={{ r: 6, fill: '#FFC400', strokeWidth: 0 }} 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Grafik Batang - Proyek Teratas */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Top 5 Proyek Populer</h3>
+            <p className="text-xs text-gray-500">Berdasarkan jumlah kunjungan aktual</p>
+          </div>
+          <div className="h-[300px] w-full">
+            {topProjects.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-400 font-medium">Belum ada proyek</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topProjects} layout="vertical" margin={{ top: 0, right: 0, left: 30, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <YAxis dataKey="title" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} width={100} />
+                  <Tooltip 
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="views" fill="#FFC400" radius={[0, 8, 8, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );

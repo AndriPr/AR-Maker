@@ -17,6 +17,11 @@ export default function Dashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
+  
+  // QR Customization State
+  const [qrFgColor, setQrFgColor] = useState("#000000");
+  const [qrBgColor, setQrBgColor] = useState("#ffffff");
+  const [qrLogoUrl, setQrLogoUrl] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -179,13 +184,42 @@ export default function Dashboard() {
                 Scan menggunakan kamera HP
               </p>
               
-              <div className="bg-white p-2 rounded-2xl border-2 border-gray-100 shadow-inner mb-6" id="qr-code-dashboard">
+              <div className="bg-white p-2 rounded-2xl border-2 border-gray-100 shadow-inner mb-4" id="qr-code-dashboard">
                 <QRCodeSVG 
                   value={`${window.location.origin}/ar-viewer/${qrModalData.id}`} 
                   size={200}
                   level="H"
                   includeMargin={true}
+                  fgColor={qrFgColor}
+                  bgColor={qrBgColor}
+                  imageSettings={qrLogoUrl ? {
+                    src: qrLogoUrl,
+                    height: 48,
+                    width: 48,
+                    excavate: true,
+                  } : undefined}
                 />
+              </div>
+
+              <div className="w-full bg-gray-50 rounded-xl p-3 mb-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-700">Warna QR</label>
+                  <input type="color" value={qrFgColor} onChange={(e) => setQrFgColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0 p-0" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-700">Warna Latar</label>
+                  <input type="color" value={qrBgColor} onChange={(e) => setQrBgColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer border-0 p-0" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">URL Logo (Tengah)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://.../logo.png" 
+                    value={qrLogoUrl}
+                    onChange={(e) => setQrLogoUrl(e.target.value)}
+                    className="w-full text-xs p-2 border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-pln-blue"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col w-full gap-2">

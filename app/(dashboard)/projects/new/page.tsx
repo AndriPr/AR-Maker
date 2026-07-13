@@ -3,14 +3,30 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Image, Box, ArrowRight, Loader2 } from 'lucide-react';
+import { Image, Box, ArrowRight, Loader2, File, Contact2, BookOpen, PartyPopper } from 'lucide-react';
 
 export default function NewProjectPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [trackingType, setTrackingType] = useState('image_tracking');
+  const [selectedTemplate, setSelectedTemplate] = useState('blank');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const templates = [
+    { id: 'blank', name: 'Blank Project', icon: File, type: 'image_tracking', desc: 'Mulai dari kanvas kosong.' },
+    { id: 'business_card', name: 'Kartu Nama AR', icon: Contact2, type: 'image_tracking', desc: 'Munculkan info kontak 3D di atas kartu.' },
+    { id: 'catalog', name: 'Katalog Produk', icon: BookOpen, type: 'image_tracking', desc: 'Tampilkan produk 3D dari brosur.' },
+    { id: 'wedding', name: 'Undangan Interaktif', icon: PartyPopper, type: 'image_tracking', desc: 'Galeri foto melayang di undangan.' }
+  ];
+
+  const handleSelectTemplate = (tmpl: any) => {
+    setSelectedTemplate(tmpl.id);
+    setTrackingType(tmpl.type);
+    if (tmpl.id !== 'blank' && !title) {
+      setTitle(tmpl.name);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +76,28 @@ export default function NewProjectPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+      {/* Template Selection */}
+      <div className="mb-8">
+        <h2 className="text-sm font-bold text-gray-700 mb-3">Mulai dari Template (Opsional)</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {templates.map(tmpl => {
+            const Icon = tmpl.icon;
+            const isSelected = selectedTemplate === tmpl.id;
+            return (
+              <div 
+                key={tmpl.id}
+                onClick={() => handleSelectTemplate(tmpl)}
+                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${isSelected ? 'border-pln-blue bg-blue-50' : 'border-gray-100 bg-white hover:border-blue-200'}`}
+              >
+                <Icon size={24} className={`mb-2 ${isSelected ? 'text-pln-blue' : 'text-gray-400'}`} />
+                <h3 className={`font-bold text-sm ${isSelected ? 'text-pln-blue-dark' : 'text-gray-900'}`}>{tmpl.name}</h3>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-8">
         
         {/* Nama Proyek */}
         <div className="mb-8">
