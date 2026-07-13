@@ -21,31 +21,101 @@ const MOCK_MARKET_ASSETS = [
   },
   {
     id: 'm3',
-    name: 'Kursi Kayu Estetik',
-    url: 'https://modelviewer.dev/shared-assets/models/chair.glb',
-    category: 'Furnitur',
+    name: 'Helm Tempur',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb',
+    category: 'Aksesoris',
     size: '3.1 MB'
   },
   {
     id: 'm4',
-    name: 'Sepatu Olahraga',
-    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb',
-    category: 'Produk',
-    size: '4.5 MB'
+    name: 'Bebek Karet',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/Duck/glTF-Binary/Duck.glb',
+    category: 'Mainan',
+    size: '0.1 MB'
   },
   {
     id: 'm5',
+    name: 'Rubah',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/Fox/glTF-Binary/Fox.glb',
+    category: 'Hewan',
+    size: '1.1 MB'
+  },
+  {
+    id: 'm6',
+    name: 'Botol Minum',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/WaterBottle/glTF-Binary/WaterBottle.glb',
+    category: 'Produk',
+    size: '1.5 MB'
+  },
+  {
+    id: 'm7',
     name: 'Mobil Mainan',
-    url: 'https://modelviewer.dev/shared-assets/models/ToyCar.glb',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/ToyCar/glTF-Binary/ToyCar.glb',
     category: 'Kendaraan',
     size: '5.2 MB'
   },
   {
-    id: 'm6',
+    id: 'm8',
+    name: 'Korset Klasik',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/Corset/glTF-Binary/Corset.glb',
+    category: 'Pakaian',
+    size: '4.8 MB'
+  },
+  {
+    id: 'm9',
     name: 'Radio Boombox',
     url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/BoomBox/glTF-Binary/BoomBox.glb',
     category: 'Elektronik',
     size: '2.8 MB'
+  },
+  {
+    id: 'm10',
+    name: 'Alpukat',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/Avocado/glTF-Binary/Avocado.glb',
+    category: 'Makanan',
+    size: '0.9 MB'
+  },
+  {
+    id: 'm11',
+    name: 'Lentera Antik',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/Lantern/glTF-Binary/Lantern.glb',
+    category: 'Furnitur',
+    size: '2.1 MB'
+  },
+  {
+    id: 'm12',
+    name: 'Kamera Vintage',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/AntiqueCamera/glTF-Binary/AntiqueCamera.glb',
+    category: 'Elektronik',
+    size: '3.3 MB'
+  },
+  {
+    id: 'm13',
+    name: 'Truk Susu',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb',
+    category: 'Kendaraan',
+    size: '4.1 MB'
+  },
+  {
+    id: 'm14',
+    name: 'Robot Anatomi',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/BrainStem/glTF-Binary/BrainStem.glb',
+    category: 'Karakter',
+    size: '1.9 MB'
+  },
+  {
+    id: 'm15',
+    name: 'Buggy Offroad',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/Buggy/glTF-Binary/Buggy.glb',
+    category: 'Kendaraan',
+    size: '6.4 MB'
+  },
+  {
+    id: 'm16',
+    name: 'Mesin Gearbox',
+    url: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/GearboxAssy/glTF-Binary/GearboxAssy.glb',
+    category: 'Mesin',
+    size: '2.4 MB'
   }
 ];
 
