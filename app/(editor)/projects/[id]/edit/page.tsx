@@ -784,18 +784,24 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-gray-400">Mode Tracking</label>
+                      <label className="text-xs text-gray-400">Mode Tracking (8th Wall Engine)</label>
                       <select
                         value={trackingMode}
                         onChange={(e) => setTrackingMode(e.target.value as any)}
                         className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue"
                       >
-                        <option value="image">Image Tracking (Deteksi Gambar)</option>
-                        <option value="face">Face Tracking (Filter Wajah/Virtual Try-On)</option>
+                        <option value="image">8th Wall - Flat Image (Poster/Kartu)</option>
+                        <option value="cylinder">8th Wall - Curved/Cylinder (Botol/Kaleng)</option>
+                        <option value="face">8th Wall - Face Tracking (Filter Wajah)</option>
                       </select>
                       {trackingMode === 'face' && (
                         <p className="text-[10px] text-pln-yellow mt-1">
-                          Mode Wajah diaktifkan! Target gambar akan diabaikan. Letakkan objek (misal: kacamata/topi) di tengah kanvas.
+                          Mode Wajah diaktifkan! Letakkan objek (misal: kacamata/topi) di tengah kanvas.
+                        </p>
+                      )}
+                      {trackingMode === 'cylinder' && (
+                        <p className="text-[10px] text-pln-blue mt-1">
+                          Mode Botol/Silinder aktif! AR akan membungkus target gambar ke objek botol untuk stabilitas pelacakan absolut tanpa jitter.
                         </p>
                       )}
                     </div>

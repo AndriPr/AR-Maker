@@ -88,7 +88,7 @@ interface EditorState {
   isSnapping: boolean;
   
   // Project Settings
-  trackingMode: 'image' | 'face';
+  trackingMode: 'image' | 'face' | 'cylinder';
 
   // Environment
   ambientLightIntensity: number;
@@ -113,7 +113,7 @@ interface EditorState {
   duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
   setIsSnapping: (val: boolean) => void;
-  setTrackingMode: (mode: 'image' | 'face') => void;
+  setTrackingMode: (mode: 'image' | 'face' | 'cylinder') => void;
   setAmbientLightIntensity: (val: number) => void;
   setDirectionalLightIntensity: (val: number) => void;
   setEnvironmentMap: (map: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment') => void;
