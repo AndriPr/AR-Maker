@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [activeFolder, setActiveFolder] = useState<string>('Semua');
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   // Folders & Multi-Select State
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [customFolders, setCustomFolders] = useState<string[]>([]);
+  const [folders, setFolders] = useState<any[]>([]);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
   const [isFolderSidebarOpen, setIsFolderSidebarOpen] = useState(true);
@@ -37,7 +37,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-    setCustomFolders(JSON.parse(localStorage.getItem('customFolders') || '[]'));
+    fetchData();
   }, [router]);
 
   const fetchData = async () => {
@@ -58,6 +58,16 @@ export default function Dashboard() {
     if (error) {
       setFetchError(error.message);
       console.error("Fetch error:", error);
+    }
+
+    const { data: folderData } = await supabase
+      .from('folders')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: true });
+
+    if (folderData) {
+      setFolders(folderData);
     }
 
     if (data) {
@@ -110,37 +120,17 @@ export default function Dashboard() {
     fetchData();
   };
 
-  const folders = ['Semua', ...Array.from(new Set([
-    ...(customFolders || []).filter(Boolean),
-    ...(projects || []).map(p => p.folder_name || 'Personal')
-  ]))];
-
-  const currentSubfolders = useMemo(() => {
-    if (activeFolder === 'Semua') {
-      return folders.filter(f => f && f !== 'Semua' && !f.includes('/'));
-    }
-    const prefix = activeFolder + '/';
-    return folders.filter(f => f && f.startsWith(prefix) && f.length > prefix.length && !f.slice(prefix.length).includes('/'));
-  }, [folders, activeFolder]);
-
-  const breadcrumbSegments = (activeFolder === 'Semua' || !activeFolder) ? [] : activeFolder.split('/');
-
-  if (loading) {
-    return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat proyek...</div>;
-  }
-
-
-
   const handleToggleSelect = (id: string) => {
     setSelectedProjects(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   };
 
   const handleBulkMove = async () => {
-    if (!targetFolder.trim()) return;
+    if (!targetFolder.trim()) return; // Here targetFolder is a folder ID or 'PERSONAL'
+    const finalTargetId = targetFolder === 'PERSONAL' ? null : targetFolder;
     const ids = projectToMove ? [projectToMove] : selectedProjects;
     
     // Update DB
-    await supabase.from('ar_projects').update({ folder_name: targetFolder }).in('id', ids);
+    await supabase.from('ar_projects').update({ folder_id: finalTargetId }).in('id', ids);
     
     setSelectedProjects([]);
     setProjectToMove(null);
@@ -148,38 +138,65 @@ export default function Dashboard() {
     fetchData();
   };
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
-    const folderPath = activeFolder === 'Semua' ? newFolderName.trim() : `${activeFolder}/${newFolderName.trim()}`;
-    const stored = JSON.parse(localStorage.getItem('customFolders') || '[]');
-    if (!stored.includes(folderPath)) {
-      const updated = [...stored, folderPath].filter(Boolean);
-      localStorage.setItem('customFolders', JSON.stringify(updated));
-      setCustomFolders(updated);
+    const { data, error } = await supabase.from('folders').insert({
+      user_id: user.id,
+      name: newFolderName.trim(),
+      parent_id: activeFolderId
+    }).select().single();
+
+    if (data) {
+      setFolders([...folders, data]);
     }
     setNewFolderName("");
     setIsCreateFolderModalOpen(false);
   };
 
-  const handleDeleteFolder = async (folder: string) => {
-    if (confirm(`Hapus folder "${folder}"? Proyek di dalamnya akan dipindahkan ke "Personal".`)) {
-      await supabase.from('ar_projects').update({ folder_name: 'Personal' }).eq('folder_name', folder);
-      const stored = JSON.parse(localStorage.getItem('customFolders') || '[]');
-      const updated = stored.filter((f: string) => f !== folder);
-      localStorage.setItem('customFolders', JSON.stringify(updated));
-      setCustomFolders(updated);
-      if (activeFolder === folder) setActiveFolder('Semua');
+  const handleDeleteFolder = async (folderId: string, folderName: string) => {
+    if (confirm(`Hapus folder "${folderName}"? Proyek di dalamnya akan dipindahkan ke "Personal".`)) {
+      // Supabase ON DELETE CASCADE is NOT on ar_projects, it's ON DELETE SET NULL which moves them to Personal (null)!
+      await supabase.from('folders').delete().eq('id', folderId);
+      
+      if (activeFolderId === folderId) setActiveFolderId(null);
       fetchData();
     }
   };
 
   const filteredProjects = projects
-    .filter(p => activeFolder === 'Semua' ? true : (p.folder_name || 'Personal') === activeFolder)
+    .filter(p => p.folder_id === activeFolderId)
     .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
     .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0));
 
+  const getBreadcrumbs = (folderId: string | null) => {
+    if (!folderId) return [];
+    const crumbs = [];
+    let currentId: string | null = folderId;
+    while (currentId) {
+      const f = folders.find(x => x.id === currentId);
+      if (f) {
+        crumbs.unshift(f);
+        currentId = f.parent_id;
+      } else {
+        break;
+      }
+    }
+    return crumbs;
+  };
+  const breadcrumbSegments = getBreadcrumbs(activeFolderId);
 
+  const buildFolderTree = (parentId: string | null, depth: number = 0): any[] => {
+    return folders.filter(f => f.parent_id === parentId).flatMap(f => [
+      { ...f, depth },
+      ...buildFolderTree(f.id, depth + 1)
+    ]);
+  };
+  const folderTree = buildFolderTree(null);
+
+  if (loading) {
+    return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat proyek...</div>;
+  }
 
   return (
     <div className="space-y-8 flex flex-col md:flex-row gap-8">
@@ -187,30 +204,24 @@ export default function Dashboard() {
       {/* Folder Sidebar */}
       <div className={`shrink-0 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${isFolderSidebarOpen ? 'w-full md:w-56 opacity-100' : 'w-0 opacity-0 hidden md:block'}`}>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
-        {folders.filter(f => f && f !== 'Semua').map(folder => {
-          const depth = (folder.match(/\//g) || []).length;
-          const name = folder.split('/').pop() || folder;
-          return (
-            <div key={folder} className="group relative flex items-center" style={{ paddingLeft: `${depth * 0.75}rem` }}>
+        {folderTree.map(folder => (
+            <div key={folder.id} className="group relative flex items-center" style={{ paddingLeft: `${folder.depth * 0.75}rem` }}>
               <button
-                onClick={() => setActiveFolder(folder)}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-10 ${activeFolder === folder ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
+                onClick={() => setActiveFolderId(folder.id)}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-10 ${activeFolderId === folder.id ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
               >
-                <Folder size={16} className={activeFolder === folder ? 'text-white' : 'text-gray-400'} />
-                {name}
+                <Folder size={16} className={activeFolderId === folder.id ? 'text-white' : 'text-gray-400'} />
+                {folder.name}
               </button>
-              {folder !== 'Personal' && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }} 
-                  className={`absolute right-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${activeFolder === folder ? 'text-blue-200 hover:text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
-                  title="Hapus Folder"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }} 
+                className={`absolute right-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${activeFolderId === folder.id ? 'text-blue-200 hover:text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                title="Hapus Folder"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
-          );
-        })}
+        ))}
         <button 
           onClick={() => setIsCreateFolderModalOpen(true)}
           className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200"
@@ -237,18 +248,17 @@ export default function Dashboard() {
               >
                 <PanelLeft size={20} />
               </button>
-              <span className="cursor-pointer hover:text-pln-blue transition-colors" onClick={() => setActiveFolder('Semua')}>My Projects</span>
+              <span className="cursor-pointer hover:text-pln-blue transition-colors" onClick={() => setActiveFolderId(null)}>My Projects</span>
               {breadcrumbSegments.map((segment, index) => {
                 const isLast = index === breadcrumbSegments.length - 1;
-                const path = breadcrumbSegments.slice(0, index + 1).join('/');
                 return (
-                  <React.Fragment key={path}>
+                  <React.Fragment key={segment.id}>
                     <span className="text-gray-300">/</span>
                     <span 
                       className={isLast ? "text-gray-900" : "text-gray-500 cursor-pointer hover:text-pln-blue transition-colors"}
-                      onClick={() => !isLast && setActiveFolder(path)}
+                      onClick={() => !isLast && setActiveFolderId(segment.id)}
                     >
-                      {segment}
+                      {segment.name}
                     </span>
                   </React.Fragment>
                 );
@@ -322,7 +332,7 @@ export default function Dashboard() {
                 views={project.views}
                 icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
                 targetImageUrl={project.target_image_url}
-                folderName={project.folder_name}
+                folderName={folders.find(f => f.id === project.folder_id)?.name || 'Personal'}
                 isSelected={selectedProjects.includes(project.id)}
                 onToggleSelect={() => handleToggleSelect(project.id)}
                 onRename={() => handleRename(project.id, project.title)}
@@ -375,7 +385,7 @@ export default function Dashboard() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
-                          <Folder size={12} /> {project.folder_name || 'Personal'}
+                          <Folder size={12} /> {folders.find(f => f.id === project.folder_id)?.name || 'Personal'}
                         </span>
                       </td>
                       <td className="p-4">
@@ -549,17 +559,18 @@ export default function Dashboard() {
             <p className="text-sm text-gray-500 mb-4">Pilih folder tujuan untuk memindahkan {projectToMove ? '1 proyek' : `${selectedProjects.length} proyek`}.</p>
             
             <div className="overflow-y-auto space-y-2 mb-6 border border-gray-100 p-2 rounded-2xl bg-gray-50 flex-1">
-              {folders.filter(f => f !== 'Semua').map(folder => (
-                <button
-                  key={folder}
-                  onClick={() => setTargetFolder(folder)}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors ${targetFolder === folder ? 'bg-pln-blue text-white shadow-md' : 'bg-white border border-gray-100 text-gray-700 hover:border-pln-blue/30 hover:bg-blue-50'}`}
+                <select 
+                  value={targetFolder} 
+                  onChange={(e) => setTargetFolder(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
                 >
-                  <Folder size={18} className={targetFolder === folder ? 'text-white' : 'text-pln-blue'} />
-                  {folder.split('/').pop()}
-                </button>
-              ))}
-            </div>
+                  <option value="PERSONAL">Personal (Tanpa Folder)</option>
+                  {folderTree.map(folder => (
+                    <option key={folder.id} value={folder.id}>
+                      {'\u00A0'.repeat(folder.depth * 4)} {folder.name}
+                    </option>
+                  ))}
+                </select></div>
 
             <div className="flex justify-end gap-3 mt-auto">
               <button onClick={() => setIsMoveModalOpen(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
@@ -625,7 +636,7 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
           </span>
           <span className="text-gray-300">•</span>
           <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100">
-            <Folder size={10} /> {(folderName || 'Personal').split('/').pop()}
+            <Folder size={10} /> {folderName}
           </span>
         </div>
         

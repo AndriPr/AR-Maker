@@ -10,10 +10,10 @@ export default function NewProjectPage() {
   const [title, setTitle] = useState('');
   const [trackingType, setTrackingType] = useState('image_tracking');
   const [selectedTemplate, setSelectedTemplate] = useState('blank');
-  const [folderName, setFolderName] = useState('Personal');
+  const [folderId, setFolderId] = useState<string>('PERSONAL');
   const [isCreatingNewFolder, setIsCreatingNewFolder] = useState(false);
   const [newFolderInput, setNewFolderInput] = useState('');
-  const [existingFolders, setExistingFolders] = useState<string[]>(['Personal']);
+  const [existingFolders, setExistingFolders] = useState<{id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,13 +31,13 @@ export default function NewProjectPage() {
       if (!session) return;
       
       const { data } = await supabase
-        .from('ar_projects')
-        .select('folder_name')
-        .eq('user_id', session.user.id);
+        .from('folders')
+        .select('id, name')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true });
         
       if (data) {
-        const unique = Array.from(new Set(data.map((p: any) => p.folder_name || 'Personal')));
-        setExistingFolders(unique as string[]);
+        setExistingFolders(data);
       }
     };
     fetchFolders();
@@ -62,6 +62,25 @@ export default function NewProjectPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Silakan login terlebih dahulu.");
 
+      // Handle Folder Creation
+      let finalFolderId = null; // null means Personal/Root
+      
+      if (isCreatingNewFolder && newFolderInput.trim()) {
+        const { data: folderData, error: folderError } = await supabase
+          .from('folders')
+          .insert({
+            user_id: session.user.id,
+            name: newFolderInput.trim()
+          })
+          .select()
+          .single();
+          
+        if (folderError) throw folderError;
+        finalFolderId = folderData.id;
+      } else if (folderId !== 'PERSONAL' && folderId !== 'NEW') {
+        finalFolderId = folderId;
+      }
+
       // Insert new project to database
       const { data, error: dbError } = await supabase
         .from('ar_projects')
@@ -70,7 +89,7 @@ export default function NewProjectPage() {
           title: title,
           tracking_type: trackingType,
           is_published: false,
-          folder_name: isCreatingNewFolder ? (newFolderInput || 'Personal') : (folderName || 'Personal')
+          folder_id: finalFolderId
         })
         .select()
         .single();
@@ -149,19 +168,20 @@ export default function NewProjectPage() {
           <label className="block text-sm font-bold text-gray-700 mb-2">Simpan di Folder</label>
           <div className="flex flex-col gap-3">
             <select
-              value={isCreatingNewFolder ? 'NEW' : folderName}
+              value={isCreatingNewFolder ? 'NEW' : folderId}
               onChange={(e) => {
                 if (e.target.value === 'NEW') {
                   setIsCreatingNewFolder(true);
                 } else {
                   setIsCreatingNewFolder(false);
-                  setFolderName(e.target.value);
+                  setFolderId(e.target.value);
                 }
               }}
               className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm"
             >
+              <option value="PERSONAL">Personal (Tanpa Folder)</option>
               {existingFolders.map(folder => (
-                <option key={folder} value={folder}>{folder}</option>
+                <option key={folder.id} value={folder.id}>{folder.name}</option>
               ))}
               <option value="NEW" className="font-bold text-pln-blue">+ Buat Folder Baru</option>
             </select>
