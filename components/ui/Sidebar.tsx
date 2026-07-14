@@ -30,7 +30,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
       </div>
 
       {/* Workspace Switcher */}
-      {!isLoading && workspaces.length > 0 && (
+      {!isLoading && (
         <div className="px-4 sm:px-6 mb-4">
           <div className="relative group">
             <button className="w-full flex items-center justify-between gap-2 bg-gray-50 border border-gray-100 hover:border-gray-200 p-2.5 rounded-xl transition-all">

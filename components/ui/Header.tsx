@@ -10,11 +10,12 @@ import { useRouter } from 'next/navigation';
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<'main' | 'personal' | 'security' | 'preferences'>('main');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [profileName, setProfileName] = useState("Admin PLN");
-  const [isEditing, setIsEditing] = useState(false);
+  const [profileName, setProfileName] = useState("User");
   const [tempName, setTempName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { activeWorkspace, activeRole } = useWorkspace();
@@ -54,12 +55,18 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   const handleSaveProfile = async () => {
     if (!tempName.trim()) return;
-    setProfileName(tempName);
-    setIsEditing(false);
-    setIsProfileOpen(false);
-    await supabase.auth.updateUser({
+    setIsSaving(true);
+    const { data, error } = await supabase.auth.updateUser({
       data: { display_name: tempName }
     });
+    
+    if (!error) {
+      setProfileName(tempName);
+      setActiveMenu('main');
+    } else {
+      alert("Gagal menyimpan profil: " + error.message);
+    }
+    setIsSaving(false);
   };
 
   const handleReadNotif = async (id: string) => {
@@ -152,85 +159,179 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           {isProfileOpen && (
             <div className="absolute top-12 right-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
               
-              {/* Header Info */}
-              <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-gray-900 text-pln-yellow flex items-center justify-center font-bold text-xl shrink-0 shadow-md">
-                    {profileName.substring(0,2).toUpperCase()}
+              {activeMenu === 'main' && (
+                <>
+                  {/* Header Info */}
+                  <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-full bg-gray-900 text-pln-yellow flex items-center justify-center font-bold text-xl shrink-0 shadow-md">
+                        {profileName.substring(0,2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg leading-tight">{profileName}</h3>
+                        <p className="text-xs text-gray-500 font-medium">{user?.email || 'user@company.com'}</p>
+                        <div className="flex items-center gap-1 mt-1.5 bg-blue-50 text-pln-blue px-2 py-0.5 rounded-md w-fit">
+                          <Shield size={10} />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">{displayRole}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg leading-tight">{profileName}</h3>
-                    <p className="text-xs text-gray-500 font-medium">{user?.email || 'user@company.com'}</p>
-                    <div className="flex items-center gap-1 mt-1.5 bg-blue-50 text-pln-blue px-2 py-0.5 rounded-md w-fit">
-                      <Shield size={10} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">{displayRole}</span>
+
+                  {/* Menu Items */}
+                  <div className="p-2 space-y-1">
+                    <button onClick={() => { setActiveMenu('personal'); setTempName(profileName); }} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
+                          <UserCircle size={18} className="text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">Personal Information</p>
+                          <p className="text-[11px] text-gray-500">Ubah nama dan info kontak</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
+                    </button>
+
+                    <button onClick={() => setActiveMenu('security')} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
+                          <Key size={18} className="text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">Security & Password</p>
+                          <p className="text-[11px] text-gray-500">Ganti password (Keamanan)</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
+                    </button>
+
+                    <button onClick={() => setActiveMenu('preferences')} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
+                          <Settings2 size={18} className="text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">Preferences</p>
+                          <p className="text-[11px] text-gray-500">Tema dan tampilan UI</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
+                    </button>
+                  </div>
+
+                  {/* Current Workspace Context */}
+                  <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                      <Building2 size={14} />
+                      <span>{activeWorkspace?.name || 'Personal Workspace'}</span>
+                    </div>
+                  </div>
+
+                  {/* Logout Action */}
+                  <div className="p-2 border-t border-gray-100">
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-left transition-colors group"
+                    >
+                      <div className="bg-red-50 p-2 rounded-lg group-hover:bg-red-100 transition-colors">
+                        <LogOut size={18} className="text-red-500" />
+                      </div>
+                      <span className="text-sm font-bold text-red-600">Log Out dari Sesi Ini</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {activeMenu === 'personal' && (
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <button onClick={() => setActiveMenu('main')} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
+                      <ChevronRight size={18} className="rotate-180" />
+                    </button>
+                    <h3 className="font-bold text-gray-900">Personal Information</h3>
+                  </div>
+                  
+                  <div className="space-y-4 flex-1">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Email Akun</label>
+                      <input 
+                        type="email" 
+                        value={user?.email || ''} 
+                        disabled 
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">Email tidak dapat diubah (Terikat SSO/Auth).</p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Nama Tampilan</label>
+                      <input 
+                        type="text" 
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-pln-blue focus:border-pln-blue outline-none transition-all"
+                        placeholder="Masukkan nama lengkap Anda..."
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex gap-2">
+                    <button onClick={() => setActiveMenu('main')} className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 transition-colors">
+                      Batal
+                    </button>
+                    <button onClick={handleSaveProfile} disabled={isSaving || !tempName.trim()} className="flex-1 py-2.5 bg-gray-900 hover:bg-black rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50">
+                      {isSaving ? 'Menyimpan...' : 'Simpan'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {activeMenu === 'security' && (
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <button onClick={() => setActiveMenu('main')} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
+                      <ChevronRight size={18} className="rotate-180" />
+                    </button>
+                    <h3 className="font-bold text-gray-900">Security & Password</h3>
+                  </div>
+                  <div className="text-center py-6">
+                    <Shield size={32} className="mx-auto text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-500">Untuk mengganti password, silakan gunakan fitur Lupa Password di halaman Login.</p>
+                  </div>
+                </div>
+              )}
+              
+              {activeMenu === 'preferences' && (
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <button onClick={() => setActiveMenu('main')} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
+                      <ChevronRight size={18} className="rotate-180" />
+                    </button>
+                    <h3 className="font-bold text-gray-900">Preferences</h3>
+                  </div>
+                  <div className="space-y-4 flex-1">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <Sun size={18} className="text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">Light Mode</span>
+                      </div>
+                      <div className="w-10 h-6 bg-pln-blue rounded-full relative shadow-inner cursor-pointer" onClick={() => setTheme('light')}>
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform"></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <Moon size={18} className="text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">Dark Mode</span>
+                      </div>
+                      <div className="w-10 h-6 bg-gray-300 rounded-full relative shadow-inner cursor-pointer" onClick={() => setTheme('dark')}>
+                        <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full transition-transform"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Menu Items */}
-              <div className="p-2 space-y-1">
-                <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
-                      <UserCircle size={18} className="text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">Personal Information</p>
-                      <p className="text-[11px] text-gray-500">Ubah nama dan info kontak</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
-                </button>
-
-                <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
-                      <Key size={18} className="text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">Security & Password</p>
-                      <p className="text-[11px] text-gray-500">Autentikasi dua faktor (2FA)</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
-                </button>
-
-                <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
-                      <Settings2 size={18} className="text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">Preferences</p>
-                      <p className="text-[11px] text-gray-500">Tema, bahasa, dan notifikasi</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
-                </button>
-              </div>
-
-              {/* Current Workspace Context */}
-              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-                  <Building2 size={14} />
-                  <span>{activeWorkspace?.name || 'Personal Workspace'}</span>
-                </div>
-              </div>
-
-              {/* Logout Action */}
-              <div className="p-2 border-t border-gray-100">
-                <button 
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-left transition-colors group"
-                >
-                  <div className="bg-red-50 p-2 rounded-lg group-hover:bg-red-100 transition-colors">
-                    <LogOut size={18} className="text-red-500" />
-                  </div>
-                  <span className="text-sm font-bold text-red-600">Log Out dari Sesi Ini</span>
-                </button>
-              </div>
+              )}
 
             </div>
           )}
