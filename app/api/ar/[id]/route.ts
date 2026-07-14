@@ -125,10 +125,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       <html>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-          <script src="//cdn.8thwall.com/web/aframe/8frame-1.4.1.min.js"></script>
+          <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
           <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
-          <script src="//cdn.8thwall.com/web/xrextras/xrextras.js"></script>
-          <script async src="//cdn.8thwall.com/web/landing/landing.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
           <script>
             AFRAME.registerComponent('gesture-handler', {
               schema: {
@@ -145,10 +144,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                   this.initialDistance = null;
                   this.previousTouch = null;
                   
-                  const targetEl = this.el.sceneEl.querySelector('xrextras-named-image-target');
+                  const targetEl = this.el.sceneEl.querySelector('[mindar-image-target]');
                   if (targetEl) {
-                    targetEl.addEventListener("xrimagefound", () => { this.isVisible = true; });
-                    targetEl.addEventListener("xrimagelost", () => { this.isVisible = false; });
+                    targetEl.addEventListener("targetFound", () => { this.isVisible = true; });
+                    targetEl.addEventListener("targetLost", () => { this.isVisible = false; });
                   }
                   
                   const canvas = this.el.sceneEl.canvas;
@@ -391,26 +390,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           </div>
           ${eduDashboardHtml}
           <a-scene 
-            xrextras-gesture-detector 
-            xrextras-almost-there 
-            xrextras-loading 
-            xrextras-runtime-error 
-            xrweb="disableWorldTracking: true"
+            mindar-image="imageTargetSrc: ${mindFileUrl}; autoStart: true; uiLoading: yes; uiError: yes; filterMinCF: 0.00001; filterBeta: 0.0001; missTolerance: 20; warmupTolerance: 1;" 
             color-space="sRGB" 
             renderer="colorManagement: true, physicallyCorrectLights, antialias: true" 
+            vr-mode-ui="enabled: false" 
+            device-orientation-permission-ui="enabled: false"
           >
             <a-assets>
               ${assetItems}
             </a-assets>
 
-            <a-camera position="0 4 10" raycaster="objects: .cantap"></a-camera>
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
             <a-light type="directional" intensity="1.5" position="1 2 1"></a-light>
             <a-light type="ambient" intensity="1"></a-light>
 
-            <xrextras-named-image-target name="bottle-target">
+            <a-entity mindar-image-target="targetIndex: 0">
               ${entities}
-            </xrextras-named-image-target>
+            </a-entity>
           </a-scene>
         </body>
       </html>
