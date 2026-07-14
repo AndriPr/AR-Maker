@@ -51,37 +51,41 @@ export default function Dashboard() {
     }
     setUser(session.user);
 
-    if (!activeWorkspace) {
-      setProjects([]);
-      setFolders([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data, error } = await supabase
+    let projectsQuery = supabase
       .from('ar_projects')
       .select('*')
-      .eq('workspace_id', activeWorkspace.id)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      setFetchError(error.message);
-      console.error("Fetch error:", error);
-    }
-
-    const { data: folderData } = await supabase
+    let foldersQuery = supabase
       .from('folders')
       .select('*')
-      .eq('workspace_id', activeWorkspace.id)
       .order('created_at', { ascending: true });
+
+    if (activeWorkspace) {
+      projectsQuery = projectsQuery.eq('workspace_id', activeWorkspace.id);
+      foldersQuery = foldersQuery.eq('workspace_id', activeWorkspace.id);
+    } else {
+      projectsQuery = projectsQuery.is('workspace_id', null).eq('user_id', session.user.id);
+      foldersQuery = foldersQuery.is('workspace_id', null).eq('user_id', session.user.id);
+    }
+
+    const [ { data: projectsData, error: projectsError }, { data: folderData } ] = await Promise.all([
+      projectsQuery,
+      foldersQuery
+    ]);
+
+    if (projectsError) {
+      setFetchError(projectsError.message);
+      console.error("Fetch error:", projectsError);
+    }
 
     if (folderData) {
       setFolders(folderData);
     }
 
-    if (data) {
-      setProjects(data);
+    if (projectsData) {
+      setProjects(projectsData);
     }
     setLoading(false);
   };

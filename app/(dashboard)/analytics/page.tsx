@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BarChart3, Eye, FolderRoot, CheckCircle2 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 
 export default function AnalyticsPage() {
+  const { activeWorkspace, user, isLoading: workspaceLoading } = useWorkspace();
   const [stats, setStats] = useState({
     totalProjects: 0,
     totalViews: 0,
@@ -17,17 +19,25 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (!workspaceLoading) {
+      fetchStats();
+    }
+  }, [activeWorkspace, workspaceLoading]);
 
   const fetchStats = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!user) return;
 
-    const { data: projects, error } = await supabase
+    let query = supabase
       .from('ar_projects')
-      .select('is_published, views')
-      .eq('user_id', session.user.id);
+      .select('is_published, views, title');
+      
+    if (activeWorkspace) {
+      query = query.eq('workspace_id', activeWorkspace.id);
+    } else {
+      query = query.is('workspace_id', null).eq('user_id', user.id);
+    }
+
+    const { data: projects, error } = await query;
 
     if (projects && !error) {
       setStats({
@@ -47,11 +57,18 @@ export default function AnalyticsPage() {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const { data: viewsData, error: viewsError } = await supabase
+    let viewsQuery = supabase
       .from('project_views')
       .select('created_at')
-      .eq('user_id', session.user.id)
       .gte('created_at', sevenDaysAgo.toISOString());
+      
+    if (activeWorkspace) {
+      viewsQuery = viewsQuery.eq('workspace_id', activeWorkspace.id);
+    } else {
+      viewsQuery = viewsQuery.is('workspace_id', null).eq('user_id', user.id);
+    }
+
+    const { data: viewsData, error: viewsError } = await viewsQuery;
 
     const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     const chartData: any[] = [];

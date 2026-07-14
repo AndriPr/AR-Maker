@@ -4,29 +4,39 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Trash2, RefreshCw, AlertTriangle, Box } from 'lucide-react';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 
 export default function TrashPage() {
   const router = useRouter();
+  const { activeWorkspace, user, isLoading: workspaceLoading } = useWorkspace();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDeletedProjects();
-  }, [router]);
+    if (!workspaceLoading) {
+      fetchDeletedProjects();
+    }
+  }, [router, activeWorkspace, workspaceLoading]);
 
   const fetchDeletedProjects = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!user) {
       router.push('/login');
       return;
     }
 
-    const { data } = await supabase
+    let query = supabase
       .from('ar_projects')
       .select('*')
-      .eq('user_id', session.user.id)
       .eq('is_deleted', true)
       .order('created_at', { ascending: false });
+      
+    if (activeWorkspace) {
+      query = query.eq('workspace_id', activeWorkspace.id);
+    } else {
+      query = query.is('workspace_id', null).eq('user_id', user.id);
+    }
+
+    const { data } = await query;
 
     if (data) setProjects(data);
     setLoading(false);
