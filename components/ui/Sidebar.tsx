@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Trash2, Store, Building2, ChevronsUpDown } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Trash2, Store, Building2, ChevronsUpDown, Settings } from 'lucide-react';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { usePathname } from 'next/navigation';
 
@@ -104,6 +104,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
           <Trash2 size={20} />
           Tong Sampah
         </Link>
+        
+        {activeRole === 'admin' && (
+          <Link 
+            href="/settings/members" 
+            onClick={onClose}
+            className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-colors mt-2 ${pathname.startsWith('/settings') ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+          >
+            <Settings size={20} />
+            Workspace Settings
+          </Link>
+        )}
       </nav>
 
       <div className="p-4 mt-auto border-t border-gray-50">
