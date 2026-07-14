@@ -138,7 +138,7 @@ export default function Dashboard() {
     const folderPath = activeFolder === 'Semua' ? newFolderName.trim() : `${activeFolder}/${newFolderName.trim()}`;
     const stored = JSON.parse(localStorage.getItem('customFolders') || '[]');
     if (!stored.includes(folderPath)) {
-      const updated = [...stored, folderPath];
+      const updated = [...stored, folderPath].filter(Boolean);
       localStorage.setItem('customFolders', JSON.stringify(updated));
       setCustomFolders(updated);
     }
@@ -166,13 +166,13 @@ export default function Dashboard() {
 
   const currentSubfolders = useMemo(() => {
     if (activeFolder === 'Semua') {
-      return folders.filter(f => f !== 'Semua' && !f.includes('/'));
+      return folders.filter(f => f && f !== 'Semua' && !f.includes('/'));
     }
     const prefix = activeFolder + '/';
-    return folders.filter(f => f.startsWith(prefix) && f.length > prefix.length && !f.slice(prefix.length).includes('/'));
+    return folders.filter(f => f && f.startsWith(prefix) && f.length > prefix.length && !f.slice(prefix.length).includes('/'));
   }, [folders, activeFolder]);
 
-  const breadcrumbSegments = activeFolder === 'Semua' ? [] : activeFolder.split('/');
+  const breadcrumbSegments = (activeFolder === 'Semua' || !activeFolder) ? [] : activeFolder.split('/');
 
   return (
     <div className="space-y-8 flex flex-col md:flex-row gap-8">
@@ -180,9 +180,9 @@ export default function Dashboard() {
       {/* Folder Sidebar */}
       <div className={`shrink-0 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${isFolderSidebarOpen ? 'w-full md:w-56 opacity-100' : 'w-0 opacity-0 hidden md:block'}`}>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
-        {folders.filter(f => f !== 'Semua').map(folder => {
+        {folders.filter(f => f && f !== 'Semua').map(folder => {
           const depth = (folder.match(/\//g) || []).length;
-          const name = folder.split('/').pop();
+          const name = folder.split('/').pop() || folder;
           return (
             <div key={folder} className="group relative flex items-center" style={{ paddingLeft: `${depth * 0.75}rem` }}>
               <button
