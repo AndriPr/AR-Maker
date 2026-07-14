@@ -41,8 +41,47 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const updateElement = useEditorStore(state => state.updateElement);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
+  const undo = useEditorStore(state => state.undo);
+  const redo = useEditorStore(state => state.redo);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
+  
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+        return;
+      }
+      
+      switch (e.key.toLowerCase()) {
+        case 'w': setTransformMode('translate'); break;
+        case 'e': setTransformMode('rotate'); break;
+        case 'r': setTransformMode('scale'); break;
+        case 'escape': setSelectedId(null); break;
+        case 'delete':
+        case 'backspace':
+          if (selectedId) removeElement(selectedId);
+          break;
+        case 'z':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.shiftKey) redo();
+            else undo();
+          }
+          break;
+        case 'y':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            redo();
+          }
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, removeElement, undo, redo, setSelectedId]);
   
   // White-Label State
   const [brandColor, setBrandColor] = useState('#00A2E9');
@@ -1165,12 +1204,21 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 Scan QR Code ini menggunakan kamera HP audiens Anda untuk langsung membuka pengalaman AR tanpa harus menginstal aplikasi.
               </p>
               
-              <div className="bg-white p-4 rounded-xl shadow-lg mb-6" id="qr-code-container">
+              <div className="bg-white p-4 rounded-xl shadow-lg mb-6 border-4" style={{ borderColor: brandColor }} id="qr-code-container">
                 <QRCodeSVG 
                   value={`${window.location.origin}/ar-viewer/${project?.id}`} 
                   size={200}
                   level="H"
                   includeMargin={true}
+                  fgColor={brandColor}
+                  imageSettings={brandLogoUrl ? {
+                    src: brandLogoUrl,
+                    x: undefined,
+                    y: undefined,
+                    height: 48,
+                    width: 48,
+                    excavate: true,
+                  } : undefined}
                 />
               </div>
 

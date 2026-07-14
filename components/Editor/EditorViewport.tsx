@@ -110,6 +110,9 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         position={element.position} 
         rotation={element.rotation} 
         scale={element.scale}
+        translationSnap={0.5}
+        rotationSnap={Math.PI / 12}
+        scaleSnap={0.5}
       >
         {primitiveObj}
       </TransformControls>
@@ -182,6 +185,9 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
         position={element.position} 
         rotation={element.rotation} 
         scale={element.scale}
+        translationSnap={0.5}
+        rotationSnap={Math.PI / 12}
+        scaleSnap={0.5}
       >
         {textObj}
       </TransformControls>
@@ -241,7 +247,16 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
 
   if (isSelected) {
     return (
-      <TransformControls ref={transformRef} mode={mode} position={element.position} rotation={element.rotation} scale={element.scale}>
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+        translationSnap={0.5}
+        rotationSnap={Math.PI / 12}
+        scaleSnap={0.5}
+      >
         {buttonObj}
       </TransformControls>
     );

@@ -57,7 +57,10 @@ interface EditorState {
   selectedId: string | null;
   targetImageUrl: string | null;
   previewAnimationData: { targetId: string, animationName: string } | null;
-  
+  // History
+  past: SceneElement[][];
+  future: SceneElement[][];
+
   // Actions
   setElements: (elements: SceneElement[]) => void;
   setTargetImageUrl: (url: string | null) => void;
@@ -67,6 +70,8 @@ interface EditorState {
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -74,8 +79,10 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectedId: null,
   targetImageUrl: null,
   previewAnimationData: null,
+  past: [],
+  future: [],
 
-  setElements: (elements) => set({ elements }),
+  setElements: (elements) => set({ elements }), // Initialization doesn't clear history directly here, let caller decide.
   
   setTargetImageUrl: (url) => set({ targetImageUrl: url }),
   setPreviewAnimationData: (data) => set({ previewAnimationData: data }),
@@ -83,43 +90,64 @@ export const useEditorStore = create<EditorState>((set) => ({
   addElement: (element) => set((state) => {
     const newId = crypto.randomUUID();
     return {
+      past: [...state.past, state.elements],
+      future: [],
       elements: [...state.elements, { ...element, id: newId }],
-      selectedId: newId // auto-select newly added element
+      selectedId: newId
     };
   }),
 
   updateElement: (id, updates) => set((state) => ({
+    past: [...state.past, state.elements],
+    future: [],
     elements: state.elements.map((el) => 
       el.id === id ? { ...el, ...updates } : el
     )
   })),
 
   removeElement: (id) => set((state) => ({
+    past: [...state.past, state.elements],
+    future: [],
     elements: state.elements.filter((el) => el.id !== id),
     selectedId: state.selectedId === id ? null : state.selectedId
   })),
 
   duplicateElement: (id) => set((state) => {
-    const elToDuplicate = state.elements.find((el) => el.id === id);
-    if (!elToDuplicate) return state;
-    
+    const el = state.elements.find((e) => e.id === id);
+    if (!el) return state;
     const newId = crypto.randomUUID();
-    const duplicatedElement = {
-      ...elToDuplicate,
-      id: newId,
-      name: `${elToDuplicate.name} (Copy)`,
-      position: [
-        elToDuplicate.position[0] + 0.5,
-        elToDuplicate.position[1] - 0.5,
-        elToDuplicate.position[2]
-      ] as [number, number, number]
-    };
-    
+    const newEl = { ...el, id: newId, name: `${el.name} (Copy)`, position: [el.position[0] + 0.5, el.position[1], el.position[2] + 0.5] as [number, number, number] };
     return {
-      elements: [...state.elements, duplicatedElement],
+      past: [...state.past, state.elements],
+      future: [],
+      elements: [...state.elements, newEl],
       selectedId: newId
     };
   }),
 
   setSelectedId: (id) => set({ selectedId: id }),
+
+  undo: () => set((state) => {
+    if (state.past.length === 0) return state;
+    const previous = state.past[state.past.length - 1];
+    const newPast = state.past.slice(0, state.past.length - 1);
+    return {
+      past: newPast,
+      future: [state.elements, ...state.future],
+      elements: previous,
+      selectedId: null // Reset selection on undo to avoid selecting deleted objects
+    };
+  }),
+
+  redo: () => set((state) => {
+    if (state.future.length === 0) return state;
+    const next = state.future[0];
+    const newFuture = state.future.slice(1);
+    return {
+      past: [...state.past, state.elements],
+      future: newFuture,
+      elements: next,
+      selectedId: null
+    };
+  })
 }));
