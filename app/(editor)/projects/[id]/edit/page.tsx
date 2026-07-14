@@ -239,8 +239,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           target_image_url: targetImageUrl,
           scene_data: sceneData,
           brand_color: brandColor,
-          brand_logo_url: brandLogoUrl,
-          folder_name: folderName
+          brand_logo_url: brandLogoUrl
+          // folder_name: folderName // Temporarily disabled until DB is migrated
         })
         .eq('id', project.id);
         
@@ -358,7 +358,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           scene_data: sceneData,
           brand_color: brandColor,
           brand_logo_url: brandLogoUrl,
-          folder_name: folderName,
+          // folder_name: folderName, // Temporarily disabled until DB is migrated
           status: 'published',
           ...(finalMindUrl ? { mind_file_url: finalMindUrl } : {})
         })
