@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>('ALL');
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -164,13 +164,13 @@ export default function Dashboard() {
   };
 
   const filteredProjects = projects
-    .filter(p => p.folder_id === activeFolderId)
+    .filter(p => activeFolderId === 'ALL' ? true : p.folder_id === activeFolderId)
     .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
     .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0));
 
   const getBreadcrumbs = (folderId: string | null) => {
-    if (!folderId) return [];
+    if (folderId === 'ALL' || !folderId) return [];
     const crumbs = [];
     let currentId: string | null = folderId;
     while (currentId) {
@@ -204,6 +204,25 @@ export default function Dashboard() {
       {/* Folder Sidebar */}
       <div className={`shrink-0 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${isFolderSidebarOpen ? 'w-full md:w-56 opacity-100' : 'w-0 opacity-0 hidden md:block'}`}>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
+        
+        <div className="space-y-1 mb-2">
+          <button
+            onClick={() => setActiveFolderId('ALL')}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-4 ${activeFolderId === 'ALL' ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <LayoutGrid size={16} className={activeFolderId === 'ALL' ? 'text-white' : 'text-gray-400'} />
+            Semua Proyek
+          </button>
+          
+          <button
+            onClick={() => setActiveFolderId(null)}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-4 ${activeFolderId === null ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Folder size={16} className={activeFolderId === null ? 'text-white' : 'text-gray-400'} />
+            Personal
+          </button>
+        </div>
+
         {folderTree.map(folder => (
             <div key={folder.id} className="group relative flex items-center" style={{ paddingLeft: `${folder.depth * 0.75}rem` }}>
               <button
@@ -248,7 +267,13 @@ export default function Dashboard() {
               >
                 <PanelLeft size={20} />
               </button>
-              <span className="cursor-pointer hover:text-pln-blue transition-colors" onClick={() => setActiveFolderId(null)}>My Projects</span>
+              <span className="cursor-pointer hover:text-pln-blue transition-colors font-semibold" onClick={() => setActiveFolderId('ALL')}>Semua Proyek</span>
+              {activeFolderId === null && (
+                <>
+                  <span className="text-gray-300">/</span>
+                  <span className="text-gray-900 font-semibold">Personal</span>
+                </>
+              )}
               {breadcrumbSegments.map((segment, index) => {
                 const isLast = index === breadcrumbSegments.length - 1;
                 return (
@@ -384,9 +409,13 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
-                          <Folder size={12} /> {folders.find(f => f.id === project.folder_id)?.name || 'Personal'}
-                        </span>
+                        {(folders.find(f => f.id === project.folder_id)?.name && folders.find(f => f.id === project.folder_id)?.name !== 'Personal') ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
+                            <Folder size={12} /> {folders.find(f => f.id === project.folder_id)?.name}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </td>
                       <td className="p-4">
                         <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${project.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -634,10 +663,14 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
           <span className="flex items-center gap-1">
             {icon} {type}
           </span>
-          <span className="text-gray-300">•</span>
-          <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100">
-            <Folder size={10} /> {folderName}
-          </span>
+          {folderName && folderName !== 'Personal' && (
+            <>
+              <span className="text-gray-300">•</span>
+              <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100">
+                <Folder size={10} /> {folderName}
+              </span>
+            </>
+          )}
         </div>
         
         <div className="mt-auto flex items-center justify-between">
