@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -23,7 +23,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   
   // Mobile Panel States
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
-  const [isRightPanelOpen, setRightPanelOpen] = useState(false);
+  const [isRightPanelOpen, setRightPanelOpen] = useState(true);
+
+  // AI Assistant State
+  const [isAIOpen, setIsAIOpen] = useState(false);
+  const [aiInput, setAiInput] = useState('');
+  const [aiMessages, setAiMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
+    { role: 'ai', text: 'Halo Bos! Saya Asisten AI Anda. Mau ganti suasana (misal: "buat suasana malam") atau tambah efek?' }
+  ]);
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   
   const { activeWorkspace, activeRole, user } = useWorkspace();
@@ -98,6 +106,78 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, removeElement, undo, redo, setSelectedId]);
+
+  // AI Logic
+  const handleAISubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiInput.trim() || isAIProcessing) return;
+    
+    const userText = aiInput.trim();
+    const lowerText = userText.toLowerCase();
+    
+    setAiMessages(prev => [...prev, { role: 'user', text: userText }]);
+    setAiInput('');
+    setIsAIProcessing(true);
+
+    setTimeout(() => {
+      let aiResponse = "Maaf bos, saya belum paham. Coba ketik 'buat jadi malam' atau 'tambah salju'.";
+      let hasAction = false;
+
+      // Intent 1: Lighting & Environment
+      if (lowerText.includes('malam') || lowerText.includes('gelap') || lowerText.includes('city') || lowerText.includes('kota')) {
+        setEnvironmentMap('city');
+        setAmbientLightIntensity(0.2);
+        setDirectionalLightIntensity(0.5);
+        aiResponse = "Siap! Suasana telah saya ubah menjadi malam hari di kota. Cahaya sudah saya redupkan.";
+        hasAction = true;
+      } else if (lowerText.includes('sore') || lowerText.includes('sunset') || lowerText.includes('senja')) {
+        setEnvironmentMap('sunset');
+        setAmbientLightIntensity(0.6);
+        setDirectionalLightIntensity(1.5);
+        aiResponse = "Siap bos! Efek langit senja (sunset) telah diaktifkan.";
+        hasAction = true;
+      } else if (lowerText.includes('terang') || lowerText.includes('studio') || lowerText.includes('siang')) {
+        setEnvironmentMap('studio');
+        setAmbientLightIntensity(1.0);
+        setDirectionalLightIntensity(2.0);
+        aiResponse = "Lampu studio menyala! Suasana kembali terang benderang.";
+        hasAction = true;
+      }
+
+      // Intent 2: VFX
+      if (lowerText.includes('efek') || lowerText.includes('salju') || lowerText.includes('bintang') || lowerText.includes('sparkle')) {
+        addElement({
+          type: 'vfx_sparkles',
+          name: 'VFX dari AI',
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          sparkleColor: lowerText.includes('emas') || lowerText.includes('gold') ? '#ffd700' : (lowerText.includes('biru') ? '#0000ff' : '#ffffff'),
+          sparkleCount: 150,
+          sparkleSize: 3,
+          sceneId: currentSceneId
+        });
+        aiResponse = hasAction ? `${aiResponse} Oh ya, efek magis juga sudah saya tambahkan ke kanvas.` : "Siap bos! Efek partikel magis sudah saya taburkan ke dalam AR.";
+        hasAction = true;
+      }
+
+      // Intent 3: Scene
+      if ((lowerText.includes('scene') || lowerText.includes('slide')) && (lowerText.includes('tambah') || lowerText.includes('baru'))) {
+        addScene(`Scene AI ${Math.floor(Math.random() * 100)}`);
+        aiResponse = hasAction ? `${aiResponse} Dan Scene baru sudah disiapkan di bawah.` : "Tentu! Scene baru telah saya siapkan di panel bawah.";
+        hasAction = true;
+      }
+
+      if (!hasAction) {
+        if (lowerText.includes('halo') || lowerText.includes('hai')) {
+          aiResponse = "Halo! Silakan beri perintah untuk mengubah suasana (misal: 'buat gelap') atau tambah elemen (misal: 'tambah salju').";
+        }
+      }
+
+      setAiMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
+      setIsAIProcessing(false);
+    }, 800);
+  };
   
   // White-Label State
   const [brandColor, setBrandColor] = useState('#00A2E9');
@@ -1700,6 +1780,64 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             title="Tambah Scene Baru"
           >
             <Plus size={16} />
+          </button>
+        </div>
+
+        {/* Floating AI Assistant Widget */}
+        <div className="absolute bottom-20 right-4 md:right-[310px] z-50 flex flex-col items-end pointer-events-none">
+          {isAIOpen && (
+            <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl w-80 h-96 mb-4 flex flex-col overflow-hidden pointer-events-auto transition-all animate-in slide-in-from-bottom-5">
+              <div className="bg-gradient-to-r from-pln-blue to-purple-600 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bot size={18} className="text-white" />
+                  <span className="font-bold text-sm text-white">AI Editor Assistant</span>
+                </div>
+                <button onClick={() => setIsAIOpen(false)} className="text-white/80 hover:text-white">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar bg-gray-900/50">
+                {aiMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-xl p-2.5 text-xs ${msg.role === 'user' ? 'bg-pln-blue text-white rounded-tr-sm' : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'}`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+                {isAIProcessing && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-xl p-2.5 text-xs bg-gray-800 text-gray-400 border border-gray-700 rounded-tl-sm flex items-center gap-1">
+                      <span className="animate-bounce">.</span><span className="animate-bounce delay-75">.</span><span className="animate-bounce delay-150">.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-gray-800 bg-gray-900">
+                <form onSubmit={handleAISubmit} className="relative">
+                  <input
+                    type="text"
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    placeholder="Ketik 'buat gelap'..."
+                    className="w-full bg-gray-800 border border-gray-700 rounded-full py-2 pl-4 pr-10 text-xs text-white outline-none focus:border-pln-blue placeholder-gray-500"
+                    disabled={isAIProcessing}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isAIProcessing || !aiInput.trim()}
+                    className="absolute right-1 top-1 bottom-1 w-8 bg-pln-blue hover:bg-pln-blue-dark rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                  >
+                    <Send size={12} className="text-white" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={() => setIsAIOpen(!isAIOpen)}
+            className="w-12 h-12 bg-gradient-to-tr from-pln-blue to-purple-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 transition-transform pointer-events-auto border-2 border-gray-900"
+          >
+            {isAIOpen ? <X size={20} className="text-white" /> : <MessageSquare size={20} className="text-white" />}
           </button>
         </div>
 
