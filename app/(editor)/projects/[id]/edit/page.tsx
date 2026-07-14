@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -43,6 +43,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
   const undo = useEditorStore(state => state.undo);
   const redo = useEditorStore(state => state.redo);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const setIsSnapping = useEditorStore(state => state.setIsSnapping);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -529,7 +531,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         </aside>
 
         {/* Toolbar Transform (Floating Center) */}
-        <div className="pointer-events-auto absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1.5">
+        <div className="pointer-events-auto absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1.5 items-center">
           <button 
             onClick={() => setTransformMode('translate')} 
             className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'translate' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
@@ -550,6 +552,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             title="Perbesar/Kecil (Scale)"
           >
             <Maximize size={18} />
+          </button>
+          
+          <div className="w-px h-6 bg-gray-700 mx-1"></div>
+          
+          <button 
+            onClick={() => setIsSnapping(!isSnapping)} 
+            className={`p-2 sm:p-2.5 rounded-full transition-all ${isSnapping ? 'bg-pln-yellow/20 text-pln-yellow shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+            title={isSnapping ? "Matikan Snapping" : "Hidupkan Snapping"}
+          >
+            <Magnet size={18} />
           </button>
         </div>
 

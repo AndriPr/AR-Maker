@@ -15,6 +15,7 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
+  const isSnapping = useEditorStore(state => state.isSnapping);
 
   const isSelected = selectedId === element.id;
   
@@ -110,9 +111,9 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         position={element.position} 
         rotation={element.rotation} 
         scale={element.scale}
-        translationSnap={0.5}
-        rotationSnap={Math.PI / 12}
-        scaleSnap={0.5}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
       >
         {primitiveObj}
       </TransformControls>
@@ -132,6 +133,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
 
   const isSelected = selectedId === element.id;
 
@@ -185,9 +187,9 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
         position={element.position} 
         rotation={element.rotation} 
         scale={element.scale}
-        translationSnap={0.5}
-        rotationSnap={Math.PI / 12}
-        scaleSnap={0.5}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
       >
         {textObj}
       </TransformControls>
@@ -206,6 +208,7 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
   useEffect(() => {
@@ -253,9 +256,9 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
         position={element.position} 
         rotation={element.rotation} 
         scale={element.scale}
-        translationSnap={0.5}
-        rotationSnap={Math.PI / 12}
-        scaleSnap={0.5}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
       >
         {buttonObj}
       </TransformControls>
@@ -289,6 +292,7 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
   const elements = useEditorStore(state => state.elements);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
 
   return (
     <div className="w-full h-full bg-gray-900 relative">

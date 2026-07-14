@@ -57,6 +57,7 @@ interface EditorState {
   selectedId: string | null;
   targetImageUrl: string | null;
   previewAnimationData: { targetId: string, animationName: string } | null;
+  isSnapping: boolean;
   // History
   past: SceneElement[][];
   future: SceneElement[][];
@@ -70,6 +71,7 @@ interface EditorState {
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
+  setIsSnapping: (val: boolean) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -79,6 +81,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectedId: null,
   targetImageUrl: null,
   previewAnimationData: null,
+  isSnapping: true,
   past: [],
   future: [],
 
@@ -126,6 +129,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   }),
 
   setSelectedId: (id) => set({ selectedId: id }),
+  setIsSnapping: (val) => set({ isSnapping: val }),
 
   undo: () => set((state) => {
     if (state.past.length === 0) return state;
