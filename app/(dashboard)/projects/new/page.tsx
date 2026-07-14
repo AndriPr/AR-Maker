@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Image, Box, ArrowRight, Loader2, File, Contact2, BookOpen, PartyPopper } from 'lucide-react';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 
 export default function NewProjectPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function NewProjectPage() {
   const [existingFolders, setExistingFolders] = useState<{id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { activeWorkspace, isLoading: workspaceLoading } = useWorkspace();
 
   const templates = [
     { id: 'blank', name: 'Blank Project', icon: File, type: 'image_tracking', desc: 'Mulai dari kanvas kosong.' },
@@ -27,21 +29,22 @@ export default function NewProjectPage() {
   // Fetch existing folders for autocomplete
   useEffect(() => {
     const fetchFolders = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!activeWorkspace) return;
       
       const { data } = await supabase
         .from('folders')
         .select('id, name')
-        .eq('user_id', session.user.id)
+        .eq('workspace_id', activeWorkspace.id)
         .order('created_at', { ascending: true });
         
       if (data) {
         setExistingFolders(data);
       }
     };
-    fetchFolders();
-  }, []);
+    if (!workspaceLoading) {
+      fetchFolders();
+    }
+  }, [activeWorkspace, workspaceLoading]);
 
   const handleSelectTemplate = (tmpl: any) => {
     setSelectedTemplate(tmpl.id);
@@ -61,6 +64,7 @@ export default function NewProjectPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Silakan login terlebih dahulu.");
+      if (!activeWorkspace) throw new Error("Silakan pilih Workspace terlebih dahulu.");
 
       // Handle Folder Creation
       let finalFolderId = null; // null means Personal/Root
@@ -70,6 +74,7 @@ export default function NewProjectPage() {
           .from('folders')
           .insert({
             user_id: session.user.id,
+            workspace_id: activeWorkspace.id,
             name: newFolderInput.trim()
           })
           .select()
@@ -86,6 +91,7 @@ export default function NewProjectPage() {
         .from('ar_projects')
         .insert({
           user_id: session.user.id,
+          workspace_id: activeWorkspace.id,
           title: title,
           tracking_type: trackingType,
           is_published: false,

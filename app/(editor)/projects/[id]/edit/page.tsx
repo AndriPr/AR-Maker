@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import dynamic from 'next/dynamic';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEditorStore } from '@/lib/store';
@@ -24,6 +25,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
   const [isRightPanelOpen, setRightPanelOpen] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  
+  const { activeWorkspace, activeRole, user } = useWorkspace();
   
   // Zustand Store
   const elements = useEditorStore(state => state.elements);
@@ -134,6 +137,20 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       return;
     }
     
+    if (activeRole === 'editor' || activeRole === 'viewer') {
+      alert("Anda hanya memiliki akses Editor/Viewer. Permintaan publikasi telah dikirim ke Admin Workspace Anda.");
+      await supabase.from('ar_projects').update({ status: 'in_review' }).eq('id', project.id);
+      
+      // Kirim Notifikasi ke Admin (Simulasi log)
+      await supabase.from('audit_logs').insert({
+        workspace_id: activeWorkspace?.id,
+        user_id: user?.id,
+        action: 'REQUEST_PUBLISH',
+        resource_name: project.title
+      });
+      return;
+    }
+    
     setSaving(true);
     
     try {
@@ -198,7 +215,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
       // 5. Update Database
       const sceneData = { elements };
-      const { error } = await supabase
+      const { error: finalError } = await supabase
         .from('ar_projects')
         .update({ 
           is_published: true,
@@ -207,11 +224,20 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           brand_color: brandColor,
           brand_logo_url: brandLogoUrl,
           folder_name: folderName,
+          status: 'published',
           ...(finalMindUrl ? { mind_file_url: finalMindUrl } : {})
         })
         .eq('id', project.id);
         
-      if (error) throw error;
+      if (finalError) throw finalError;
+
+      // 6. Record Audit Log
+      await supabase.from('audit_logs').insert({
+        workspace_id: activeWorkspace?.id,
+        user_id: user?.id,
+        action: 'PUBLISH_PROJECT',
+        resource_name: project.title
+      });
       
       setPublishProgress("Selesai!");
       setShowPublishModal(true);
@@ -322,14 +348,11 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <span className="hidden sm:inline sm:ml-2">Simpan Manual</span>
           </button>
           
-          <button onClick={handlePublish} disabled={saving || publishProgress !== null} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 text-[10px] sm:text-sm font-bold bg-pln-blue hover:bg-pln-blue-dark text-white rounded-lg transition-colors disabled:opacity-50">
-            {publishProgress ? (
-               <Loader2 size={14} className="animate-spin" />
-            ) : (
-               <Play size={14} />
-            )}
-            <span className="hidden sm:inline">{publishProgress || 'Publish & Preview'}</span>
-            <span className="sm:hidden">{publishProgress || 'Publish'}</span>
+          <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 text-[10px] sm:text-sm font-bold text-white rounded-lg transition-colors disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-pln-blue hover:bg-pln-blue-dark'}`}>
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />}
+            <span className="hidden sm:inline">
+              {(activeRole === 'editor') ? 'Request Publish' : 'Publish'}
+            </span>
           </button>
 
           <button 

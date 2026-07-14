@@ -6,6 +6,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const { activeWorkspace, isLoading: workspaceLoading } = useWorkspace();
   const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
   
   // QR Customization State
@@ -36,9 +38,10 @@ export default function Dashboard() {
   const [projectToMove, setProjectToMove] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
-    fetchData();
-  }, [router]);
+    if (!workspaceLoading) {
+      fetchData();
+    }
+  }, [router, activeWorkspace, workspaceLoading]);
 
   const fetchData = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -48,10 +51,17 @@ export default function Dashboard() {
     }
     setUser(session.user);
 
+    if (!activeWorkspace) {
+      setProjects([]);
+      setFolders([]);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('ar_projects')
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('workspace_id', activeWorkspace.id)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
@@ -63,7 +73,7 @@ export default function Dashboard() {
     const { data: folderData } = await supabase
       .from('folders')
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('workspace_id', activeWorkspace.id)
       .order('created_at', { ascending: true });
 
     if (folderData) {
@@ -139,11 +149,12 @@ export default function Dashboard() {
   };
 
   const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim() || !activeWorkspace) return;
     const { data, error } = await supabase.from('folders').insert({
       user_id: user.id,
+      workspace_id: activeWorkspace.id,
       name: newFolderName.trim(),
-      parent_id: activeFolderId
+      parent_id: activeFolderId === 'ALL' ? null : activeFolderId
     }).select().single();
 
     if (data) {
