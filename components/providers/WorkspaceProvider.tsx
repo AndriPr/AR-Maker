@@ -56,7 +56,25 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`/api/workspaces?user_id=${currentUser.id}`);
       if (!res.ok) throw new Error('Failed to fetch workspaces');
       
-      const { workspaces: data } = await res.json();
+      const resData = await res.json();
+      let data = resData.workspaces;
+
+      // Auto-provision if the user has no workspaces
+      if (!data || data.length === 0) {
+        const provisionRes = await fetch('/api/workspaces/provision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id })
+        });
+        if (provisionRes.ok) {
+          // Re-fetch workspaces after provisioning
+          const retryRes = await fetch(`/api/workspaces?user_id=${currentUser.id}`);
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            data = retryData.workspaces;
+          }
+        }
+      }
 
       if (data && data.length > 0) {
         const formattedWorkspaces = data.map((item: any) => ({
