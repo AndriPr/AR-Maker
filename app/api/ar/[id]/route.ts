@@ -23,6 +23,156 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     ]).catch(err => console.error("Failed to update analytics:", err));
 
     const elements = project.scene_data?.elements || [];
+    const trackingMode = project.scene_data?.trackingMode || 'image';
+    const objectTargetType = project.scene_data?.objectTargetType || 'Shoe';
+
+    if (trackingMode === 'object3d') {
+      const objectronHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/objectron/objectron.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <style>
+          body { margin: 0; padding: 0; overflow: hidden; background: black; font-family: monospace; }
+          .input_video { display: none; }
+          .output_canvas { width: 100vw; height: 100vh; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
+          #three-canvas { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none; }
+          #loading-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00ffff; z-index: 4; text-align: center; text-shadow: 0 0 10px #00ffff; }
+          #status-ui { position: absolute; top: 20px; left: 20px; color: #00ff00; z-index: 5; background: rgba(0,255,0,0.1); padding: 10px; border: 1px solid #00ff00; border-radius: 5px; }
+        </style>
+      </head>
+      <body>
+        <div id="loading-ui"><h2>⚡ INITIALIZING NEURAL NETWORK</h2><p>Model: 3D Object Tracking (${objectTargetType})</p></div>
+        <div id="status-ui" style="display:none;">TARGET: ${objectTargetType} | STATUS: SEARCHING...</div>
+        <video class="input_video" playsinline></video>
+        <canvas class="output_canvas"></canvas>
+        <canvas id="three-canvas"></canvas>
+        
+        <script>
+          const videoElement = document.getElementsByClassName('input_video')[0];
+          const canvasElement = document.getElementsByClassName('output_canvas')[0];
+          const canvasCtx = canvasElement.getContext('2d');
+          const statusUi = document.getElementById('status-ui');
+          const loadingUi = document.getElementById('loading-ui');
+          
+          // ThreeJS Setup
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+          const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), alpha: true, antialias: true });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          
+          const light = new THREE.DirectionalLight(0xffffff, 1.5);
+          light.position.set(1, 2, 1).normalize();
+          scene.add(light);
+          scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+          
+          // Cyberpunk Tracking Box
+          const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+          const boxMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.8 });
+          const trackingBox = new THREE.Mesh(boxGeometry, boxMaterial);
+          
+          // Add a glowing core
+          const coreGeo = new THREE.IcosahedronGeometry(0.2, 0);
+          const coreMat = new THREE.MeshPhongMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 0.5 });
+          const core = new THREE.Mesh(coreGeo, coreMat);
+          trackingBox.add(core);
+
+          trackingBox.visible = false;
+          scene.add(trackingBox);
+
+          camera.position.z = 3;
+
+          function onResults(results) {
+            loadingUi.style.display = 'none';
+            statusUi.style.display = 'block';
+            
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
+            if (results.objectDetections && results.objectDetections.length > 0) {
+              statusUi.innerText = 'TARGET: ${objectTargetType} | STATUS: LOCKED 🔒';
+              statusUi.style.color = '#00ffff';
+              statusUi.style.borderColor = '#00ffff';
+              statusUi.style.background = 'rgba(0,255,255,0.1)';
+
+              const detection = results.objectDetections[0];
+              const landmarks = detection.landmarks;
+              
+              if (landmarks && landmarks.length > 0) {
+                // Objectron landmark 0 is usually the center of the bounding box
+                const center = landmarks[0]; 
+                
+                // Convert normalized coordinates to screen space for PoC
+                const x = (center.x - 0.5) * 6; 
+                const y = -(center.y - 0.5) * 6;
+                const z = -2 + (center.z || 0) * 2; // Approximate depth
+
+                // Smooth interpolation for jitter-free tracking
+                trackingBox.position.x += (x - trackingBox.position.x) * 0.3;
+                trackingBox.position.y += (y - trackingBox.position.y) * 0.3;
+                trackingBox.position.z += (z - trackingBox.position.z) * 0.3;
+                
+                // Spin the core
+                core.rotation.x += 0.05;
+                core.rotation.y += 0.05;
+
+                trackingBox.visible = true;
+              }
+            } else {
+              statusUi.innerText = 'TARGET: ${objectTargetType} | STATUS: SEARCHING...';
+              statusUi.style.color = '#ff0000';
+              statusUi.style.borderColor = '#ff0000';
+              statusUi.style.background = 'rgba(255,0,0,0.1)';
+              trackingBox.visible = false;
+            }
+            canvasCtx.restore();
+            renderer.render(scene, camera);
+          }
+
+          const objectron = new Objectron({locateFile: (file) => {
+            return \`https://cdn.jsdelivr.net/npm/@mediapipe/objectron/\${file}\`;
+          }});
+          objectron.setOptions({
+            modelName: '${objectTargetType}',
+            maxNumObjects: 1,
+          });
+          objectron.onResults(onResults);
+
+          const cameraUtils = new Camera(videoElement, {
+            onFrame: async () => {
+              // Ensure canvas matches window size
+              if (canvasElement.width !== window.innerWidth || canvasElement.height !== window.innerHeight) {
+                canvasElement.width = window.innerWidth;
+                canvasElement.height = window.innerHeight;
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+              }
+              await objectron.send({image: videoElement});
+            },
+            width: 1280,
+            height: 720
+          });
+          cameraUtils.start();
+        </script>
+      </body>
+      </html>
+      `;
+      return new NextResponse(objectronHtml, {
+        headers: {
+          'Content-Type': 'text/html',
+          'Permissions-Policy': 'camera=*, gyroscope=*, accelerometer=*, magnetometer=*'
+        },
+      });
+    }
+
     const mindFileUrl = project.mind_file_url || "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/examples/image-tracking/assets/card-example/card.mind";
 
     const assetItems = elements
