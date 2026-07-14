@@ -110,11 +110,26 @@ export default function Dashboard() {
     fetchData();
   };
 
+  const folders = ['Semua', ...Array.from(new Set([
+    ...(customFolders || []).filter(Boolean),
+    ...(projects || []).map(p => p.folder_name || 'Personal')
+  ]))];
+
+  const currentSubfolders = useMemo(() => {
+    if (activeFolder === 'Semua') {
+      return folders.filter(f => f && f !== 'Semua' && !f.includes('/'));
+    }
+    const prefix = activeFolder + '/';
+    return folders.filter(f => f && f.startsWith(prefix) && f.length > prefix.length && !f.slice(prefix.length).includes('/'));
+  }, [folders, activeFolder]);
+
+  const breadcrumbSegments = (activeFolder === 'Semua' || !activeFolder) ? [] : activeFolder.split('/');
+
   if (loading) {
     return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat proyek...</div>;
   }
 
-  const folders = ['Semua', ...Array.from(new Set([...customFolders, ...projects.map(p => p.folder_name || 'Personal')]))];
+
 
   const handleToggleSelect = (id: string) => {
     setSelectedProjects(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
@@ -164,15 +179,7 @@ export default function Dashboard() {
     .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
     .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0));
 
-  const currentSubfolders = useMemo(() => {
-    if (activeFolder === 'Semua') {
-      return folders.filter(f => f && f !== 'Semua' && !f.includes('/'));
-    }
-    const prefix = activeFolder + '/';
-    return folders.filter(f => f && f.startsWith(prefix) && f.length > prefix.length && !f.slice(prefix.length).includes('/'));
-  }, [folders, activeFolder]);
 
-  const breadcrumbSegments = (activeFolder === 'Semua' || !activeFolder) ? [] : activeFolder.split('/');
 
   return (
     <div className="space-y-8 flex flex-col md:flex-row gap-8">
