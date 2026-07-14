@@ -105,18 +105,19 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           </button>
         )}
 
-        <button 
-          onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
-          className={`relative p-2 rounded-full transition-colors hidden sm:block ${isNotifOpen ? 'bg-pln-blue text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-        >
-          <Bell size={20} />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
-          )}
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
+            className={`relative p-2 rounded-full transition-colors hidden sm:block ${isNotifOpen ? 'bg-pln-blue text-white shadow-md shadow-blue-500/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+            )}
+          </button>
 
         {isNotifOpen && (
-          <div className="absolute top-12 right-10 sm:right-40 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+          <div className="absolute top-full right-0 mt-3 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden transform origin-top-right transition-all">
             <div className="p-4 border-b border-gray-50 bg-gray-50 flex justify-between items-center">
               <h3 className="font-bold text-gray-900">Notifikasi</h3>
             </div>
@@ -141,23 +142,24 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </div>
           </div>
         )}
+        </div>
         
         <div className="relative">
           <div 
             onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
-            className="flex items-center gap-3 sm:border-l sm:border-gray-100 sm:pl-6 cursor-pointer group"
+            className={`flex items-center gap-3 sm:border-l sm:border-gray-100 sm:pl-6 cursor-pointer group p-1.5 pr-3 rounded-full transition-colors ${isProfileOpen ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 group-hover:bg-pln-blue transition-colors text-pln-yellow flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 shadow-sm">
               {profileName.substring(0,2).toUpperCase()}
             </div>
             <div className="hidden sm:block">
               <p className="text-sm font-bold text-gray-900 leading-tight">{profileName}</p>
-              <p className="text-xs text-gray-500">{displayRole}</p>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">{displayRole}</p>
             </div>
           </div>
 
           {isProfileOpen && (
-            <div className="absolute top-12 right-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
+            <div className="absolute top-full right-0 mt-3 w-80 bg-white border border-gray-100 rounded-2xl shadow-2xl shadow-gray-200/50 z-50 overflow-hidden flex flex-col transform origin-top-right transition-all">
               
               {activeMenu === 'main' && (
                 <>
