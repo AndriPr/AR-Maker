@@ -6,7 +6,7 @@ import { useWorkspace } from "@/components/providers/WorkspaceProvider";
 import { ShieldAlert, UserPlus, Trash2, Mail } from "lucide-react";
 
 export default function MembersPage() {
-  const { activeWorkspace, user, isLoading: workspaceLoading } = useWorkspace();
+  const { activeWorkspace, user, activeRole, isLoading: workspaceLoading } = useWorkspace();
   const [members, setMembers] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,40 +122,46 @@ export default function MembersPage() {
   return (
     <div className="space-y-8">
       {/* Invite Section */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Undang Anggota Baru</h2>
-        <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="email" 
-              required
-              value={inviteEmail}
-              onChange={e => setInviteEmail(e.target.value)}
-              placeholder="Alamat email kolega Anda..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-pln-blue focus:ring-1 focus:ring-pln-blue text-sm"
-            />
+      {activeRole === 'admin' && (
+        <>
+          <div className="mb-8 p-6 bg-gray-50 border border-gray-100 rounded-2xl">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Undang Anggota Baru</h2>
+            <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="Alamat email kolega Anda..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-pln-blue focus:border-pln-blue transition-all"
+                />
+              </div>
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-pln-blue focus:border-pln-blue font-medium text-gray-700 min-w-[160px]"
+              >
+                <option value="viewer">Viewer (Hanya Lihat)</option>
+                <option value="editor">Editor (Bisa Edit)</option>
+                <option value="admin">Admin (Akses Penuh)</option>
+              </select>
+              <button
+                type="submit"
+                disabled={inviting}
+                className="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+              >
+                {inviting ? "Mengundang..." : <><UserPlus size={18} /> Undang</>}
+              </button>
+            </form>
           </div>
-          <select 
-            value={inviteRole}
-            onChange={e => setInviteRole(e.target.value)}
-            className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-pln-blue text-sm"
-          >
-            <option value="viewer">Viewer (Hanya Lihat)</option>
-            <option value="editor">Editor (Bisa Edit)</option>
-            <option value="admin">Admin (Akses Penuh)</option>
-          </select>
-          <button 
-            type="submit"
-            disabled={inviting}
-            className="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
-          >
-            {inviting ? "Mengundang..." : <><UserPlus size={18} /> Undang</>}
-          </button>
-        </form>
-      </div>
 
-      <div className="h-px w-full bg-gray-100"></div>
+          <div className="h-px w-full bg-gray-100"></div>
+        </>
+      )}
 
       {/* Members List */}
       <div>
@@ -170,7 +176,7 @@ export default function MembersPage() {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-1/2">Nama Pengguna</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Peran (Role)</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                  {activeRole === 'admin' && <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -199,16 +205,18 @@ export default function MembersPage() {
                         {member.role}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-right">
-                      {member.user_id !== user?.id && (
-                        <button 
-                          onClick={() => handleRemove(member.user_id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-medium"
-                        >
-                          <Trash2 size={14} /> Hapus
-                        </button>
-                      )}
-                    </td>
+                    {activeRole === 'admin' && (
+                      <td className="px-4 py-4 text-right">
+                        {member.user_id !== user?.id && (
+                          <button 
+                            onClick={() => handleRemove(member.user_id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-medium"
+                          >
+                            <Trash2 size={14} /> Hapus
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -218,7 +226,7 @@ export default function MembersPage() {
       </div>
 
       {/* Pending Invitations List */}
-      {invitations.length > 0 && (
+      {activeRole === 'admin' && invitations.length > 0 && (
         <div className="pt-4">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Undangan Pending</h2>
           <div className="border border-gray-200 rounded-xl overflow-hidden">

@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useWorkspace } from "@/components/providers/WorkspaceProvider";
-import { Activity, Clock, FileEdit, Trash2, Rocket, Share2, Shield, FolderPlus, UserPlus, FilePlus } from "lucide-react";
+import { Activity, Clock, FileEdit, Trash2, Rocket, Share2, Shield, FolderPlus, UserPlus, FilePlus, UploadCloud, Image as ImageIcon, Box } from "lucide-react";
 
 export default function AuditLogsPage() {
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, activeRole } = useWorkspace();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +39,8 @@ export default function AuditLogsPage() {
       case 'DELETE_FOLDER': return { color: 'text-red-500', bg: 'bg-red-50', icon: Trash2, label: 'Folder Dihapus' };
       case 'INVITE_MEMBER': return { color: 'text-purple-500', bg: 'bg-purple-50', icon: UserPlus, label: 'Anggota Diundang' };
       case 'REMOVE_MEMBER': return { color: 'text-red-500', bg: 'bg-red-50', icon: Shield, label: 'Akses Dicabut' };
+      case 'UPLOAD_ASSET': return { color: 'text-blue-500', bg: 'bg-blue-50', icon: UploadCloud, label: 'Aset Diunggah' };
+      case 'DELETE_ASSET': return { color: 'text-red-500', bg: 'bg-red-50', icon: Trash2, label: 'Aset Dihapus' };
       default: return { color: 'text-gray-500', bg: 'bg-gray-100', icon: Activity, label: action };
     }
   };
@@ -50,6 +52,16 @@ export default function AuditLogsPage() {
       hour: '2-digit', minute: '2-digit'
     }).format(date);
   };
+
+  if (activeRole !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <Shield size={48} className="text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Akses Ditolak</h2>
+        <p className="text-gray-500 max-w-md">Anda memerlukan peran Administrator untuk melihat riwayat aktivitas Workspace ini.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

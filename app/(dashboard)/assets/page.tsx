@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 
 export default function AssetLibraryPage() {
   const router = useRouter();
+  const { activeWorkspace, activeRole } = useWorkspace();
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -22,11 +24,15 @@ export default function AssetLibraryPage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('assets')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
+    let query = supabase.from('assets').select('*').order('created_at', { ascending: false });
+    
+    if (activeWorkspace) {
+      query = query.eq('workspace_id', activeWorkspace.id);
+    } else {
+      query = query.eq('user_id', session.user.id).is('workspace_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (data) {
       setAssets(data);
@@ -36,7 +42,7 @@ export default function AssetLibraryPage() {
 
   useEffect(() => {
     fetchAssets();
-  }, [router]);
+  }, [router, activeWorkspace]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | any) => {
     const file = e.target?.files?.[0] || e.dataTransfer?.files?.[0];
@@ -74,45 +80,55 @@ export default function AssetLibraryPage() {
         .getPublicUrl(filePath);
 
       // 4. Simpan ke Database
-      const { error: dbError } = await supabase
+      const { data: insertedAsset, error: dbError } = await supabase
         .from('assets')
         .insert({
           user_id: session.user.id,
+          workspace_id: activeWorkspace?.id || null,
           name: file.name,
           type: assetType,
           file_url: publicUrl,
           size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-        });
+        })
+        .select()
+        .single();
 
       if (dbError) throw dbError;
 
-      // Kirim Notifikasi
-      supabase.from('notifications').insert({
+      await supabase.from('audit_logs').insert({
+        workspace_id: activeWorkspace?.id,
         user_id: session.user.id,
-        title: 'Aset Baru Diunggah',
-        message: `File '${file.name}' berhasil ditambahkan ke Asset Library.`
-      }).then();
+        action: 'UPLOAD_ASSET',
+        resource_name: file.name,
+        details: { type: assetType, size: file.size }
+      });
 
       alert("File berhasil diunggah!");
-      fetchAssets(); // Refresh list
+      fetchAssets();
     } catch (error: any) {
       alert("Error saat mengunggah: " + error.message);
     } finally {
       setUploading(false);
-      // Reset input
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleDelete = async (id: string, fileUrl: string) => {
+  const handleDelete = async (asset: any) => {
     if (!confirm('Yakin ingin menghapus aset ini?')) return;
     
     try {
-      // Hapus dari database
-      await supabase.from('assets').delete().eq('id', id);
+      await supabase.from('assets').delete().eq('id', asset.id);
       
-      // Ekstrak file path dari URL dan hapus dari storage (opsional/lanjutan)
-      // ...
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.from('audit_logs').insert({
+          workspace_id: activeWorkspace?.id,
+          user_id: session.user.id,
+          action: 'DELETE_ASSET',
+          resource_name: asset.name,
+          details: { asset_id: asset.id }
+        });
+      }
 
       fetchAssets();
     } catch (err) {
@@ -132,7 +148,7 @@ export default function AssetLibraryPage() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (activeRole !== 'viewer' && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileUpload(e as any);
     }
   };
@@ -149,22 +165,29 @@ export default function AssetLibraryPage() {
           <h1 className="text-2xl font-bold text-gray-900">Asset Library</h1>
           <p className="text-gray-500 text-sm mt-1">Kelola model 3D (.glb) dan gambar target untuk proyek AR Anda.</p>
         </div>
-        <div className="flex gap-3">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            className="hidden" 
-            accept=".glb,.gltf,image/png,image/jpeg,image/webp"
-          />
-          <button 
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-pln-blue hover:bg-pln-blue-dark text-white font-bold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50"
-          >
-            {uploading ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
-            {uploading ? 'Mengunggah...' : 'Upload Asset'}
-          </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {activeRole !== 'viewer' && (
+            <>
+              <input 
+                type="file" 
+                className="hidden" 
+                ref={fileInputRef}
+                accept="image/*,.glb,.gltf"
+                onChange={handleFileUpload}
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {uploading ? (
+                  <><Loader2 size={18} className="animate-spin" /> Mengunggah...</>
+                ) : (
+                  <><UploadCloud size={18} /> Unggah Baru</>
+                )}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -185,15 +208,6 @@ export default function AssetLibraryPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {assets.map((asset) => (
             <div key={asset.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col group relative">
-              <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <button className="bg-white p-1.5 rounded-md text-gray-500 hover:text-pln-blue shadow-sm" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(asset.file_url); }} title="Copy URL">
-                  <LinkIcon size={14} />
-                </button>
-                <button className="bg-white p-1.5 rounded-md text-red-500 hover:bg-red-50 shadow-sm" onClick={(e) => { e.stopPropagation(); handleDelete(asset.id, asset.file_url); }} title="Hapus">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-              
               <div 
                 className="h-24 bg-gray-50 rounded-xl mb-3 flex items-center justify-center relative overflow-hidden cursor-pointer"
                 onClick={() => setPreviewModal({ url: asset.file_url, name: asset.name, type: asset.type })}
@@ -215,7 +229,38 @@ export default function AssetLibraryPage() {
               </div>
               
               <h3 className="font-bold text-gray-900 text-sm truncate" title={asset.name}>{asset.name}</h3>
-              <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+              
+              {activeRole === 'viewer' && (
+                <div className="w-full h-8 flex items-center justify-center bg-gray-50 border border-gray-100 rounded-lg text-xs font-medium text-gray-400 mt-2">
+                  View Only
+                </div>
+              )}
+
+              {activeRole !== 'viewer' && (
+                <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(asset.file_url);
+                      alert("URL berhasil disalin!");
+                    }}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <LinkIcon size={14} /> Salin URL
+                  </button>
+                  
+                  {activeRole === 'admin' && (
+                    <button 
+                      onClick={() => handleDelete(asset)}
+                      className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-colors"
+                      title="Hapus aset"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
                 <span className="capitalize">{asset.type.replace('_', ' ')}</span>
                 <span>{asset.size || '-'}</span>
               </div>

@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
-  const { activeWorkspace, isLoading: workspaceLoading } = useWorkspace();
+  const { activeWorkspace, activeRole, isLoading: workspaceLoading } = useWorkspace();
   const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
   
   // QR Customization State
@@ -247,22 +247,26 @@ export default function Dashboard() {
                 <Folder size={16} className={activeFolderId === folder.id ? 'text-white' : 'text-gray-400'} />
                 {folder.name}
               </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }} 
-                className={`absolute right-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${activeFolderId === folder.id ? 'text-blue-200 hover:text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
-                title="Hapus Folder"
-              >
-                <Trash2 size={14} />
-              </button>
+              {activeRole === 'admin' && (
+                <button 
+                  onClick={() => handleDeleteFolder(folder.id, folder.name)}
+                  className="absolute right-2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                  title="Hapus Folder"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
         ))}
-        <button 
-          onClick={() => setIsCreateFolderModalOpen(true)}
-          className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200"
-        >
-          <FolderPlus size={16} />
-          Buat Folder Baru
-        </button>
+        {activeRole !== 'viewer' && (
+          <button 
+            onClick={() => setIsCreateFolderModalOpen(true)}
+            className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200"
+          >
+            <FolderPlus size={16} />
+            Buat Folder Baru
+          </button>
+        )}
       </div>
 
       {/* Main Content */}
@@ -282,29 +286,36 @@ export default function Dashboard() {
               >
                 <PanelLeft size={20} />
               </button>
-              <span className="cursor-pointer hover:text-pln-blue transition-colors font-semibold" onClick={() => setActiveFolderId('ALL')}>Semua Proyek</span>
-              {activeFolderId === null && (
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Proyek Anda</h1>
+              <p className="text-gray-500 text-sm mt-1 flex items-center gap-2">
+                Kelola dan kembangkan pengalaman AR Anda
+                {activeRole === 'viewer' && (
+                   <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Read Only</span>
+                )}
+              </p>
+            </div>
+            
+            <div className="flex gap-2 sm:gap-3 shrink-0">
+              {activeRole !== 'viewer' && (
                 <>
-                  <span className="text-gray-300">/</span>
-                  <span className="text-gray-900 font-semibold">Personal</span>
+                  <button 
+                    onClick={() => setIsCreateFolderModalOpen(true)}
+                    className="hidden sm:flex items-center gap-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm"
+                  >
+                    <FolderPlus size={18} />
+                    <span className="hidden md:inline">Folder Baru</span>
+                  </button>
+                  
+                  <Link 
+                    href="/projects/new" 
+                    className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md"
+                  >
+                    <Plus size={20} />
+                    <span className="hidden sm:inline">Buat Proyek</span>
+                  </Link>
                 </>
               )}
-              {breadcrumbSegments.map((segment, index) => {
-                const isLast = index === breadcrumbSegments.length - 1;
-                return (
-                  <React.Fragment key={segment.id}>
-                    <span className="text-gray-300">/</span>
-                    <span 
-                      className={isLast ? "text-gray-900" : "text-gray-500 cursor-pointer hover:text-pln-blue transition-colors"}
-                      onClick={() => !isLast && setActiveFolderId(segment.id)}
-                    >
-                      {segment.name}
-                    </span>
-                  </React.Fragment>
-                );
-              })}
             </div>
-            <p className="text-gray-500 text-sm">Kelola dan edit pengalaman Augmented Reality Anda.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
             
@@ -380,6 +391,7 @@ export default function Dashboard() {
                 onDelete={() => handleDelete(project.id, project.title)}
                 onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
                 onMove={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }}
+                activeRole={activeRole}
               />
             ))}
           </div>
@@ -444,15 +456,19 @@ export default function Dashboard() {
                           <button onClick={() => setQrModalData({ id: project.id, title: project.title })} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="QR Code">
                             <QrCode size={16} />
                           </button>
-                          <Link href={`/projects/${project.id}/edit`} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Edit">
-                            <Edit3 size={16} />
-                          </Link>
+                          {activeRole !== 'viewer' && (
+                            <Link href={`/projects/${project.id}/edit`} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Edit">
+                              <Edit3 size={16} />
+                            </Link>
+                          )}
                           <button onClick={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Pindahkan">
                             <FolderInput size={16} />
                           </button>
-                          <button onClick={() => handleDelete(project.id, project.title)} className="p-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors" title="Hapus">
-                            <Trash2 size={16} />
-                          </button>
+                          {activeRole === 'admin' && (
+                            <button onClick={() => handleDelete(project.id, project.title)} className="p-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors" title="Hapus">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -627,7 +643,7 @@ export default function Dashboard() {
   );
 }
 
-function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, folderName, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove }: any) {
+function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, folderName, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove, activeRole }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleCopyLink = (e: any) => {
@@ -638,37 +654,36 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
     setIsMenuOpen(false);
   };
 
-  return (
-    <div className="relative">
-      <Link href={`/projects/${id}/edit`} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
-        <div 
-          className="h-32 bg-gray-100 relative group-hover:bg-gray-200 transition-colors flex items-center justify-center bg-cover bg-center"
-          style={targetImageUrl ? { backgroundImage: `url(${targetImageUrl})` } : {}}
-        >
-          {targetImageUrl && <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>}
-          
-          <div className="absolute top-3 left-3 z-20">
-            <div 
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(); }}
-              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-pln-blue border-pln-blue text-white shadow-md scale-110' : 'bg-white/90 border-gray-300 text-transparent hover:border-pln-blue opacity-0 group-hover:opacity-100 shadow-sm'}`}
-            >
-              <Check size={14} />
-            </div>
+  const CardInner = (
+    <>
+      <div 
+        className="h-32 bg-gray-100 relative group-hover:bg-gray-200 transition-colors flex items-center justify-center bg-cover bg-center"
+        style={targetImageUrl ? { backgroundImage: `url(${targetImageUrl})` } : {}}
+      >
+        {targetImageUrl && <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>}
+        
+        <div className="absolute top-3 left-3 z-20">
+          <div 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(); }}
+            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-pln-blue border-pln-blue text-white shadow-md scale-110' : 'bg-white/90 border-gray-300 text-transparent hover:border-pln-blue opacity-0 group-hover:opacity-100 shadow-sm'}`}
+          >
+            <Check size={14} />
           </div>
-
-          <div className="absolute top-3 right-3 z-20">
-            <button 
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} 
-              className={`p-1.5 rounded-lg shadow-sm transition-colors ${isMenuOpen || targetImageUrl ? 'bg-white/90 text-gray-700 hover:text-pln-blue' : 'bg-white/90 text-gray-400 hover:text-pln-blue opacity-0 group-hover:opacity-100'}`}
-              title="Menu Opsi"
-            >
-              <MoreVertical size={18} />
-            </button>
-          </div>
-          
-          {!targetImageUrl && icon}
         </div>
-      
+
+        <div className="absolute top-3 right-3 z-20">
+          <button 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} 
+            className={`p-1.5 rounded-lg shadow-sm transition-colors ${isMenuOpen || targetImageUrl ? 'bg-white/90 text-gray-700 hover:text-pln-blue' : 'bg-white/90 text-gray-400 hover:text-pln-blue opacity-0 group-hover:opacity-100'}`}
+            title="Menu Opsi"
+          >
+            <MoreVertical size={18} />
+          </button>
+        </div>
+        
+        {!targetImageUrl && icon}
+      </div>
+    
       <div className="p-5 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-bold text-gray-900 line-clamp-1 pr-2">{title}</h3>
@@ -703,29 +718,46 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
           )}
         </div>
       </div>
-      </Link>
+    </>
+  );
+
+  return (
+    <div className="relative">
+      {activeRole === 'viewer' ? (
+        <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] relative">
+          {CardInner}
+        </div>
+      ) : (
+        <Link href={`/projects/${id}/edit`} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
+          {CardInner}
+        </Link>
+      )}
 
       {/* Dropdown Menu */}
       {isMenuOpen && (
         <div className="absolute top-12 right-3 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-30 transform origin-top-right transition-all">
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onRename(); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-          >
-            <Edit3 size={14} /> Ganti Nama
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDuplicate(); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-          >
-            <Copy size={14} /> Gandakan Proyek
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onMove(); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-          >
-            <FolderInput size={14} /> Pindahkan
-          </button>
+          {activeRole !== 'viewer' && (
+            <>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onRename(); }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
+              >
+                <Edit3 size={14} /> Ganti Nama
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDuplicate(); }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
+              >
+                <Copy size={14} /> Gandakan Proyek
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onMove(); }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
+              >
+                <FolderInput size={14} /> Pindahkan
+              </button>
+            </>
+          )}
           {status === 'Published' && (
             <>
               <button
@@ -742,13 +774,17 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
               </button>
             </>
           )}
-          <div className="h-px bg-gray-100 my-1"></div>
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDelete(); }}
-            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            <Trash2 size={14} /> Hapus Proyek
-          </button>
+          {activeRole === 'admin' && (
+            <>
+              <div className="h-px bg-gray-100 my-1"></div>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDelete(); }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <Trash2 size={14} /> Hapus Proyek
+              </button>
+            </>
+          )}
         </div>
       )}
       
