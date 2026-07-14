@@ -17,8 +17,16 @@ export default function MembersPage() {
   useEffect(() => {
     if (activeWorkspace) {
       fetchMembers();
+    } else if (user) {
+      setMembers([{
+        user_id: user.id,
+        role: 'admin',
+        email: user.email || 'unknown@example.com',
+        display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || 'Unknown User'
+      }]);
+      setLoading(false);
     }
-  }, [activeWorkspace]);
+  }, [activeWorkspace, user]);
 
   const fetchMembers = async () => {
     setLoading(true);
