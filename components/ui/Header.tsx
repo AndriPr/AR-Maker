@@ -24,6 +24,22 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   useEffect(() => {
     setMounted(true);
     fetchUserAndNotifs();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfileName("User");
+          setNotifications([]);
+        } else {
+          fetchUserAndNotifs();
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserAndNotifs = async () => {

@@ -39,6 +39,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchWorkspaces();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        fetchWorkspaces();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchWorkspaces = async () => {
@@ -46,6 +56,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const currentUser = sessionData?.session?.user;
     
     if (!currentUser) {
+      setUser(null);
+      setWorkspaces([]);
+      setActiveWorkspaceId(null);
+      setActiveRole(null);
       setIsLoading(false);
       return;
     }
@@ -88,7 +102,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setWorkspaces(formattedWorkspaces);
 
         // Load saved active workspace from localStorage or default to first one
-        const savedWorkspaceId = localStorage.getItem('activeWorkspaceId');
+        const storageKey = `activeWorkspaceId_${currentUser.id}`;
+        const savedWorkspaceId = localStorage.getItem(storageKey);
         const found = formattedWorkspaces.find((w: any) => w.id === savedWorkspaceId);
         
         if (found) {
@@ -97,7 +112,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         } else {
           setActiveWorkspaceId(formattedWorkspaces[0].id);
           setActiveRole(formattedWorkspaces[0].role);
-          localStorage.setItem('activeWorkspaceId', formattedWorkspaces[0].id);
+          localStorage.setItem(storageKey, formattedWorkspaces[0].id);
         }
       }
     } catch (error) {
@@ -111,14 +126,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   // When activeWorkspaceId changes, update role and localStorage
   useEffect(() => {
-    if (activeWorkspaceId && workspaces.length > 0) {
+    if (activeWorkspaceId && workspaces.length > 0 && user) {
       const found = workspaces.find(w => w.id === activeWorkspaceId);
       if (found) {
         setActiveRole((found as any).role);
-        localStorage.setItem('activeWorkspaceId', activeWorkspaceId);
+        localStorage.setItem(`activeWorkspaceId_${user.id}`, activeWorkspaceId);
       }
     }
-  }, [activeWorkspaceId, workspaces]);
+  }, [activeWorkspaceId, workspaces, user]);
 
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId) || null;
 
