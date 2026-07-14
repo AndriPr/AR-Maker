@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/ui/Sidebar";
 import Header from "@/components/ui/Header";
+import WorkspaceBanner from "@/components/ui/WorkspaceBanner";
 
 export default function DashboardLayout({
   children,
@@ -24,6 +25,7 @@ export default function DashboardLayout({
       )}
 
       <div className="flex-1 md:ml-64 flex flex-col min-w-0 min-h-screen transition-all duration-300">
+        <WorkspaceBanner />
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="p-4 sm:p-6 md:p-8 flex-1 w-full max-w-7xl mx-auto">
           {children}

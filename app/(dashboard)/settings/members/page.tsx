@@ -6,8 +6,9 @@ import { useWorkspace } from "@/components/providers/WorkspaceProvider";
 import { ShieldAlert, UserPlus, Trash2, Mail } from "lucide-react";
 
 export default function MembersPage() {
-  const { activeWorkspace, user } = useWorkspace();
+  const { activeWorkspace, user, isLoading: workspaceLoading } = useWorkspace();
   const [members, setMembers] = useState<any[]>([]);
+  const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [inviteEmail, setInviteEmail] = useState("");
@@ -15,6 +16,8 @@ export default function MembersPage() {
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
+    if (workspaceLoading) return;
+
     if (activeWorkspace) {
       fetchMembers();
     } else if (user) {
@@ -26,16 +29,20 @@ export default function MembersPage() {
       }]);
       setLoading(false);
     }
-  }, [activeWorkspace, user]);
+  }, [activeWorkspace, user, workspaceLoading]);
 
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/workspace-members?workspace_id=${activeWorkspace?.id}`);
-      const data = await res.json();
-      if (data.members) {
-        setMembers(data.members);
-      }
+      const [membersRes, invitesRes] = await Promise.all([
+        fetch(`/api/workspace-members?workspace_id=${activeWorkspace?.id}`),
+        fetch(`/api/workspaces/invitations?workspace_id=${activeWorkspace?.id}`)
+      ]);
+      const membersData = await membersRes.json();
+      const invitesData = await invitesRes.json();
+
+      if (membersData.members) setMembers(membersData.members);
+      if (invitesData.invitations) setInvitations(invitesData.invitations);
     } catch (err) {
       console.error("Error fetching members:", err);
     }
@@ -47,25 +54,41 @@ export default function MembersPage() {
     setInviting(true);
     
     try {
-      // In a real app, this would trigger an Edge Function to invite a user via Email using Supabase Admin API.
-      // For this prototype, we'll simulate inviting by just showing a success alert.
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate Audit Log
-      await supabase.from('audit_logs').insert({
-        workspace_id: activeWorkspace?.id,
-        user_id: user?.id,
-        action: 'INVITE_MEMBER',
-        resource_name: inviteEmail,
-        details: { role: inviteRole }
+      const res = await fetch('/api/workspaces/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: activeWorkspace?.id,
+          email: inviteEmail,
+          role: inviteRole,
+          invited_by: user?.id
+        })
       });
-      
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to invite user');
+
       alert(`Undangan berhasil dikirim ke ${inviteEmail} sebagai ${inviteRole.toUpperCase()}`);
       setInviteEmail("");
+      fetchMembers(); // Refresh to show in pending invitations
     } catch (err: any) {
       alert("Gagal mengundang: " + err.message);
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    if (confirm("Cabut undangan ini?")) {
+      try {
+        const res = await fetch(`/api/workspaces/invitations?id=${inviteId}&workspace_id=${activeWorkspace?.id}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error("Gagal mencabut undangan");
+        fetchMembers();
+      } catch (err: any) {
+        alert(err.message);
+      }
     }
   };
 
@@ -193,6 +216,54 @@ export default function MembersPage() {
           </div>
         )}
       </div>
+
+      {/* Pending Invitations List */}
+      {invitations.length > 0 && (
+        <div className="pt-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Undangan Pending</h2>
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-1/2">Email</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Peran (Role)</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {invitations.map((invite) => (
+                  <tr key={invite.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
+                          <Mail size={16} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900">{invite.email}</span>
+                          <span className="text-xs text-orange-500">Menunggu Konfirmasi</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-100 text-gray-700`}>
+                        {invite.role}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <button 
+                        onClick={() => handleRevokeInvite(invite.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-medium"
+                      >
+                        <Trash2 size={14} /> Cabut
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
