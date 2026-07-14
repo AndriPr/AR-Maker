@@ -1,9 +1,11 @@
 "use client";
 
-import { Bell, Menu, X, Check, CheckCircle2, Moon, Sun } from 'lucide-react';
+import { Bell, Menu, X, Check, Moon, Sun, User as UserIcon, Shield, Key, Settings2, LogOut, ChevronRight, Building2, UserCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from 'next-themes';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import { useRouter } from 'next/navigation';
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -15,6 +17,8 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [tempName, setTempName] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { activeWorkspace, activeRole } = useWorkspace();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -62,6 +66,13 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
     await supabase.from('notifications').update({ is_read: true }).eq('id', id);
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
+  const displayRole = activeRole === 'admin' ? 'Administrator' : activeRole === 'editor' ? 'Editor' : activeRole === 'viewer' ? 'Viewer' : 'Member';
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
   return (
@@ -134,54 +145,93 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </div>
             <div className="hidden sm:block">
               <p className="text-sm font-bold text-gray-900 leading-tight">{profileName}</p>
-              <p className="text-xs text-gray-500">Administrator</p>
+              <p className="text-xs text-gray-500">{displayRole}</p>
             </div>
           </div>
 
           {isProfileOpen && (
-            <div className="absolute top-12 right-0 w-64 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden p-4">
-              <h3 className="font-bold text-gray-900 mb-4 text-sm">Edit Profil</h3>
+            <div className="absolute top-12 right-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col">
               
-              {!isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Nama Tampilan</p>
-                    <p className="text-sm font-semibold">{profileName}</p>
+              {/* Header Info */}
+              <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gray-900 text-pln-yellow flex items-center justify-center font-bold text-xl shrink-0 shadow-md">
+                    {profileName.substring(0,2).toUpperCase()}
                   </div>
-                  <button 
-                    onClick={() => { setIsEditing(true); setTempName(profileName); }}
-                    className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold text-gray-700 transition-colors"
-                  >
-                    Ubah Nama
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Nama Baru</label>
-                    <input 
-                      type="text" 
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold text-gray-600 flex items-center justify-center"
-                    >
-                      Batal
-                    </button>
-                    <button 
-                      onClick={handleSaveProfile}
-                      className="flex-1 py-2 bg-pln-blue hover:bg-pln-blue-dark rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1"
-                    >
-                      <Check size={14} /> Simpan
-                    </button>
+                    <h3 className="font-bold text-gray-900 text-lg leading-tight">{profileName}</h3>
+                    <p className="text-xs text-gray-500 font-medium">{user?.email || 'user@company.com'}</p>
+                    <div className="flex items-center gap-1 mt-1.5 bg-blue-50 text-pln-blue px-2 py-0.5 rounded-md w-fit">
+                      <Shield size={10} />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">{displayRole}</span>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Menu Items */}
+              <div className="p-2 space-y-1">
+                <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <UserCircle size={18} className="text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Personal Information</p>
+                      <p className="text-[11px] text-gray-500">Ubah nama dan info kontak</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
+                </button>
+
+                <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <Key size={18} className="text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Security & Password</p>
+                      <p className="text-[11px] text-gray-500">Autentikasi dua faktor (2FA)</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
+                </button>
+
+                <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <Settings2 size={18} className="text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Preferences</p>
+                      <p className="text-[11px] text-gray-500">Tema, bahasa, dan notifikasi</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
+                </button>
+              </div>
+
+              {/* Current Workspace Context */}
+              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                  <Building2 size={14} />
+                  <span>{activeWorkspace?.name || 'Personal Workspace'}</span>
+                </div>
+              </div>
+
+              {/* Logout Action */}
+              <div className="p-2 border-t border-gray-100">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-left transition-colors group"
+                >
+                  <div className="bg-red-50 p-2 rounded-lg group-hover:bg-red-100 transition-colors">
+                    <LogOut size={18} className="text-red-500" />
+                  </div>
+                  <span className="text-sm font-bold text-red-600">Log Out dari Sesi Ini</span>
+                </button>
+              </div>
+
             </div>
           )}
         </div>
