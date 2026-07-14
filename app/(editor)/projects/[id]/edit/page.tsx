@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -464,6 +464,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   {el.type === 'ui_button' && <MousePointerClick size={14} className="text-blue-400 shrink-0" />}
                   {el.type === 'edu_panel' && <LayoutDashboard size={14} className="text-pln-yellow shrink-0" />}
                   {el.type === 'audio' && <Volume2 size={14} className="text-pink-400 shrink-0" />}
+                  {el.type === 'video' && <Video size={14} className="text-red-400 shrink-0" />}
+                  {el.type === 'vfx_sparkles' && <Sparkles size={14} className="text-yellow-400 shrink-0" />}
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
@@ -525,6 +527,18 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                          volume: 1
                       });
                     }
+                    if (asset.type === 'video') {
+                      addElement({
+                         type: 'video',
+                         name: asset.name,
+                         url: asset.file_url,
+                         position: [0, 0, 0],
+                         rotation: [0, 0, 0],
+                         scale: [1, 1, 1],
+                         loop: true,
+                         autoplay: true
+                      });
+                    }
                     if(window.innerWidth < 768) setLeftPanelOpen(false);
                   }}
                   className={`aspect-square rounded-md border flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-gray-800 border-gray-700 hover:border-gray-500`}
@@ -533,6 +547,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                      <img src={asset.file_url} className="w-full h-full object-cover opacity-70" />
                   ) : asset.type === 'audio' ? (
                      <Music size={24} className="text-pink-400 mb-1" />
+                  ) : asset.type === 'video' ? (
+                     <Video size={24} className="text-red-400 mb-1" />
                   ) : (
                      <Box size={24} className="text-gray-400 mb-1" />
                   )}
@@ -583,6 +599,27 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             title={isSnapping ? "Matikan Snapping" : "Hidupkan Snapping"}
           >
             <Magnet size={18} />
+          </button>
+
+          <div className="w-px h-6 bg-gray-700 mx-1"></div>
+
+          <button 
+            onClick={() => {
+              addElement({
+                type: 'vfx_sparkles',
+                name: 'Efek Salju/Bintang',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+                sparkleColor: '#ffffff',
+                sparkleCount: 100,
+                sparkleSize: 2
+              });
+            }} 
+            className={`p-2 sm:p-2.5 rounded-full transition-all text-yellow-400 hover:text-white hover:bg-gray-800`}
+            title="Tambah Efek Visual (VFX)"
+          >
+            <Sparkles size={18} />
           </button>
         </div>
 
@@ -1250,6 +1287,89 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           </div>
                         </div>
                       )}
+                      
+                      {/* Video Properties Display */}
+                      {selectedElement.type === 'video' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <Video size={12} className="text-red-400"/> Video Settings
+                          </h4>
+                          
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-gray-300">Autoplay</label>
+                              <input 
+                                type="checkbox"
+                                checked={selectedElement.autoplay !== false}
+                                onChange={(e) => updateElement(selectedElement.id, { autoplay: e.target.checked })}
+                                className="w-4 h-4 accent-pln-blue"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-gray-300">Loop</label>
+                              <input 
+                                type="checkbox"
+                                checked={selectedElement.loop !== false}
+                                onChange={(e) => updateElement(selectedElement.id, { loop: e.target.checked })}
+                                className="w-4 h-4 accent-pln-blue"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* VFX Properties Display */}
+                      {selectedElement.type === 'vfx_sparkles' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <Sparkles size={12} className="text-yellow-400"/> VFX Settings
+                          </h4>
+                          
+                          <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs text-gray-400 flex justify-between">
+                                Warna Partikel
+                                <span className="font-mono text-[10px] bg-gray-800 px-1 rounded">{selectedElement.sparkleColor || '#ffffff'}</span>
+                              </label>
+                              <input 
+                                type="color" 
+                                value={selectedElement.sparkleColor || '#ffffff'}
+                                onChange={(e) => updateElement(selectedElement.id, { sparkleColor: e.target.value })}
+                                className="w-full h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                              />
+                            </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs text-gray-400 flex justify-between">
+                                Jumlah Partikel
+                                <span className="font-mono text-[10px]">{selectedElement.sparkleCount || 100}</span>
+                              </label>
+                              <input 
+                                type="range" 
+                                min="10" max="500" step="10" 
+                                value={selectedElement.sparkleCount || 100}
+                                onChange={(e) => updateElement(selectedElement.id, { sparkleCount: parseInt(e.target.value) })}
+                                className="w-full accent-pln-blue"
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs text-gray-400 flex justify-between">
+                                Ukuran Partikel
+                                <span className="font-mono text-[10px]">{selectedElement.sparkleSize || 2}</span>
+                              </label>
+                              <input 
+                                type="range" 
+                                min="0.5" max="10" step="0.5" 
+                                value={selectedElement.sparkleSize || 2}
+                                onChange={(e) => updateElement(selectedElement.id, { sparkleSize: parseFloat(e.target.value) })}
+                                className="w-full accent-pln-blue"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 <div className="h-px bg-gray-800 my-2"></div>
@@ -1288,6 +1408,93 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   <p className="text-[10px] text-gray-500 mt-4 text-center">
                     Tarik panah/lingkaran navigasi 3D di viewport untuk mengubah letak secara langsung.
                   </p>
+                </div>
+
+                <div className="h-px bg-gray-800 my-2"></div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                    <MousePointerClick size={14} className="text-blue-400" /> Interaktivitas (On-Click)
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400">Pilih Aksi</label>
+                      <select
+                        value={selectedElement.onClickActionType || 'none'}
+                        onChange={(e) => updateElement(selectedElement.id, { 
+                          onClickActionType: e.target.value as any,
+                          onClickActionValue: '' // reset value
+                        })}
+                        className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
+                      >
+                        <option value="none">-- Tidak Ada Aksi --</option>
+                        <option value="url">Buka Link (URL / WhatsApp)</option>
+                        <option value="audio">Putar Audio</option>
+                        <option value="animation">Mainkan Animasi Model 3D</option>
+                      </select>
+                    </div>
+
+                    {selectedElement.onClickActionType === 'url' && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-400">URL Tujuan</label>
+                        <input
+                          type="url"
+                          value={selectedElement.onClickActionValue || ''}
+                          onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
+                          className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    )}
+
+                    {selectedElement.onClickActionType === 'audio' && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-400">Pilih Elemen Audio</label>
+                        <select
+                          value={selectedElement.onClickActionValue || ''}
+                          onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
+                          className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
+                        >
+                          <option value="">-- Pilih Audio --</option>
+                          {elements.filter(el => el.type === 'audio').map(audio => (
+                            <option key={audio.id} value={audio.id}>{audio.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {selectedElement.onClickActionType === 'animation' && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-400">Target Model 3D</label>
+                        <select
+                          value={selectedElement.onClickActionValue ? selectedElement.onClickActionValue.split('|')[0] : ''}
+                          onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value + '|*' })} // Default select All
+                          className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
+                        >
+                          <option value="">-- Pilih Model 3D --</option>
+                          {elements.filter(el => el.type === '3d_model').map(model => (
+                            <option key={model.id} value={model.id}>{model.name}</option>
+                          ))}
+                        </select>
+                        
+                        {selectedElement.onClickActionValue && selectedElement.onClickActionValue.split('|')[0] && (
+                          <select
+                            value={selectedElement.onClickActionValue.split('|')[1] || '*'}
+                            onChange={(e) => {
+                              const targetId = selectedElement.onClickActionValue!.split('|')[0];
+                              updateElement(selectedElement.id, { onClickActionValue: `${targetId}|${e.target.value}` });
+                            }}
+                            className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue mt-1"
+                          >
+                            <option value="*">Semua Animasi (*)</option>
+                            {elements.find(el => el.id === selectedElement.onClickActionValue!.split('|')[0])?.availableAnimations?.map(anim => (
+                              <option key={anim} value={anim}>{anim}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
             )}

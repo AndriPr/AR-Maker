@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio';
+export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles';
 
 export interface EduComponent {
   id: string;
@@ -40,6 +40,10 @@ export interface SceneElement {
   actionTargetId?: string;        // The ID of the model to animate
   actionAnimation?: string;       // The name of the animation to play
   
+  // No-Code On-Click Actions (For any element)
+  onClickActionType?: 'none' | 'url' | 'audio' | 'animation';
+  onClickActionValue?: string; // URL, Audio Element ID, or Animation Name
+  
   // Audio Properties
   loop?: boolean;
   autoplay?: boolean;
@@ -49,6 +53,11 @@ export interface SceneElement {
   panelTitle?: string;
   eduComponents?: EduComponent[];
   eduMaintenanceTasks?: EduMaintenanceTask[];
+
+  // VFX Properties
+  sparkleColor?: string;
+  sparkleCount?: number;
+  sparkleSize?: number;
 
   position: [number, number, number];
   rotation: [number, number, number];

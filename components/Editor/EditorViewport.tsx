@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations } from '@react-three/drei';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -341,6 +341,158 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   );
 }
 
+function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; 
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const videoObj = (
+    <group 
+      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+    >
+      <mesh>
+        <planeGeometry args={[3, 1.68]} />
+        <meshBasicMaterial color="#374151" opacity={0.8} transparent />
+      </mesh>
+      <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
+        <div className={`w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-red-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-red-500 scale-110 transition-transform bg-gray-700' : ''}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </div>
+      </Html>
+      {/* Invisible hitbox */}
+      <mesh visible={false} scale={[3, 1.68, 0.1]}>
+         <boxGeometry />
+         <meshBasicMaterial />
+      </mesh>
+    </group>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
+      >
+        {videoObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {videoObj}
+    </group>
+  );
+}
+
+function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; 
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const sparklesObj = (
+    <group 
+      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+    >
+      <Sparkles 
+        count={element.sparkleCount || 100} 
+        scale={5} 
+        size={element.sparkleSize || 2} 
+        color={element.sparkleColor || "#ffffff"} 
+        speed={0.4} 
+        noise={1} 
+      />
+      {isSelected && (
+        <Html transform center position={[0,0,0]}>
+          <div className="px-2 py-1 bg-yellow-400 text-black text-[10px] font-bold rounded shadow-lg whitespace-nowrap">
+            ✨ VFX Zone
+          </div>
+        </Html>
+      )}
+      {/* Invisible hitbox */}
+      <mesh visible={false} scale={[2, 2, 2]}>
+         <sphereGeometry args={[1, 16, 16]} />
+         <meshBasicMaterial />
+      </mesh>
+    </group>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
+      >
+        {sparklesObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {sparklesObj}
+    </group>
+  );
+}
+
 
 function TargetImage({ url }: { url: string }) {
   const texture = useTexture(url);
@@ -398,6 +550,12 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             }
             if (el.type === 'audio') {
               return <AudioElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === 'video') {
+              return <VideoElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === 'vfx_sparkles') {
+              return <SparklesElement key={el.id} element={el} mode={transformMode} />;
             }
             return null;
           })}
