@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Image, Box, ArrowRight, Loader2, File, Contact2, BookOpen, PartyPopper } from 'lucide-react';
@@ -10,6 +10,8 @@ export default function NewProjectPage() {
   const [title, setTitle] = useState('');
   const [trackingType, setTrackingType] = useState('image_tracking');
   const [selectedTemplate, setSelectedTemplate] = useState('blank');
+  const [folderName, setFolderName] = useState('Personal');
+  const [existingFolders, setExistingFolders] = useState<string[]>(['Personal']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,6 +21,25 @@ export default function NewProjectPage() {
     { id: 'catalog', name: 'Katalog Produk', icon: BookOpen, type: 'image_tracking', desc: 'Tampilkan produk 3D dari brosur.' },
     { id: 'wedding', name: 'Undangan Interaktif', icon: PartyPopper, type: 'image_tracking', desc: 'Galeri foto melayang di undangan.' }
   ];
+
+  // Fetch existing folders for autocomplete
+  useEffect(() => {
+    const fetchFolders = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const { data } = await supabase
+        .from('ar_projects')
+        .select('folder_name')
+        .eq('user_id', session.user.id);
+        
+      if (data) {
+        const unique = Array.from(new Set(data.map((p: any) => p.folder_name || 'Personal')));
+        setExistingFolders(unique as string[]);
+      }
+    };
+    fetchFolders();
+  }, []);
 
   const handleSelectTemplate = (tmpl: any) => {
     setSelectedTemplate(tmpl.id);
@@ -46,7 +67,8 @@ export default function NewProjectPage() {
           user_id: session.user.id,
           title: title,
           tracking_type: trackingType,
-          is_published: false
+          is_published: false,
+          folder_name: folderName || 'Personal'
         })
         .select()
         .single();
@@ -118,6 +140,25 @@ export default function NewProjectPage() {
             required
             autoFocus
           />
+        </div>
+
+        {/* Folder Penyimpanan */}
+        <div className="mb-8">
+          <label className="block text-sm font-bold text-gray-700 mb-2">Simpan di Folder</label>
+          <input 
+            type="text" 
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            list="folder-options"
+            placeholder="Ketik nama folder baru atau pilih yang sudah ada..." 
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm"
+          />
+          <datalist id="folder-options">
+            {existingFolders.map(folder => (
+              <option key={folder} value={folder} />
+            ))}
+          </datalist>
+          <p className="text-xs text-gray-500 mt-2">Folder akan dibuat otomatis jika belum ada.</p>
         </div>
 
         {/* Tipe Tracking */}

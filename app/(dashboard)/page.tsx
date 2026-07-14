@@ -1,6 +1,6 @@
 "use client";
 
-import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag } from 'lucide-react';
+import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag, Check, FolderInput } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -25,8 +25,18 @@ export default function Dashboard() {
   const [qrBgColor, setQrBgColor] = useState("#ffffff");
   const [qrLogoUrl, setQrLogoUrl] = useState("");
 
+  // Folders & Multi-Select State
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [customFolders, setCustomFolders] = useState<string[]>([]);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [targetFolder, setTargetFolder] = useState("Personal");
+  const [projectToMove, setProjectToMove] = useState<string | null>(null);
+
   useEffect(() => {
     fetchData();
+    setCustomFolders(JSON.parse(localStorage.getItem('customFolders') || '[]'));
   }, [router]);
 
   const fetchData = async () => {
@@ -103,7 +113,48 @@ export default function Dashboard() {
     return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat proyek...</div>;
   }
 
-  const folders = ['Semua', ...Array.from(new Set(projects.map(p => p.folder_name || 'Personal')))];
+  const folders = ['Semua', ...Array.from(new Set([...customFolders, ...projects.map(p => p.folder_name || 'Personal')]))];
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedProjects(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+  };
+
+  const handleBulkMove = async () => {
+    if (!targetFolder.trim()) return;
+    const ids = projectToMove ? [projectToMove] : selectedProjects;
+    
+    // Update DB
+    await supabase.from('ar_projects').update({ folder_name: targetFolder }).in('id', ids);
+    
+    setSelectedProjects([]);
+    setProjectToMove(null);
+    setIsMoveModalOpen(false);
+    fetchData();
+  };
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+    const stored = JSON.parse(localStorage.getItem('customFolders') || '[]');
+    if (!stored.includes(newFolderName)) {
+      const updated = [...stored, newFolderName];
+      localStorage.setItem('customFolders', JSON.stringify(updated));
+      setCustomFolders(updated);
+    }
+    setNewFolderName("");
+    setIsCreateFolderModalOpen(false);
+  };
+
+  const handleDeleteFolder = async (folder: string) => {
+    if (confirm(`Hapus folder "${folder}"? Proyek di dalamnya akan dipindahkan ke "Personal".`)) {
+      await supabase.from('ar_projects').update({ folder_name: 'Personal' }).eq('folder_name', folder);
+      const stored = JSON.parse(localStorage.getItem('customFolders') || '[]');
+      const updated = stored.filter((f: string) => f !== folder);
+      localStorage.setItem('customFolders', JSON.stringify(updated));
+      setCustomFolders(updated);
+      if (activeFolder === folder) setActiveFolder('Semua');
+      fetchData();
+    }
+  };
 
   const filteredProjects = projects
     .filter(p => activeFolder === 'Semua' ? true : (p.folder_name || 'Personal') === activeFolder)
@@ -118,16 +169,29 @@ export default function Dashboard() {
       <div className="w-full md:w-56 shrink-0 space-y-2">
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
         {folders.map(folder => (
-          <button
-            key={folder}
-            onClick={() => setActiveFolder(folder)}
-            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors ${activeFolder === folder ? 'bg-pln-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <Folder size={16} className={activeFolder === folder ? 'text-white' : 'text-gray-400'} />
-            {folder}
-          </button>
+          <div key={folder} className="group relative flex items-center">
+            <button
+              onClick={() => setActiveFolder(folder)}
+              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-10 ${activeFolder === folder ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <Folder size={16} className={activeFolder === folder ? 'text-white' : 'text-gray-400'} />
+              {folder}
+            </button>
+            {folder !== 'Semua' && folder !== 'Personal' && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }} 
+                className={`absolute right-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${activeFolder === folder ? 'text-blue-200 hover:text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                title="Hapus Folder"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         ))}
-        <button className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200">
+        <button 
+          onClick={() => setIsCreateFolderModalOpen(true)}
+          className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200"
+        >
           <FolderPlus size={16} />
           Buat Folder Baru
         </button>
@@ -142,10 +206,29 @@ export default function Dashboard() {
         )}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{activeFolder === 'Semua' ? 'My Projects' : `Folder: ${activeFolder}`}</h1>
-            <p className="text-gray-500 text-sm mt-1">Kelola dan edit pengalaman Augmented Reality Anda.</p>
+            <div className="flex items-center gap-2 text-2xl font-bold text-gray-900 mb-1">
+              <span className="cursor-pointer hover:text-pln-blue transition-colors" onClick={() => setActiveFolder('Semua')}>My Projects</span>
+              {activeFolder !== 'Semua' && (
+                <>
+                  <span className="text-gray-300">/</span>
+                  <span>{activeFolder}</span>
+                </>
+              )}
+            </div>
+            <p className="text-gray-500 text-sm">Kelola dan edit pengalaman Augmented Reality Anda.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+            
+            {/* Bulk Actions */}
+            {selectedProjects.length > 0 && (
+              <button 
+                onClick={() => { setProjectToMove(null); setIsMoveModalOpen(true); }}
+                className="bg-pln-blue text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-500/20 hover:bg-pln-blue-dark transition-colors flex items-center gap-2 animate-in fade-in zoom-in duration-200"
+              >
+                <FolderInput size={16} />
+                Pindahkan ({selectedProjects.length})
+              </button>
+            )}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -207,10 +290,13 @@ export default function Dashboard() {
                 views={project.views}
                 icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
                 targetImageUrl={project.target_image_url}
+                isSelected={selectedProjects.includes(project.id)}
+                onToggleSelect={() => handleToggleSelect(project.id)}
                 onRename={() => handleRename(project.id, project.title)}
                 onDuplicate={() => handleDuplicate(project)}
                 onDelete={() => handleDelete(project.id, project.title)}
                 onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
+                onMove={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }}
               />
             ))}
           </div>
@@ -230,9 +316,17 @@ export default function Dashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filteredProjects.map(project => (
-                    <tr key={project.id} className="hover:bg-blue-50/30 transition-colors">
-                      <td className="p-4 pl-6">
-                        <div className="flex items-center gap-3">
+                    <tr key={project.id} className={`transition-colors ${selectedProjects.includes(project.id) ? 'bg-blue-50/50' : 'hover:bg-blue-50/30'}`}>
+                      <td className="p-4 pl-6 relative">
+                        <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                          <input 
+                            type="checkbox"
+                            checked={selectedProjects.includes(project.id)}
+                            onChange={() => handleToggleSelect(project.id)}
+                            className="w-4 h-4 text-pln-blue border-gray-300 rounded focus:ring-pln-blue cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 pl-4">
                           <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
                             {project.target_image_url ? (
                               <img src={project.target_image_url} className="w-full h-full object-cover" />
@@ -266,6 +360,9 @@ export default function Dashboard() {
                           <Link href={`/projects/${project.id}/edit`} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Edit">
                             <Edit3 size={16} />
                           </Link>
+                          <button onClick={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Pindahkan">
+                            <FolderInput size={16} />
+                          </button>
                           <button onClick={() => handleDelete(project.id, project.title)} className="p-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors" title="Hapus">
                             <Trash2 size={16} />
                           </button>
@@ -388,11 +485,61 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Create Folder Modal */}
+      {isCreateFolderModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Buat Folder Baru</h2>
+            <input 
+              type="text" 
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="Nama Folder (Misal: Portofolio)" 
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm mb-6"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); }}
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setIsCreateFolderModalOpen(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
+              <button onClick={handleCreateFolder} className="px-4 py-2 text-sm font-bold text-white bg-pln-blue hover:bg-pln-blue-dark rounded-xl transition-colors shadow-sm">Buat Folder</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Move To Modal */}
+      {isMoveModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6 flex flex-col max-h-[80vh]">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Pindahkan Proyek</h2>
+            <p className="text-sm text-gray-500 mb-4">Pilih folder tujuan untuk memindahkan {projectToMove ? '1 proyek' : `${selectedProjects.length} proyek`}.</p>
+            
+            <div className="overflow-y-auto space-y-2 mb-6 border border-gray-100 p-2 rounded-2xl bg-gray-50 flex-1">
+              {folders.filter(f => f !== 'Semua').map(folder => (
+                <button
+                  key={folder}
+                  onClick={() => setTargetFolder(folder)}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors ${targetFolder === folder ? 'bg-pln-blue text-white shadow-md' : 'bg-white border border-gray-100 text-gray-700 hover:border-pln-blue/30 hover:bg-blue-50'}`}
+                >
+                  <Folder size={18} className={targetFolder === folder ? 'text-white' : 'text-pln-blue'} />
+                  {folder}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-auto">
+              <button onClick={() => setIsMoveModalOpen(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
+              <button onClick={handleBulkMove} className="px-4 py-2 text-sm font-bold text-white bg-pln-blue hover:bg-pln-blue-dark rounded-xl transition-colors shadow-sm">Pindahkan ke {targetFolder}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, onRename, onDuplicate, onDelete, onShowQR }: any) {
+function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleCopyLink = (e: any) => {
@@ -412,6 +559,15 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
         >
           {targetImageUrl && <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>}
           
+          <div className="absolute top-3 left-3 z-20">
+            <div 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(); }}
+              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-pln-blue border-pln-blue text-white shadow-md scale-110' : 'bg-white/90 border-gray-300 text-transparent hover:border-pln-blue opacity-0 group-hover:opacity-100 shadow-sm'}`}
+            >
+              <Check size={14} />
+            </div>
+          </div>
+
           <div className="absolute top-3 right-3 z-20">
             <button 
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} 
@@ -466,6 +622,12 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
           >
             <Copy size={14} /> Gandakan Proyek
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onMove(); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
+          >
+            <FolderInput size={14} /> Pindahkan
           </button>
           {status === 'Published' && (
             <>
