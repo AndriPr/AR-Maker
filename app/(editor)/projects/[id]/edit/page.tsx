@@ -52,6 +52,13 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setDirectionalLightIntensity = useEditorStore(state => state.setDirectionalLightIntensity);
   const environmentMap = useEditorStore(state => state.environmentMap);
   const setEnvironmentMap = useEditorStore(state => state.setEnvironmentMap);
+  const trackingMode = useEditorStore(state => state.trackingMode);
+  const setTrackingMode = useEditorStore(state => state.setTrackingMode);
+  const scenes = useEditorStore(state => state.scenes);
+  const currentSceneId = useEditorStore(state => state.currentSceneId);
+  const addScene = useEditorStore(state => state.addScene);
+  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
+  const removeScene = useEditorStore(state => state.removeScene);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -661,6 +668,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             {selectedId === null && (
               <div className="space-y-6">
                 <div>
+                  <h3 className="text-xs font-bold text-gray-500 mb-3 px-1 uppercase tracking-wider flex items-center justify-between">
+                    Hierarchy
+                    <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">{elements.filter(e => e.sceneId === currentSceneId).length}</span>
+                  </h3>
                   <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center justify-between">
                     Target Image (Marker)
                     <button className="text-red-400 text-xs hover:underline" onClick={() => setTargetImageUrl(null)}>Clear</button>
@@ -677,18 +688,37 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 {/* Folder Settings */}
                 <div className="pt-4 border-t border-gray-800">
                   <h3 className="text-sm font-bold text-gray-200 mb-3">Pengaturan Proyek</h3>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-gray-400">Nama Folder</label>
-                    <input 
-                      type="text" 
-                      value={folderName}
-                      onChange={(e) => {
-                        setFolderName(e.target.value);
-                        handleSave(true);
-                      }}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors"
-                      placeholder="e.g. Klien A, Personal"
-                    />
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400">Nama Folder</label>
+                      <input 
+                        type="text" 
+                        value={folderName}
+                        onChange={(e) => {
+                          setFolderName(e.target.value);
+                          handleSave(true);
+                        }}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors"
+                        placeholder="e.g. Klien A, Personal"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400">Mode Tracking</label>
+                      <select
+                        value={trackingMode}
+                        onChange={(e) => setTrackingMode(e.target.value as any)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue"
+                      >
+                        <option value="image">Image Tracking (Deteksi Gambar)</option>
+                        <option value="face">Face Tracking (Filter Wajah/Virtual Try-On)</option>
+                      </select>
+                      {trackingMode === 'face' && (
+                        <p className="text-[10px] text-pln-yellow mt-1">
+                          Mode Wajah diaktifkan! Target gambar akan diabaikan. Letakkan objek (misal: kacamata/topi) di tengah kanvas.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -826,31 +856,75 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     </div>
 
                     {selectedElement.type === '3d_text' && (
-                      <>
+                      <div className="space-y-4 pt-4 border-t border-gray-800">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                          <Type size={12} className="text-green-400"/> Pengaturan Teks
+                        </h4>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-xs text-gray-400">Konten Teks</label>
-                          <textarea 
-                            value={selectedElement.content}
+                          <label className="text-xs text-gray-400">Isi Teks</label>
+                          <input 
+                            type="text" 
+                            value={selectedElement.content || ''}
                             onChange={(e) => updateElement(selectedElement.id, { content: e.target.value })}
-                            className="w-full bg-gray-800/80 border border-gray-600 rounded-lg p-3 text-sm text-white outline-none focus:border-pln-blue h-28 resize-none transition-colors shadow-inner font-medium"
-                            placeholder="Ketik sesuatu..."
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
                           />
                         </div>
+                        
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs text-gray-400">Warna Teks</label>
-                          <input 
-                            type="color" 
-                            value={selectedElement.color || '#ffffff'}
-                            onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded-lg h-10 outline-none cursor-pointer p-1"
-                          />
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="color" 
+                              value={selectedElement.color || '#ffffff'}
+                              onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                              className="w-8 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer shrink-0"
+                            />
+                            <input 
+                              type="text" 
+                              value={selectedElement.color || '#ffffff'}
+                              onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                              className="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs text-white outline-none focus:border-pln-blue font-mono"
+                            />
+                          </div>
                         </div>
-                      </>
+
+                        <div className="flex flex-col gap-1.5 pt-3 border-t border-gray-800/50">
+                          <label className="text-xs text-gray-300 font-bold flex items-center gap-2">
+                            <Loader2 size={12} className="text-blue-400" /> Real-time Data (IoT)
+                          </label>
+                          <p className="text-[10px] text-gray-500 mb-1">Ambil teks secara live dari API (misal: suhu/harga saham).</p>
+                          
+                          <label className="text-xs text-gray-400 mt-1">API Endpoint URL</label>
+                          <input 
+                            type="url" 
+                            value={selectedElement.apiEndpoint || ''}
+                            onChange={(e) => updateElement(selectedElement.id, { apiEndpoint: e.target.value })}
+                            className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                            placeholder="https://api.example.com/data"
+                          />
+
+                          {selectedElement.apiEndpoint && (
+                            <>
+                              <label className="text-xs text-gray-400 mt-1">JSON Path (Optional)</label>
+                              <input 
+                                type="text" 
+                                value={selectedElement.apiJsonPath || ''}
+                                onChange={(e) => updateElement(selectedElement.id, { apiJsonPath: e.target.value })}
+                                className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                                placeholder="e.g. data.temperature"
+                              />
+                              <p className="text-[10px] text-pln-yellow mt-1">Di AR, teks ini akan otomatis di-update setiap 5 detik sesuai data API.</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     )}
                       {/* UI Button Specific Properties */}
                       {selectedElement.type === 'ui_button' && (
                         <div className="space-y-4 pt-4 border-t border-gray-800">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase">Interaktivitas Tombol</h4>
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <MousePointerClick size={12} className="text-blue-400" /> Interaktivitas Tombol
+                          </h4>
                           <p className="text-[10px] text-gray-500 leading-tight">
                             Tombol ini akan muncul di layar HP saat AR digunakan. Anda bisa mengaturnya untuk memutar animasi pada model 3D.
                           </p>
@@ -1510,6 +1584,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                         <option value="url">Buka Link (URL / WhatsApp)</option>
                         <option value="audio">Putar Audio</option>
                         <option value="animation">Mainkan Animasi Model 3D</option>
+                        <option value="change_scene">Pindah Scene (Multi-Scene)</option>
                       </select>
                     </div>
 
@@ -1523,6 +1598,23 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
                           placeholder="https://..."
                         />
+                      </div>
+                    )}
+
+                    {selectedElement.onClickActionType === 'change_scene' && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-400">Pilih Scene Tujuan</label>
+                        <select
+                          value={selectedElement.onClickActionValue || ''}
+                          onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
+                          className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
+                        >
+                          <option value="">-- Pilih Scene --</option>
+                          {scenes.map(sc => (
+                            <option key={sc.id} value={sc.id}>{sc.name}</option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] text-gray-500">Saat objek ini diklik di AR, presentasi akan berpindah ke Scene yang dipilih.</p>
                       </div>
                     )}
 
@@ -1580,6 +1672,37 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
           </div>
         </aside>
+
+        {/* Bottom Scene Manager */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1 items-center max-w-[90vw] overflow-x-auto custom-scrollbar">
+          {scenes.map(sc => (
+            <div key={sc.id} className="relative group flex items-center">
+              <button
+                onClick={() => setCurrentSceneId(sc.id)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${currentSceneId === sc.id ? 'bg-pln-blue text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+              >
+                {sc.name}
+              </button>
+              {scenes.length > 1 && currentSceneId !== sc.id && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); removeScene(sc.id); }}
+                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                >
+                  <X size={10} />
+                </button>
+              )}
+            </div>
+          ))}
+          <div className="w-px h-5 bg-gray-700 mx-1"></div>
+          <button
+            onClick={() => addScene(`Scene ${scenes.length + 1}`)}
+            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-colors flex items-center justify-center shrink-0"
+            title="Tambah Scene Baru"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+
       </div>
 
       {/* Publish Success & QR Code Modal */}

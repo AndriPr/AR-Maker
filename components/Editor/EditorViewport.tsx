@@ -137,6 +137,49 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
 
   const isSelected = selectedId === element.id;
 
+  const [liveText, setLiveText] = useState(element.content || '');
+
+  // Update when editor changes it
+  useEffect(() => {
+    if (!element.apiEndpoint) {
+      setLiveText(element.content || '');
+    }
+  }, [element.content, element.apiEndpoint]);
+
+  // Real-time API Binding (IoT)
+  useEffect(() => {
+    if (!element.apiEndpoint) return;
+    
+    let isMounted = true;
+    const fetchData = async () => {
+      try {
+        const res = await fetch(element.apiEndpoint);
+        if (!res.ok) throw new Error('API Error');
+        let data = await res.json();
+        
+        if (!isMounted) return;
+        
+        if (element.apiJsonPath) {
+          // simple dot notation path resolution
+          const value = element.apiJsonPath.split('.').reduce((o: any, i: string) => o?.[i], data);
+          if (value !== undefined) setLiveText(String(value));
+        } else {
+          setLiveText(typeof data === 'object' ? JSON.stringify(data) : String(data));
+        }
+      } catch (err) {
+        console.error("Failed to fetch real-time data for 3d_text", err);
+      }
+    };
+    
+    fetchData(); // initial fetch
+    const interval = setInterval(fetchData, 5000); // Poll every 5s
+    
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [element.apiEndpoint, element.apiJsonPath]);
+
   useEffect(() => {
     if (transformRef.current && isSelected) {
       const controls = transformRef.current;
@@ -175,7 +218,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
         if (e.type === 'click') setSelectedId(null);
       }}
     >
-      {element.content}
+      {liveText}
     </Text>
   );
 
@@ -595,6 +638,8 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
   const environmentMap = useEditorStore(state => state.environmentMap);
+  const trackingMode = useEditorStore(state => state.trackingMode);
+  const currentSceneId = useEditorStore(state => state.currentSceneId);
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
@@ -620,9 +665,20 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
         />
         
         <Suspense fallback={null}>
-          {targetImageUrl && <TargetImage url={targetImageUrl} />}
+          {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
+          {trackingMode === 'face' && (
+            <group position={[0, 1, 0]}>
+              <mesh>
+                <sphereGeometry args={[1, 32, 32]} />
+                <meshBasicMaterial color="#1e293b" wireframe />
+              </mesh>
+              <Html center position={[0, 0, 1.2]}>
+                <div className="bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap">Face Mesh Dummy</div>
+              </Html>
+            </group>
+          )}
           
-          {elements.map(el => {
+          {elements.filter(el => el.sceneId === currentSceneId).map(el => {
             if (el.type === '3d_model') {
               return <ModelElement key={el.id} element={el} mode={transformMode} />;
             }

@@ -41,8 +41,8 @@ export interface SceneElement {
   actionAnimation?: string;       // The name of the animation to play
   
   // No-Code On-Click Actions (For any element)
-  onClickActionType?: 'none' | 'url' | 'audio' | 'animation';
-  onClickActionValue?: string; // URL, Audio Element ID, or Animation Name
+  onClickActionType?: 'none' | 'url' | 'audio' | 'animation' | 'change_scene';
+  onClickActionValue?: string; // URL, Audio Element ID, Animation Name, or Scene ID
   
   // Audio Properties
   loop?: boolean;
@@ -66,6 +66,13 @@ export interface SceneElement {
   // Hotspot Properties
   hotspotText?: string;
 
+  // Real-time Data (IoT)
+  apiEndpoint?: string;
+  apiJsonPath?: string;
+
+  // Multi-Scene
+  sceneId?: string;
+
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
@@ -80,10 +87,17 @@ interface EditorState {
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
   
+  // Project Settings
+  trackingMode: 'image' | 'face';
+
   // Environment
   ambientLightIntensity: number;
   directionalLightIntensity: number;
   environmentMap: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment';
+  
+  // Multi-Scene
+  scenes: { id: string; name: string }[];
+  currentSceneId: string;
   
   // History
   past: SceneElement[][];
@@ -94,14 +108,21 @@ interface EditorState {
   setTargetImageUrl: (url: string | null) => void;
   setPreviewAnimationData: (data: { targetId: string, animationName: string } | null) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
-  updateElement: (id: string, updates: Partial<SceneElement>) => void;
+  updateElement: (id: string, element: Partial<SceneElement>) => void;
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
   setIsSnapping: (val: boolean) => void;
+  setTrackingMode: (mode: 'image' | 'face') => void;
   setAmbientLightIntensity: (val: number) => void;
   setDirectionalLightIntensity: (val: number) => void;
   setEnvironmentMap: (map: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment') => void;
+  
+  // Scene Management
+  addScene: (name: string) => void;
+  setCurrentSceneId: (id: string) => void;
+  removeScene: (id: string) => void;
+
   undo: () => void;
   redo: () => void;
 }
@@ -112,24 +133,31 @@ export const useEditorStore = create<EditorState>((set) => ({
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
+  trackingMode: 'image',
   ambientLightIntensity: 0.8,
   directionalLightIntensity: 1.8,
   environmentMap: 'none',
+  scenes: [{ id: 'scene-1', name: 'Scene 1' }],
+  currentSceneId: 'scene-1',
   past: [],
   future: [],
 
-  setElements: (elements) => set({ elements }), // Initialization doesn't clear history directly here, let caller decide.
+  setElements: (elements) => set({ elements }),
   
   setTargetImageUrl: (url) => set({ targetImageUrl: url }),
   setPreviewAnimationData: (data) => set({ previewAnimationData: data }),
   
   addElement: (element) => set((state) => {
-    const newId = crypto.randomUUID();
+    const newElement = { 
+      ...element, 
+      id: Math.random().toString(36).substring(2, 9),
+      sceneId: element.sceneId || state.currentSceneId
+    };
     return {
       past: [...state.past, state.elements],
       future: [],
-      elements: [...state.elements, { ...element, id: newId }],
-      selectedId: newId
+      elements: [...state.elements, newElement],
+      selectedId: newElement.id
     };
   }),
 
@@ -149,23 +177,52 @@ export const useEditorStore = create<EditorState>((set) => ({
   })),
 
   duplicateElement: (id) => set((state) => {
-    const el = state.elements.find((e) => e.id === id);
-    if (!el) return state;
-    const newId = crypto.randomUUID();
-    const newEl = { ...el, id: newId, name: `${el.name} (Copy)`, position: [el.position[0] + 0.5, el.position[1], el.position[2] + 0.5] as [number, number, number] };
+    const element = state.elements.find(el => el.id === id);
+    if (!element) return state;
+    
+    const newElement = {
+      ...element,
+      id: Math.random().toString(36).substring(2, 9),
+      position: [element.position[0] + 0.5, element.position[1], element.position[2] + 0.5] as [number, number, number],
+      name: `${element.name} (Copy)`
+    };
+    
     return {
       past: [...state.past, state.elements],
       future: [],
-      elements: [...state.elements, newEl],
-      selectedId: newId
+      elements: [...state.elements, newElement],
+      selectedId: newElement.id
     };
   }),
 
   setSelectedId: (id) => set({ selectedId: id }),
   setIsSnapping: (val) => set({ isSnapping: val }),
+  setTrackingMode: (mode) => set({ trackingMode: mode }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
   setDirectionalLightIntensity: (val) => set({ directionalLightIntensity: val }),
   setEnvironmentMap: (map) => set({ environmentMap: map }),
+
+  addScene: (name) => set((state) => {
+    const newSceneId = `scene-${Math.random().toString(36).substring(2, 9)}`;
+    return {
+      scenes: [...state.scenes, { id: newSceneId, name }],
+      currentSceneId: newSceneId
+    };
+  }),
+  setCurrentSceneId: (id) => set({ currentSceneId: id, selectedId: null }),
+  removeScene: (id) => set((state) => {
+    if (state.scenes.length <= 1) return state;
+    const newScenes = state.scenes.filter(s => s.id !== id);
+    const newElements = state.elements.filter(el => el.sceneId !== id);
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      scenes: newScenes,
+      elements: newElements,
+      currentSceneId: state.currentSceneId === id ? newScenes[0].id : state.currentSceneId,
+      selectedId: null
+    };
+  }),
 
   undo: () => set((state) => {
     if (state.past.length === 0) return state;
