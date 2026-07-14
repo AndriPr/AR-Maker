@@ -272,6 +272,75 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
   );
 }
 
+function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; 
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const audioObj = (
+    <group 
+      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+    >
+      <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
+        <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-pink-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-pink-500 scale-110 transition-transform bg-gray-700' : ''}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+        </div>
+      </Html>
+      {/* Invisible hitbox */}
+      <mesh visible={false} scale={[1, 1, 1]}>
+         <sphereGeometry args={[0.5, 16, 16]} />
+         <meshBasicMaterial />
+      </mesh>
+    </group>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
+      >
+        {audioObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {audioObj}
+    </group>
+  );
+}
+
 
 function TargetImage({ url }: { url: string }) {
   const texture = useTexture(url);
@@ -293,13 +362,15 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
   const elements = useEditorStore(state => state.elements);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const isSnapping = useEditorStore(state => state.isSnapping);
+  const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
+  const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
       <Canvas camera={{ position: [0, 4, 8], fov: 45 }} onPointerMissed={() => setSelectedId(null)}>
         <color attach="background" args={['#0f172a']} />
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[10, 20, 10]} intensity={1.8} castShadow />
+        <ambientLight intensity={ambientLightIntensity} />
+        <directionalLight position={[10, 20, 10]} intensity={directionalLightIntensity} castShadow />
         <spotLight position={[-10, 10, -10]} intensity={1.2} color="#818cf8" />
         
         <Grid 
@@ -324,6 +395,9 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             }
             if (el.type === 'ui_button') {
               return <UIButtonElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === 'audio') {
+              return <AudioElement key={el.id} element={el} mode={transformMode} />;
             }
             return null;
           })}

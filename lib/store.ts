@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel';
+export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio';
 
 export interface EduComponent {
   id: string;
@@ -39,6 +39,11 @@ export interface SceneElement {
   buttonText?: string;            // For UI button
   actionTargetId?: string;        // The ID of the model to animate
   actionAnimation?: string;       // The name of the animation to play
+  
+  // Audio Properties
+  loop?: boolean;
+  autoplay?: boolean;
+  volume?: number;
 
   // Edu Panel Properties
   panelTitle?: string;
@@ -58,6 +63,11 @@ interface EditorState {
   targetImageUrl: string | null;
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
+  
+  // Environment
+  ambientLightIntensity: number;
+  directionalLightIntensity: number;
+  
   // History
   past: SceneElement[][];
   future: SceneElement[][];
@@ -72,6 +82,8 @@ interface EditorState {
   duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
   setIsSnapping: (val: boolean) => void;
+  setAmbientLightIntensity: (val: number) => void;
+  setDirectionalLightIntensity: (val: number) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -82,6 +94,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
+  ambientLightIntensity: 0.8,
+  directionalLightIntensity: 1.8,
   past: [],
   future: [],
 
@@ -130,6 +144,8 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   setSelectedId: (id) => set({ selectedId: id }),
   setIsSnapping: (val) => set({ isSnapping: val }),
+  setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
+  setDirectionalLightIntensity: (val) => set({ directionalLightIntensity: val }),
 
   undo: () => set((state) => {
     if (state.past.length === 0) return state;

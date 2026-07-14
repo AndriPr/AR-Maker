@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -45,6 +45,11 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const redo = useEditorStore(state => state.redo);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const setIsSnapping = useEditorStore(state => state.setIsSnapping);
+  
+  const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
+  const setAmbientLightIntensity = useEditorStore(state => state.setAmbientLightIntensity);
+  const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
+  const setDirectionalLightIntensity = useEditorStore(state => state.setDirectionalLightIntensity);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -458,6 +463,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   {el.type === '3d_text' && <Type size={14} className="text-green-400 shrink-0" />}
                   {el.type === 'ui_button' && <MousePointerClick size={14} className="text-blue-400 shrink-0" />}
                   {el.type === 'edu_panel' && <LayoutDashboard size={14} className="text-pln-yellow shrink-0" />}
+                  {el.type === 'audio' && <Volume2 size={14} className="text-pink-400 shrink-0" />}
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
@@ -506,12 +512,27 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                          scale: [1, 1, 1]
                       });
                     }
+                    if (asset.type === 'audio') {
+                      addElement({
+                         type: 'audio',
+                         name: asset.name,
+                         url: asset.file_url,
+                         position: [0, 0, 0],
+                         rotation: [0, 0, 0],
+                         scale: [1, 1, 1],
+                         loop: true,
+                         autoplay: true,
+                         volume: 1
+                      });
+                    }
                     if(window.innerWidth < 768) setLeftPanelOpen(false);
                   }}
                   className={`aspect-square rounded-md border flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-gray-800 border-gray-700 hover:border-gray-500`}
                 >
                   {asset.type === 'image' ? (
                      <img src={asset.file_url} className="w-full h-full object-cover opacity-70" />
+                  ) : asset.type === 'audio' ? (
+                     <Music size={24} className="text-pink-400 mb-1" />
                   ) : (
                      <Box size={24} className="text-gray-400 mb-1" />
                   )}
@@ -611,6 +632,39 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors"
                       placeholder="e.g. Klien A, Personal"
                     />
+                  </div>
+                </div>
+
+                {/* Environment Lighting Settings */}
+                <div className="pt-4 border-t border-gray-800">
+                  <h3 className="text-sm font-bold text-gray-200 mb-3">Pencahayaan Lingkungan</h3>
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400 flex justify-between">
+                        Ambient Light
+                        <span className="font-mono text-[10px]">{ambientLightIntensity.toFixed(1)}</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" max="2" step="0.1" 
+                        value={ambientLightIntensity}
+                        onChange={(e) => setAmbientLightIntensity(parseFloat(e.target.value))}
+                        className="w-full accent-pln-blue"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400 flex justify-between">
+                        Directional Light (Shadows)
+                        <span className="font-mono text-[10px]">{directionalLightIntensity.toFixed(1)}</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" max="3" step="0.1" 
+                        value={directionalLightIntensity}
+                        onChange={(e) => setDirectionalLightIntensity(parseFloat(e.target.value))}
+                        className="w-full accent-pln-blue"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1149,6 +1203,51 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                             ))}
                           </div>
                           <p className="text-[10px] text-gray-500">Klik tombol di atas untuk melihat *preview* animasi di kanvas. Buat "UI Button" untuk memicunya di AR.</p>
+                        </div>
+                      )}
+
+                      {/* Audio Properties Display */}
+                      {selectedElement.type === 'audio' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <Volume2 size={12} className="text-pink-400"/> Audio Settings
+                          </h4>
+                          
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-gray-300">Autoplay (BGM)</label>
+                              <input 
+                                type="checkbox"
+                                checked={selectedElement.autoplay !== false}
+                                onChange={(e) => updateElement(selectedElement.id, { autoplay: e.target.checked })}
+                                className="w-4 h-4 accent-pln-blue"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-gray-300">Loop (Ulang Terus)</label>
+                              <input 
+                                type="checkbox"
+                                checked={selectedElement.loop !== false}
+                                onChange={(e) => updateElement(selectedElement.id, { loop: e.target.checked })}
+                                className="w-4 h-4 accent-pln-blue"
+                              />
+                            </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs text-gray-400 flex justify-between">
+                                Volume
+                                <span className="font-mono text-[10px]">{(selectedElement.volume ?? 1).toFixed(1)}</span>
+                              </label>
+                              <input 
+                                type="range" 
+                                min="0" max="1" step="0.1" 
+                                value={selectedElement.volume ?? 1}
+                                onChange={(e) => updateElement(selectedElement.id, { volume: parseFloat(e.target.value) })}
+                                className="w-full accent-pln-blue"
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
