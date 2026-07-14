@@ -1,6 +1,6 @@
 "use client";
 
-import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag, Check, FolderInput } from 'lucide-react';
+import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag, Check, FolderInput, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [customFolders, setCustomFolders] = useState<string[]>([]);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+  const [isFolderSidebarOpen, setIsFolderSidebarOpen] = useState(true);
   const [newFolderName, setNewFolderName] = useState("");
   const [targetFolder, setTargetFolder] = useState("Personal");
   const [projectToMove, setProjectToMove] = useState<string | null>(null);
@@ -166,7 +167,7 @@ export default function Dashboard() {
     <div className="space-y-8 flex flex-col md:flex-row gap-8">
       
       {/* Folder Sidebar */}
-      <div className="w-full md:w-56 shrink-0 space-y-2">
+      <div className={`shrink-0 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${isFolderSidebarOpen ? 'w-full md:w-56 opacity-100' : 'w-0 opacity-0 hidden md:block'}`}>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
         {folders.map(folder => (
           <div key={folder} className="group relative flex items-center">
@@ -207,6 +208,13 @@ export default function Dashboard() {
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 text-2xl font-bold text-gray-900 mb-1">
+              <button 
+                onClick={() => setIsFolderSidebarOpen(!isFolderSidebarOpen)} 
+                className="p-1.5 mr-2 -ml-1 text-gray-400 hover:text-pln-blue bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors hidden md:block"
+                title="Toggle Folders"
+              >
+                <PanelLeft size={20} />
+              </button>
               <span className="cursor-pointer hover:text-pln-blue transition-colors" onClick={() => setActiveFolder('Semua')}>My Projects</span>
               {activeFolder !== 'Semua' && (
                 <>
@@ -272,13 +280,6 @@ export default function Dashboard() {
 
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <Link href="/projects/new" className="bg-pln-blue-dark rounded-3xl p-6 flex flex-col items-center justify-center text-white hover:bg-pln-blue transition-colors group min-h-[250px] border border-transparent hover:border-pln-yellow">
-              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Plus size={32} />
-              </div>
-              <h3 className="font-bold text-lg">Buat Proyek Baru</h3>
-            </Link>
-            
             {filteredProjects.map((project) => (
               <ProjectCard 
                 key={project.id}
