@@ -1,6 +1,6 @@
 "use client";
 
-import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy } from 'lucide-react';
+import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +13,8 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeFolder, setActiveFolder] = useState<string>('Semua');
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -101,81 +103,189 @@ export default function Dashboard() {
     return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat proyek...</div>;
   }
 
+  const folders = ['Semua', ...Array.from(new Set(projects.map(p => p.folder_name || 'Personal')))];
+
+  const filteredProjects = projects
+    .filter(p => activeFolder === 'Semua' ? true : (p.folder_name || 'Personal') === activeFolder)
+    .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
+    .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0));
+
   return (
-    <div className="space-y-8">
-      {fetchError && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-xl border border-red-200">
-          <strong>Error Fetching Projects:</strong> {fetchError}
-        </div>
-      )}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Projects</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola dan edit pengalaman Augmented Reality Anda.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
+    <div className="space-y-8 flex flex-col md:flex-row gap-8">
+      
+      {/* Folder Sidebar */}
+      <div className="w-full md:w-56 shrink-0 space-y-2">
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
+        {folders.map(folder => (
+          <button
+            key={folder}
+            onClick={() => setActiveFolder(folder)}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors ${activeFolder === folder ? 'bg-pln-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
           >
-            <option value="all">Semua Status</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-          </select>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
-          >
-            <option value="newest">Terbaru</option>
-            <option value="popular">Terpopuler (Views)</option>
-          </select>
-          <input 
-            type="text" 
-            placeholder="Cari proyek..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none w-full sm:w-auto"
-          />
-        </div>
+            <Folder size={16} className={activeFolder === folder ? 'text-white' : 'text-gray-400'} />
+            {folder}
+          </button>
+        ))}
+        <button className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200">
+          <FolderPlus size={16} />
+          Buat Folder Baru
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {/* Create New Card */}
-        <Link href="/projects/new" className="bg-pln-blue-dark rounded-3xl p-6 flex flex-col items-center justify-center text-white hover:bg-pln-blue transition-colors group min-h-[250px] border border-transparent hover:border-pln-yellow">
-          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Plus size={32} />
+      {/* Main Content */}
+      <div className="flex-1 space-y-6 min-w-0">
+        {fetchError && (
+          <div className="bg-red-50 text-red-500 p-4 rounded-xl border border-red-200">
+            <strong>Error Fetching Projects:</strong> {fetchError}
           </div>
-          <h3 className="font-bold text-lg">Buat Proyek Baru</h3>
-          <p className="text-sm text-gray-300 mt-2 text-center">Mulai proyek AR dari awal</p>
-        </Link>
+        )}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{activeFolder === 'Semua' ? 'My Projects' : `Folder: ${activeFolder}`}</h1>
+            <p className="text-gray-500 text-sm mt-1">Kelola dan edit pengalaman Augmented Reality Anda.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
+            >
+              <option value="all">Semua Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
+            >
+              <option value="newest">Terbaru</option>
+              <option value="popular">Terpopuler</option>
+            </select>
+            <input 
+              type="text" 
+              placeholder="Cari proyek..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pln-blue outline-none w-full sm:w-auto flex-1"
+            />
+            <div className="flex bg-gray-100 rounded-xl p-1 border border-gray-200">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-pln-blue' : 'text-gray-500 hover:text-gray-900'}`}
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-pln-blue' : 'text-gray-500 hover:text-gray-900'}`}
+              >
+                <List size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
 
-        {/* Dynamic Projects Grid */}
-        {projects
-          .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
-          .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
-          .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0))
-          .map((project) => (
-          <ProjectCard 
-            key={project.id}
-            id={project.id}
-            title={project.title}
-            type={project.tracking_type === 'image_tracking' ? 'Image Tracking' : 'Surface Tracking'}
-            date={new Date(project.created_at).toLocaleDateString('id-ID')}
-            status={project.is_published ? 'Published' : 'Draft'}
-            views={project.views}
-            icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
-            targetImageUrl={project.target_image_url}
-            onRename={() => handleRename(project.id, project.title)}
-            onDuplicate={() => handleDuplicate(project)}
-            onDelete={() => handleDelete(project.id, project.title)}
-            onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
-          />
-        ))}
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <Link href="/projects/new" className="bg-pln-blue-dark rounded-3xl p-6 flex flex-col items-center justify-center text-white hover:bg-pln-blue transition-colors group min-h-[250px] border border-transparent hover:border-pln-yellow">
+              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Plus size={32} />
+              </div>
+              <h3 className="font-bold text-lg">Buat Proyek Baru</h3>
+            </Link>
+            
+            {filteredProjects.map((project) => (
+              <ProjectCard 
+                key={project.id}
+                id={project.id}
+                title={project.title}
+                type={project.tracking_type === 'image_tracking' ? 'Image Tracking' : 'Surface Tracking'}
+                date={new Date(project.created_at).toLocaleDateString('id-ID')}
+                status={project.is_published ? 'Published' : 'Draft'}
+                views={project.views}
+                icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
+                targetImageUrl={project.target_image_url}
+                onRename={() => handleRename(project.id, project.title)}
+                onDuplicate={() => handleDuplicate(project)}
+                onDelete={() => handleDelete(project.id, project.title)}
+                onShowQR={() => setQrModalData({ id: project.id, title: project.title })}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-bold tracking-wider">
+                    <th className="p-4 pl-6">Proyek</th>
+                    <th className="p-4">Folder</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-center">Views</th>
+                    <th className="p-4">Tgl Dibuat</th>
+                    <th className="p-4 pr-6 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filteredProjects.map(project => (
+                    <tr key={project.id} className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4 pl-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
+                            {project.target_image_url ? (
+                              <img src={project.target_image_url} className="w-full h-full object-cover" />
+                            ) : (
+                              <Box size={16} className="text-gray-400" />
+                            )}
+                          </div>
+                          <div>
+                            <Link href={`/projects/${project.id}/edit`} className="font-bold text-gray-900 hover:text-pln-blue transition-colors line-clamp-1">{project.title}</Link>
+                            <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><Image size={10}/> Image Tracking</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
+                          <Folder size={12} /> {project.folder_name || 'Personal'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${project.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {project.is_published ? 'Published' : 'Draft'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center font-mono text-sm text-gray-600">{project.views || 0}</td>
+                      <td className="p-4 text-sm text-gray-500">{new Date(project.created_at).toLocaleDateString('id-ID')}</td>
+                      <td className="p-4 pr-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => setQrModalData({ id: project.id, title: project.title })} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="QR Code">
+                            <QrCode size={16} />
+                          </button>
+                          <Link href={`/projects/${project.id}/edit`} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Edit">
+                            <Edit3 size={16} />
+                          </Link>
+                          <button onClick={() => handleDelete(project.id, project.title)} className="p-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors" title="Hapus">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredProjects.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-500 text-sm">Tidak ada proyek yang ditemukan.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-        {projects.length === 0 && (
-          <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-3 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border border-dashed border-gray-300 text-gray-500 p-10 min-h-[250px]">
+        {projects.length === 0 && viewMode === 'grid' && (
+          <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-3 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border border-dashed border-gray-300 text-gray-500 p-10 min-h-[250px] mt-6">
             <Box size={48} className="mb-4 text-gray-300" />
             <p className="font-bold">Belum ada proyek</p>
             <p className="text-sm">Klik kartu biru untuk membuat proyek pertama Anda.</p>

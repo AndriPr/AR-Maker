@@ -45,6 +45,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [brandColor, setBrandColor] = useState('#00A2E9');
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
   
+  // Folder State
+  const [folderName, setFolderName] = useState('Personal');
+  
   const fetchEditorData = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -63,6 +66,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setTargetImageUrl(projData.target_image_url);
       setBrandColor(projData.brand_color || '#00A2E9');
       setBrandLogoUrl(projData.brand_logo_url || null);
+      setFolderName(projData.folder_name || 'Personal');
       
       // Load scene data from JSONB
       if (projData.scene_data && projData.scene_data.elements) {
@@ -97,7 +101,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           target_image_url: targetImageUrl,
           scene_data: sceneData,
           brand_color: brandColor,
-          brand_logo_url: brandLogoUrl
+          brand_logo_url: brandLogoUrl,
+          folder_name: folderName
         })
         .eq('id', project.id);
         
@@ -201,6 +206,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           scene_data: sceneData,
           brand_color: brandColor,
           brand_logo_url: brandLogoUrl,
+          folder_name: folderName,
           ...(finalMindUrl ? { mind_file_url: finalMindUrl } : {})
         })
         .eq('id', project.id);
@@ -513,6 +519,24 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     ) : (
                       <ImageIcon size={32} className="text-gray-600" />
                     )}
+                  </div>
+                </div>
+
+                {/* Folder Settings */}
+                <div className="pt-4 border-t border-gray-800">
+                  <h3 className="text-sm font-bold text-gray-200 mb-3">Pengaturan Proyek</h3>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-gray-400">Nama Folder</label>
+                    <input 
+                      type="text" 
+                      value={folderName}
+                      onChange={(e) => {
+                        setFolderName(e.target.value);
+                        handleSave(true);
+                      }}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors"
+                      placeholder="e.g. Klien A, Personal"
+                    />
                   </div>
                 </div>
 
