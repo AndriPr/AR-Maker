@@ -62,8 +62,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setEnvironmentMap = useEditorStore(state => state.setEnvironmentMap);
   const trackingMode = useEditorStore(state => state.trackingMode);
   const setTrackingMode = useEditorStore(state => state.setTrackingMode);
-  const objectTargetType = useEditorStore(state => state.objectTargetType);
-  const setObjectTargetType = useEditorStore(state => state.setObjectTargetType);
   const scenes = useEditorStore(state => state.scenes);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
   const addScene = useEditorStore(state => state.addScene);
@@ -795,7 +793,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                         <option value="image">8th Wall - Flat Image (Poster/Kartu)</option>
                         <option value="cylinder">8th Wall - Curved/Cylinder (Botol/Kaleng)</option>
                         <option value="face">8th Wall - Face Tracking (Filter Wajah)</option>
-                        <option value="object3d">AI 3D Object Tracking (Sepatu/Gelas)</option>
                       </select>
                       {trackingMode === 'face' && (
                         <p className="text-[10px] text-pln-yellow mt-1">
@@ -806,24 +803,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                         <p className="text-[10px] text-pln-blue mt-1">
                           Mode Botol/Silinder aktif! AR akan membungkus target gambar ke objek botol.
                         </p>
-                      )}
-                      {trackingMode === 'object3d' && (
-                        <div className="mt-2 flex flex-col gap-1.5 p-2 bg-purple-900/30 border border-purple-500/30 rounded-lg">
-                          <label className="text-xs text-purple-300 font-bold flex items-center gap-1">
-                            🤖 AI Target Object
-                          </label>
-                          <select
-                            value={objectTargetType}
-                            onChange={(e) => setObjectTargetType(e.target.value as any)}
-                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-gray-200 outline-none focus:border-purple-500"
-                          >
-                            <option value="Shoe">Sepatu (Shoe)</option>
-                            <option value="Cup">Cangkir/Gelas (Cup)</option>
-                          </select>
-                          <p className="text-[9px] text-purple-300/80 mt-1">
-                            Kamera akan mendeteksi objek fisik 3D secara real-time menggunakan neural network (MediaPipe Objectron).
-                          </p>
-                        </div>
                       )}
                     </div>
                   </div>
