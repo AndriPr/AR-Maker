@@ -311,21 +311,6 @@ export default function Dashboard() {
 
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            
-            {/* Subfolders View */}
-            {currentSubfolders.map(sub => (
-              <div 
-                key={sub} 
-                onClick={() => setActiveFolder(sub)} 
-                className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group hover:border-pln-blue/50"
-              >
-                <div className="p-3 bg-blue-50 text-pln-blue rounded-xl group-hover:bg-pln-blue group-hover:text-white transition-colors">
-                  <Folder size={24} fill="currentColor" className="opacity-80" />
-                </div>
-                <div className="flex-1 font-bold text-gray-800 line-clamp-1">{sub.split('/').pop()}</div>
-              </div>
-            ))}
-
             {filteredProjects.map((project) => (
               <ProjectCard 
                 key={project.id}
