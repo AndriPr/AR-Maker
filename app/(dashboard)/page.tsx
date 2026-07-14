@@ -2,7 +2,7 @@
 
 import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag, Check, FolderInput, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
@@ -135,9 +135,10 @@ export default function Dashboard() {
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
+    const folderPath = activeFolder === 'Semua' ? newFolderName.trim() : `${activeFolder}/${newFolderName.trim()}`;
     const stored = JSON.parse(localStorage.getItem('customFolders') || '[]');
-    if (!stored.includes(newFolderName)) {
-      const updated = [...stored, newFolderName];
+    if (!stored.includes(folderPath)) {
+      const updated = [...stored, folderPath];
       localStorage.setItem('customFolders', JSON.stringify(updated));
       setCustomFolders(updated);
     }
@@ -163,32 +164,46 @@ export default function Dashboard() {
     .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
     .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0));
 
+  const currentSubfolders = useMemo(() => {
+    if (activeFolder === 'Semua') {
+      return folders.filter(f => f !== 'Semua' && !f.includes('/'));
+    }
+    const prefix = activeFolder + '/';
+    return folders.filter(f => f.startsWith(prefix) && f.length > prefix.length && !f.slice(prefix.length).includes('/'));
+  }, [folders, activeFolder]);
+
+  const breadcrumbSegments = activeFolder === 'Semua' ? [] : activeFolder.split('/');
+
   return (
     <div className="space-y-8 flex flex-col md:flex-row gap-8">
       
       {/* Folder Sidebar */}
       <div className={`shrink-0 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${isFolderSidebarOpen ? 'w-full md:w-56 opacity-100' : 'w-0 opacity-0 hidden md:block'}`}>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 mb-4">Folders</h2>
-        {folders.map(folder => (
-          <div key={folder} className="group relative flex items-center">
-            <button
-              onClick={() => setActiveFolder(folder)}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-10 ${activeFolder === folder ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              <Folder size={16} className={activeFolder === folder ? 'text-white' : 'text-gray-400'} />
-              {folder}
-            </button>
-            {folder !== 'Semua' && folder !== 'Personal' && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }} 
-                className={`absolute right-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${activeFolder === folder ? 'text-blue-200 hover:text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
-                title="Hapus Folder"
+        {folders.filter(f => f !== 'Semua').map(folder => {
+          const depth = (folder.match(/\//g) || []).length;
+          const name = folder.split('/').pop();
+          return (
+            <div key={folder} className="group relative flex items-center" style={{ paddingLeft: `${depth * 0.75}rem` }}>
+              <button
+                onClick={() => setActiveFolder(folder)}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors pr-10 ${activeFolder === folder ? 'bg-pln-blue text-white shadow-md shadow-blue-900/20' : 'text-gray-600 hover:bg-gray-100'}`}
               >
-                <Trash2 size={14} />
+                <Folder size={16} className={activeFolder === folder ? 'text-white' : 'text-gray-400'} />
+                {name}
               </button>
-            )}
-          </div>
-        ))}
+              {folder !== 'Personal' && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder); }} 
+                  className={`absolute right-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${activeFolder === folder ? 'text-blue-200 hover:text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                  title="Hapus Folder"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          );
+        })}
         <button 
           onClick={() => setIsCreateFolderModalOpen(true)}
           className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 text-pln-blue hover:bg-blue-50 transition-colors mt-4 border border-dashed border-blue-200"
@@ -216,12 +231,21 @@ export default function Dashboard() {
                 <PanelLeft size={20} />
               </button>
               <span className="cursor-pointer hover:text-pln-blue transition-colors" onClick={() => setActiveFolder('Semua')}>My Projects</span>
-              {activeFolder !== 'Semua' && (
-                <>
-                  <span className="text-gray-300">/</span>
-                  <span>{activeFolder}</span>
-                </>
-              )}
+              {breadcrumbSegments.map((segment, index) => {
+                const isLast = index === breadcrumbSegments.length - 1;
+                const path = breadcrumbSegments.slice(0, index + 1).join('/');
+                return (
+                  <React.Fragment key={path}>
+                    <span className="text-gray-300">/</span>
+                    <span 
+                      className={isLast ? "text-gray-900" : "text-gray-500 cursor-pointer hover:text-pln-blue transition-colors"}
+                      onClick={() => !isLast && setActiveFolder(path)}
+                    >
+                      {segment}
+                    </span>
+                  </React.Fragment>
+                );
+              })}
             </div>
             <p className="text-gray-500 text-sm">Kelola dan edit pengalaman Augmented Reality Anda.</p>
           </div>
@@ -280,6 +304,21 @@ export default function Dashboard() {
 
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            
+            {/* Subfolders View */}
+            {currentSubfolders.map(sub => (
+              <div 
+                key={sub} 
+                onClick={() => setActiveFolder(sub)} 
+                className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group hover:border-pln-blue/50"
+              >
+                <div className="p-3 bg-blue-50 text-pln-blue rounded-xl group-hover:bg-pln-blue group-hover:text-white transition-colors">
+                  <Folder size={24} fill="currentColor" className="opacity-80" />
+                </div>
+                <div className="flex-1 font-bold text-gray-800 line-clamp-1">{sub.split('/').pop()}</div>
+              </div>
+            ))}
+
             {filteredProjects.map((project) => (
               <ProjectCard 
                 key={project.id}
@@ -291,6 +330,7 @@ export default function Dashboard() {
                 views={project.views}
                 icon={project.tracking_type === 'image_tracking' ? <Image size={16} className="text-blue-500" /> : <Box size={16} className="text-purple-500" />}
                 targetImageUrl={project.target_image_url}
+                folderName={project.folder_name}
                 isSelected={selectedProjects.includes(project.id)}
                 onToggleSelect={() => handleToggleSelect(project.id)}
                 onRename={() => handleRename(project.id, project.title)}
@@ -524,7 +564,7 @@ export default function Dashboard() {
                   className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors ${targetFolder === folder ? 'bg-pln-blue text-white shadow-md' : 'bg-white border border-gray-100 text-gray-700 hover:border-pln-blue/30 hover:bg-blue-50'}`}
                 >
                   <Folder size={18} className={targetFolder === folder ? 'text-white' : 'text-pln-blue'} />
-                  {folder}
+                  {folder.split('/').pop()}
                 </button>
               ))}
             </div>
@@ -540,7 +580,7 @@ export default function Dashboard() {
   );
 }
 
-function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove }: any) {
+function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, folderName, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleCopyLink = (e: any) => {
@@ -587,9 +627,14 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
           <h3 className="font-bold text-gray-900 line-clamp-1 pr-2">{title}</h3>
         </div>
         
-        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-4">
-          {icon}
-          {type}
+        <div className="flex items-center gap-2 text-xs font-medium text-gray-500 mb-4 flex-wrap">
+          <span className="flex items-center gap-1">
+            {icon} {type}
+          </span>
+          <span className="text-gray-300">•</span>
+          <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100">
+            <Folder size={10} /> {(folderName || 'Personal').split('/').pop()}
+          </span>
         </div>
         
         <div className="mt-auto flex items-center justify-between">

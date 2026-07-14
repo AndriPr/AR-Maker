@@ -11,6 +11,8 @@ export default function NewProjectPage() {
   const [trackingType, setTrackingType] = useState('image_tracking');
   const [selectedTemplate, setSelectedTemplate] = useState('blank');
   const [folderName, setFolderName] = useState('Personal');
+  const [isCreatingNewFolder, setIsCreatingNewFolder] = useState(false);
+  const [newFolderInput, setNewFolderInput] = useState('');
   const [existingFolders, setExistingFolders] = useState<string[]>(['Personal']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export default function NewProjectPage() {
           title: title,
           tracking_type: trackingType,
           is_published: false,
-          folder_name: folderName || 'Personal'
+          folder_name: isCreatingNewFolder ? (newFolderInput || 'Personal') : (folderName || 'Personal')
         })
         .select()
         .single();
@@ -145,20 +147,40 @@ export default function NewProjectPage() {
         {/* Folder Penyimpanan */}
         <div className="mb-8">
           <label className="block text-sm font-bold text-gray-700 mb-2">Simpan di Folder</label>
-          <input 
-            type="text" 
-            value={folderName}
-            onChange={(e) => setFolderName(e.target.value)}
-            list="folder-options"
-            placeholder="Ketik nama folder baru atau pilih yang sudah ada..." 
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm"
-          />
-          <datalist id="folder-options">
-            {existingFolders.map(folder => (
-              <option key={folder} value={folder} />
-            ))}
-          </datalist>
-          <p className="text-xs text-gray-500 mt-2">Folder akan dibuat otomatis jika belum ada.</p>
+          <div className="flex flex-col gap-3">
+            <select
+              value={isCreatingNewFolder ? 'NEW' : folderName}
+              onChange={(e) => {
+                if (e.target.value === 'NEW') {
+                  setIsCreatingNewFolder(true);
+                } else {
+                  setIsCreatingNewFolder(false);
+                  setFolderName(e.target.value);
+                }
+              }}
+              className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm"
+            >
+              {existingFolders.map(folder => (
+                <option key={folder} value={folder}>{folder}</option>
+              ))}
+              <option value="NEW" className="font-bold text-pln-blue">+ Buat Folder Baru</option>
+            </select>
+            
+            {isCreatingNewFolder && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                <input 
+                  type="text" 
+                  value={newFolderInput}
+                  onChange={(e) => setNewFolderInput(e.target.value)}
+                  placeholder="Ketik nama folder baru (Misal: Client X)..." 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm"
+                  autoFocus
+                  required
+                />
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Folder akan otomatis dibuat berserta proyek ini.</p>
         </div>
 
         {/* Tipe Tracking */}
