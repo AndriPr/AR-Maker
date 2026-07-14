@@ -22,15 +22,15 @@ export default function MembersPage() {
 
   const fetchMembers = async () => {
     setLoading(true);
-    // As we don't have a direct users table accessible to public, we fetch from workspace_members
-    // In a real app with proper admin API, you'd join with auth.users.
-    // For this prototype, we'll just display user_id and role.
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select('*')
-      .eq('workspace_id', activeWorkspace?.id);
-      
-    if (data) setMembers(data);
+    try {
+      const res = await fetch(`/api/workspace-members?workspace_id=${activeWorkspace?.id}`);
+      const data = await res.json();
+      if (data.members) {
+        setMembers(data.members);
+      }
+    } catch (err) {
+      console.error("Error fetching members:", err);
+    }
     setLoading(false);
   };
 
@@ -137,7 +137,7 @@ export default function MembersPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-1/2">User ID</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-1/2">Nama Pengguna</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Peran (Role)</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                 </tr>
@@ -147,14 +147,14 @@ export default function MembersPage() {
                   <tr key={member.user_id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-pln-blue flex items-center justify-center font-bold text-xs shrink-0">
-                          {member.user_id === user?.id ? 'ME' : 'U'}
+                        <div className="w-10 h-10 rounded-full bg-blue-100 text-pln-blue flex items-center justify-center font-bold text-sm shrink-0">
+                          {member.display_name ? member.display_name.substring(0,2).toUpperCase() : 'U'}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900 font-mono">
-                            {member.user_id.substring(0, 8)}...{member.user_id.substring(member.user_id.length - 4)}
+                          <span className="text-sm font-bold text-gray-900">
+                            {member.display_name} {member.user_id === user?.id && <span className="ml-2 inline-block px-1.5 py-0.5 bg-pln-blue text-white rounded text-[10px] uppercase font-bold tracking-wider">Anda</span>}
                           </span>
-                          {member.user_id === user?.id && <span className="text-[10px] text-pln-blue font-bold uppercase">Anda</span>}
+                          <span className="text-xs text-gray-500">{member.email}</span>
                         </div>
                       </div>
                     </td>
