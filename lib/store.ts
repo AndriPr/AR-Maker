@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles';
+export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot';
 
 export interface EduComponent {
   id: string;
@@ -49,6 +49,10 @@ export interface SceneElement {
   autoplay?: boolean;
   volume?: number;
 
+  // Video Hologram Properties
+  chromaKey?: boolean;
+  chromaKeyColor?: string;
+
   // Edu Panel Properties
   panelTitle?: string;
   eduComponents?: EduComponent[];
@@ -58,6 +62,9 @@ export interface SceneElement {
   sparkleColor?: string;
   sparkleCount?: number;
   sparkleSize?: number;
+
+  // Hotspot Properties
+  hotspotText?: string;
 
   position: [number, number, number];
   rotation: [number, number, number];
@@ -76,6 +83,7 @@ interface EditorState {
   // Environment
   ambientLightIntensity: number;
   directionalLightIntensity: number;
+  environmentMap: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment';
   
   // History
   past: SceneElement[][];
@@ -93,6 +101,7 @@ interface EditorState {
   setIsSnapping: (val: boolean) => void;
   setAmbientLightIntensity: (val: number) => void;
   setDirectionalLightIntensity: (val: number) => void;
+  setEnvironmentMap: (map: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment') => void;
   undo: () => void;
   redo: () => void;
 }
@@ -105,6 +114,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   isSnapping: true,
   ambientLightIntensity: 0.8,
   directionalLightIntensity: 1.8,
+  environmentMap: 'none',
   past: [],
   future: [],
 
@@ -155,6 +165,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   setIsSnapping: (val) => set({ isSnapping: val }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
   setDirectionalLightIntensity: (val) => set({ directionalLightIntensity: val }),
+  setEnvironmentMap: (map) => set({ environmentMap: map }),
 
   undo: () => set((state) => {
     if (state.past.length === 0) return state;

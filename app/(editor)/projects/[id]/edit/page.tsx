@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -50,6 +50,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setAmbientLightIntensity = useEditorStore(state => state.setAmbientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
   const setDirectionalLightIntensity = useEditorStore(state => state.setDirectionalLightIntensity);
+  const environmentMap = useEditorStore(state => state.environmentMap);
+  const setEnvironmentMap = useEditorStore(state => state.setEnvironmentMap);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -466,6 +468,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   {el.type === 'audio' && <Volume2 size={14} className="text-pink-400 shrink-0" />}
                   {el.type === 'video' && <Video size={14} className="text-red-400 shrink-0" />}
                   {el.type === 'vfx_sparkles' && <Sparkles size={14} className="text-yellow-400 shrink-0" />}
+                  {el.type === 'hotspot' && <MapPin size={14} className="text-orange-400 shrink-0" />}
                   <span className="truncate text-xs">{el.name}</span>
                 </div>
                 {selectedId === el.id && (
@@ -621,6 +624,23 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           >
             <Sparkles size={18} />
           </button>
+
+          <button 
+            onClick={() => {
+              addElement({
+                type: 'hotspot',
+                name: '3D Hotspot',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+                hotspotText: 'Penjelasan Produk...'
+              });
+            }} 
+            className={`p-2 sm:p-2.5 rounded-full transition-all text-orange-400 hover:text-white hover:bg-gray-800`}
+            title="Tambah Titik Penjelasan (Hotspot)"
+          >
+            <MapPin size={18} />
+          </button>
         </div>
 
         {/* Right Sidebar (Properties) */}
@@ -701,6 +721,21 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                         onChange={(e) => setDirectionalLightIntensity(parseFloat(e.target.value))}
                         className="w-full accent-pln-blue"
                       />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-gray-400">Environment Reflection (HDRI)</label>
+                      <select
+                        value={environmentMap}
+                        onChange={(e) => setEnvironmentMap(e.target.value as any)}
+                        className="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-pln-blue"
+                      >
+                        <option value="none">Kosong (Tidak Ada Pantulan)</option>
+                        <option value="studio">Studio Foto</option>
+                        <option value="city">Perkotaan (Malam)</option>
+                        <option value="sunset">Sunset (Senja)</option>
+                        <option value="forest">Hutan</option>
+                        <option value="apartment">Apartemen Mewah</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1315,6 +1350,50 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                 className="w-4 h-4 accent-pln-blue"
                               />
                             </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
+                              <label className="text-xs text-gray-300 font-bold">Hologram (Chroma Key)</label>
+                              <input 
+                                type="checkbox"
+                                checked={selectedElement.chromaKey || false}
+                                onChange={(e) => updateElement(selectedElement.id, { chromaKey: e.target.checked })}
+                                className="w-4 h-4 accent-pln-blue"
+                              />
+                            </div>
+
+                            {selectedElement.chromaKey && (
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs text-gray-400 flex justify-between">
+                                  Warna Latar untuk Dihapus
+                                  <span className="font-mono text-[10px] bg-gray-800 px-1 rounded">{selectedElement.chromaKeyColor || '#00ff00'}</span>
+                                </label>
+                                <input 
+                                  type="color" 
+                                  value={selectedElement.chromaKeyColor || '#00ff00'}
+                                  onChange={(e) => updateElement(selectedElement.id, { chromaKeyColor: e.target.value })}
+                                  className="w-full h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hotspot Properties Display */}
+                      {selectedElement.type === 'hotspot' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                            <MapPin size={12} className="text-orange-400"/> Hotspot Settings
+                          </h4>
+                          
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-gray-400">Teks Penjelasan</label>
+                            <textarea
+                              value={selectedElement.hotspotText || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { hotspotText: e.target.value })}
+                              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-white outline-none focus:border-pln-blue min-h-[80px]"
+                              placeholder="Masukkan teks saat hotspot diklik..."
+                            />
                           </div>
                         </div>
                       )}

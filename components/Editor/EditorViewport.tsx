@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles } from '@react-three/drei';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -493,6 +493,84 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   );
 }
 
+function HotspotElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; 
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const hotspotObj = (
+    <group 
+      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+    >
+      {/* Glowing Dot */}
+      <mesh>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshBasicMaterial color="#fb923c" transparent opacity={0.8} />
+      </mesh>
+      <mesh scale={[1.5, 1.5, 1.5]}>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.3} />
+      </mesh>
+
+      {/* Label Box */}
+      <Html center position={[0, 0.5, 0]}>
+        <div className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl transition-all ${isSelected ? 'bg-orange-500 text-white ring-2 ring-white scale-110' : 'bg-gray-800 text-orange-400 border border-gray-700'}`}>
+          <div className="flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            {element.hotspotText || "Hotspot"}
+          </div>
+        </div>
+      </Html>
+    </group>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position} 
+        rotation={element.rotation} 
+        scale={element.scale}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
+      >
+        {hotspotObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position} rotation={element.rotation} scale={element.scale}>
+      {hotspotObj}
+    </group>
+  );
+}
+
 
 function TargetImage({ url }: { url: string }) {
   const texture = useTexture(url);
@@ -516,11 +594,17 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
   const isSnapping = useEditorStore(state => state.isSnapping);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
+  const environmentMap = useEditorStore(state => state.environmentMap);
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
       <Canvas camera={{ position: [0, 4, 8], fov: 45 }} onPointerMissed={() => setSelectedId(null)}>
         <color attach="background" args={['#0f172a']} />
+        
+        {environmentMap !== 'none' && (
+          <Environment preset={environmentMap as any} background={false} />
+        )}
+
         <ambientLight intensity={ambientLightIntensity} />
         <directionalLight position={[10, 20, 10]} intensity={directionalLightIntensity} castShadow />
         <spotLight position={[-10, 10, -10]} intensity={1.2} color="#818cf8" />
@@ -556,6 +640,9 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             }
             if (el.type === 'vfx_sparkles') {
               return <SparklesElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === 'hotspot') {
+              return <HotspotElement key={el.id} element={el} mode={transformMode} />;
             }
             return null;
           })}
