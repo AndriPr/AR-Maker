@@ -33,9 +33,9 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
 
     // Check for WebXR Support
     if (navigator.xr) {
-      navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-        setIsXrSupported(supported);
-      });
+      navigator.xr.isSessionSupported('immersive-ar')
+        .then((supported) => setIsXrSupported(supported))
+        .catch(() => setIsXrSupported(false));
     } else {
       setIsXrSupported(false);
     }
@@ -73,7 +73,9 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         </div>
       ) : (
         <button 
-          onClick={() => store.enterAR()}
+          onClick={() => {
+            store.enterAR().catch(err => alert("Gagal memulai AR: " + err.message));
+          }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold z-[60] shadow-xl border border-white/20 transition-all"
         >
           START AR
