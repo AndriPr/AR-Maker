@@ -23,6 +23,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   
   // Mobile Panel States
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library'>('hierarchy');
   const [isRightPanelOpen, setRightPanelOpen] = useState(true);
 
   // AI Assistant State
@@ -485,9 +486,12 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         {/* Ultra-slim Toolbar (Blippar Style) */}
         <aside className="pointer-events-auto absolute top-14 bottom-0 left-0 z-30 w-12 bg-[#1a1b1e] border-r border-[#2b2d31] flex flex-col items-center py-4 gap-4 shadow-xl">
           <button 
-            onClick={() => setLeftPanelOpen(!isLeftPanelOpen)}
-            className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
-            title="Library & Hierarchy"
+            onClick={() => {
+              if (isLeftPanelOpen && leftPanelTab === 'hierarchy') setLeftPanelOpen(false);
+              else { setLeftPanelOpen(true); setLeftPanelTab('hierarchy'); }
+            }}
+            className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'hierarchy' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+            title="Scene Hierarchy"
           >
             <FolderOpen size={18} />
           </button>
@@ -495,9 +499,12 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           <div className="w-6 h-px bg-[#2b2d31]"></div>
           
           <button 
-            onClick={() => setLeftPanelOpen(true)}
-            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors"
-            title="Add Model from Library"
+            onClick={() => {
+              if (isLeftPanelOpen && leftPanelTab === 'library') setLeftPanelOpen(false);
+              else { setLeftPanelOpen(true); setLeftPanelTab('library'); }
+            }}
+            className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'library' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+            title="Asset Library"
           >
             <Box size={18} />
           </button>
@@ -547,59 +554,61 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
         {/* Secondary Drawer (Library & Hierarchy) */}
         <aside className={`pointer-events-auto absolute top-14 bottom-0 left-12 z-20 w-64 bg-[#202227] border-r border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-[150%]'} overflow-hidden`}>
-          {/* TABS */}
-          <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
-            <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">PROJECT ASSETS</button>
-            <Link href="/assets" target="_blank" className="flex-1 py-3 text-[10px] font-bold text-gray-500 hover:text-gray-300 bg-[#1a1b1e] text-center flex items-center justify-center">UPLOAD ASSET</Link>
-          </div>
           
-          <div className="flex-1 overflow-y-auto p-2 space-y-0.5 bg-[#202227] custom-scrollbar border-b border-[#2b2d31]">
-            <div className="text-[9px] font-bold text-gray-500 uppercase px-2 mb-2 mt-2 tracking-wider">SCENE HIERARCHY</div>
-            <div 
-              className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-                selectedId === null ? 'bg-pln-blue/20 text-pln-blue font-bold' : 'text-gray-300 hover:bg-[#2b2d31]'
-              }`}
-              onClick={() => setSelectedId(null)}
-            >
-              <ImageIcon size={12} className="shrink-0" />
-              <span className="truncate">Marker Image</span>
-            </div>
-            
-            {elements.map(el => (
-              <div 
-                key={el.id}
-                onClick={() => setSelectedId(el.id)}
-                className={`flex items-center justify-between px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-                  selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold' : 'text-gray-300 hover:bg-[#2b2d31]'
-                }`}
-              >
-                <div className="flex items-center gap-2 overflow-hidden">
-                  {el.type === '3d_model' && <Box size={12} className="shrink-0" />}
-                  {el.type === '3d_text' && <Type size={12} className="shrink-0" />}
-                  {el.type === 'ui_button' && <MousePointerClick size={12} className="shrink-0" />}
-                  {el.type === 'edu_panel' && <LayoutDashboard size={12} className="shrink-0" />}
-                  {el.type === 'audio' && <Volume2 size={12} className="shrink-0" />}
-                  {el.type === 'video' && <Video size={12} className="shrink-0" />}
-                  {el.type === 'vfx_sparkles' && <Sparkles size={12} className="shrink-0" />}
-                  {el.type === 'hotspot' && <MapPin size={12} className="shrink-0" />}
-                  <span className="truncate">{el.name}</span>
-                </div>
-                {selectedId === el.id && (
-                  <div className="flex items-center">
-                    <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1" title="Hapus">
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                )}
+          {leftPanelTab === 'hierarchy' ? (
+            <>
+              {/* Hierarchy View */}
+              <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
+                <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">SCENE HIERARCHY</button>
               </div>
-            ))}
-          </div>
-          
-          {/* Asset Library Grid */}
-          <div className="h-[45%] flex flex-col bg-[#1a1b1e]">
-            <div className="p-2 border-b border-[#2b2d31] bg-[#1a1b1e]">
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider pl-1">LIBRARY (CLICK TO ADD)</span>
-            </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-0.5 bg-[#202227] custom-scrollbar">
+                <div 
+                  className={`flex items-center gap-2 px-3 py-2 mt-1 rounded text-xs cursor-pointer transition-colors ${
+                    selectedId === null ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                  }`}
+                  onClick={() => setSelectedId(null)}
+                >
+                  <ImageIcon size={12} className="shrink-0" />
+                  <span className="truncate">Marker Image</span>
+                </div>
+                
+                {elements.map(el => (
+                  <div 
+                    key={el.id}
+                    onClick={() => setSelectedId(el.id)}
+                    className={`flex items-center justify-between px-3 py-2 rounded text-xs cursor-pointer transition-colors ${
+                      selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      {el.type === '3d_model' && <Box size={12} className="shrink-0" />}
+                      {el.type === '3d_text' && <Type size={12} className="shrink-0" />}
+                      {el.type === 'ui_button' && <MousePointerClick size={12} className="shrink-0" />}
+                      {el.type === 'edu_panel' && <LayoutDashboard size={12} className="shrink-0" />}
+                      {el.type === 'audio' && <Volume2 size={12} className="shrink-0" />}
+                      {el.type === 'video' && <Video size={12} className="shrink-0" />}
+                      {el.type === 'vfx_sparkles' && <Sparkles size={12} className="shrink-0" />}
+                      {el.type === 'hotspot' && <MapPin size={12} className="shrink-0" />}
+                      <span className="truncate">{el.name}</span>
+                    </div>
+                    {selectedId === el.id && (
+                      <div className="flex items-center">
+                        <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Library View */}
+              <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
+                <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">PROJECT ASSETS</button>
+                <Link href="/assets" target="_blank" className="flex-1 py-3 text-[10px] font-bold text-gray-500 hover:text-gray-300 bg-[#1a1b1e] text-center flex items-center justify-center border-l border-[#2b2d31]">UPLOAD ASSET</Link>
+              </div>
             <div className="flex-1 p-2 grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar">
               {assets.map(asset => (
                 <div 
@@ -668,7 +677,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 </div>
               )}
             </div>
-          </div>
+          </>
+          )}
+
         </aside>
 
         {/* Toolbar Transform (Floating Center) */}
