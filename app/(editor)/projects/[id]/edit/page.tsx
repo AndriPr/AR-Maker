@@ -662,6 +662,17 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                      <Music size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
                   ) : asset.type === 'video' ? (
                      <Video size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
+                  ) : asset.type === '3d_model' ? (
+                     <div className="w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       {/* @ts-ignore */}
+                       <model-viewer 
+                         src={asset.file_url} 
+                         auto-rotate 
+                         style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+                       >
+                       {/* @ts-ignore */}
+                       </model-viewer>
+                     </div>
                   ) : (
                      <Box size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
                   )}
