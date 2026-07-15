@@ -88,7 +88,7 @@ function VPSManager({
           session,
           renderer: gl,
           scene,
-          camera,
+          camera: camera as THREE.PerspectiveCamera,
           showObjectMeshes: true, // Tampilkan mesh outline agar user tahu object mana yg dilacak
         });
         
