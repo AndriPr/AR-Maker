@@ -10,7 +10,7 @@ import { useGLTF, Text } from '@react-three/drei';
 
 // Simple model component
 function Model({ url, position, rotation, scale }: any) {
-  const { scene } = useGLTF(url);
+  const { scene } = useGLTF(url as string) as any;
   return <primitive object={scene.clone()} position={position} rotation={rotation} scale={scale} />;
 }
 
