@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Canvas } from '@react-three/fiber';
-import { XR, ARButton } from '@react-three/xr';
+import { XR, createXRStore } from '@react-three/xr';
 import { useGLTF, Text } from '@react-three/drei';
 // Import MultiSet AI SDK 
 // import { MultiSetProvider, ObjectAnchor } from '@multisetai/vps';
@@ -13,6 +13,8 @@ function Model({ url, position, rotation, scale }: any) {
   const { scene } = useGLTF(url as string) as any;
   return <primitive object={scene.clone()} position={position} rotation={rotation} scale={scale} />;
 }
+
+const store = createXRStore();
 
 export default function ARCanvas({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -40,9 +42,12 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="w-full h-screen bg-gray-900 relative">
-      <ARButton 
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full font-bold z-50 shadow-lg"
-      />
+      <button 
+        onClick={() => store.enterAR()}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold z-[60] shadow-xl border border-white/20 transition-all"
+      >
+        START AR
+      </button>
       
       {/* UI React Murni untuk Edu Panel */}
       <div className="absolute top-4 left-4 z-50 text-white p-4 bg-black/50 rounded-xl pointer-events-none border border-white/10">
@@ -53,7 +58,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
       </div>
 
       <Canvas>
-        <XR>
+        <XR store={store}>
           <ambientLight intensity={1} />
           <directionalLight position={[1, 2, 1]} intensity={1.5} />
           
