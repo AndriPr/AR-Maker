@@ -82,7 +82,7 @@ export default function ARViewer({ params }: { params: Promise<{ id: string }> }
       <div className="w-full flex-1">
         {project.tracking_type === 'image_tracking' ? (
            <iframe 
-             src={`/api/ar/${project.id}`} 
+             src={`/ar-canvas/${project.id}`} 
              allow="camera; gyroscope; accelerometer; magnetometer; display-capture; xr-spatial-tracking"
              className="w-full h-full border-none"
              title="AR Experience"
