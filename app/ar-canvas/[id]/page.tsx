@@ -11,6 +11,21 @@ function Model({ url, position, rotation, scale }: any) {
   return <primitive object={scene.clone()} position={position} rotation={rotation} scale={scale} />;
 }
 
+// HACK: WebXR Viewer di iOS melempar error jika addEventListener dipanggil sebelum session dimulai.
+// Kita harus mencegat fungsi ini agar @react-three/xr v6 tidak membuat aplikasi crash.
+if (typeof navigator !== 'undefined' && navigator.xr) {
+  const originalAdd = (navigator.xr as any).addEventListener;
+  if (originalAdd) {
+    (navigator.xr as any).addEventListener = function() {
+      try {
+        originalAdd.apply(this, arguments);
+      } catch (e) {
+        console.warn("Ignored WebXR Viewer event listener error:", e);
+      }
+    };
+  }
+}
+
 const store = createXRStore();
 
 export default function ARCanvas({ params }: { params: Promise<{ id: string }> }) {
