@@ -89,6 +89,7 @@ interface EditorState {
   
   // Project Settings
   trackingMode: 'image' | 'face' | 'cylinder';
+  multisetMapId: string;
 
   // Environment
   ambientLightIntensity: number;
@@ -114,6 +115,7 @@ interface EditorState {
   setSelectedId: (id: string | null) => void;
   setIsSnapping: (val: boolean) => void;
   setTrackingMode: (mode: 'image' | 'face' | 'cylinder') => void;
+  setMultisetMapId: (id: string) => void;
   setAmbientLightIntensity: (val: number) => void;
   setDirectionalLightIntensity: (val: number) => void;
   setEnvironmentMap: (map: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment') => void;
@@ -134,6 +136,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   previewAnimationData: null,
   isSnapping: true,
   trackingMode: 'image',
+  multisetMapId: '',
   ambientLightIntensity: 0.8,
   directionalLightIntensity: 1.8,
   environmentMap: 'none',
@@ -198,6 +201,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   setSelectedId: (id) => set({ selectedId: id }),
   setIsSnapping: (val) => set({ isSnapping: val }),
   setTrackingMode: (mode) => set({ trackingMode: mode }),
+  setMultisetMapId: (id) => set({ multisetMapId: id }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
   setDirectionalLightIntensity: (val) => set({ directionalLightIntensity: val }),
   setEnvironmentMap: (map) => set({ environmentMap: map }),

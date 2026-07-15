@@ -62,6 +62,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setEnvironmentMap = useEditorStore(state => state.setEnvironmentMap);
   const trackingMode = useEditorStore(state => state.trackingMode);
   const setTrackingMode = useEditorStore(state => state.setTrackingMode);
+  const multisetMapId = useEditorStore(state => state.multisetMapId);
+  const setMultisetMapId = useEditorStore(state => state.setMultisetMapId);
   const scenes = useEditorStore(state => state.scenes);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
   const addScene = useEditorStore(state => state.addScene);
@@ -207,8 +209,13 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setFolderName(projData.folder_name || 'Personal');
       
       // Load scene data from JSONB
-      if (projData.scene_data && projData.scene_data.elements) {
-        setElements(projData.scene_data.elements);
+      if (projData.scene_data) {
+        if (projData.scene_data.elements) {
+          setElements(projData.scene_data.elements);
+        }
+        if (projData.scene_data.multiset_map_id) {
+          setMultisetMapId(projData.scene_data.multiset_map_id);
+        }
       }
     }
 
@@ -232,7 +239,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     if (!silent) setSaving(true);
     
     try {
-      const sceneData = { elements };
+      const sceneData = { elements, multiset_map_id: multisetMapId };
       const { error } = await supabase
         .from('ar_projects')
         .update({
@@ -349,7 +356,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgress("Menyimpan proyek...");
 
       // 5. Update Database
-      const sceneData = { elements };
+      const sceneData = { elements, multiset_map_id: multisetMapId };
       const { error: finalError } = await supabase
         .from('ar_projects')
         .update({ 
@@ -784,26 +791,30 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-gray-400">Mode Tracking (8th Wall Engine)</label>
+                      <label className="text-xs text-gray-400">Mode Tracking (MultiSet Engine)</label>
                       <select
                         value={trackingMode}
                         onChange={(e) => setTrackingMode(e.target.value as any)}
                         className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue"
                       >
-                        <option value="image">8th Wall - Flat Image (Poster/Kartu)</option>
-                        <option value="cylinder">8th Wall - Curved/Cylinder (Botol/Kaleng)</option>
-                        <option value="face">8th Wall - Face Tracking (Filter Wajah)</option>
+                        <option value="image">MultiSet - Object Tracking / Flat Image</option>
+                        <option value="cylinder">MultiSet - Area Target (VPS)</option>
                       </select>
-                      {trackingMode === 'face' && (
-                        <p className="text-[10px] text-pln-yellow mt-1">
-                          Mode Wajah diaktifkan! Letakkan objek (misal: kacamata/topi) di tengah kanvas.
-                        </p>
-                      )}
-                      {trackingMode === 'cylinder' && (
-                        <p className="text-[10px] text-pln-blue mt-1">
-                          Mode Botol/Silinder aktif! AR akan membungkus target gambar ke objek botol.
-                        </p>
-                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs text-gray-400">MultiSet Map ID / Object Code</label>
+                      <input 
+                        type="text" 
+                        value={multisetMapId}
+                        onChange={(e) => {
+                          setMultisetMapId(e.target.value);
+                          handleSave(true);
+                        }}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors font-mono"
+                        placeholder="Contoh: c4b1a..."
+                      />
+                      <p className="text-[10px] text-gray-500 mt-1">Dapatkan Map ID dari dashboard akun MultiSet AI Anda.</p>
                     </div>
                   </div>
                 </div>
