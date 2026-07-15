@@ -96,7 +96,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
             <p className="text-sm text-gray-300 mb-4">Apple memblokir WebXR secara otomatis. Ikuti 3 langkah ini untuk menyalakannya:</p>
             <ol className="list-decimal pl-5 text-sm space-y-2 text-gray-300 mb-6">
               <li>Buka aplikasi <strong>Settings</strong> (Pengaturan) di iPhone Anda.</li>
-              <li>Gulir ke bawah dan pilih <strong>Safari</strong> > <strong>Advanced</strong> > <strong>Feature Flags</strong>.</li>
+              <li>Gulir ke bawah dan pilih <strong>Safari</strong> &gt; <strong>Advanced</strong> &gt; <strong>Feature Flags</strong>.</li>
               <li>Cari <strong>WebXR Device API</strong> dan <strong>WebXR Augmented Reality Module</strong>, lalu nyalakan <span className="text-green-400 font-bold">(hijau)</span>.</li>
             </ol>
             <p className="text-xs text-yellow-400 text-center bg-yellow-400/10 p-2 rounded-lg border border-yellow-400/20">
