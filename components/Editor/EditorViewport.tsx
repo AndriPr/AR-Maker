@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera } from '@react-three/drei';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -75,6 +75,69 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
   });
 
   return <group ref={groupRef}>{children}</group>;
+}
+
+function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSelected = selectedId === element.id;
+  const isSnapping = useEditorStore(state => state.isSnapping);
+
+  useEffect(() => {
+    if (isSelected && transformRef.current) {
+      transformRef.current.setMode(mode);
+    }
+  }, [isSelected, mode]);
+
+  const handleTransform = () => {
+    if (transformRef.current && groupRef.current) {
+      const p = groupRef.current.position;
+      const r = groupRef.current.rotation;
+      const s = groupRef.current.scale;
+      updateElement(element.id, {
+        position: [p.x, p.y, p.z],
+        rotation: [r.x, r.y, r.z],
+        scale: [s.x, s.y, s.z]
+      });
+    }
+  };
+
+  return (
+    <group
+      position={element.position as [number, number, number]}
+      rotation={element.rotation as [number, number, number]}
+      scale={element.scale as [number, number, number]}
+      onClick={(e) => { e.stopPropagation(); setSelectedId(element.id); }}
+      onPointerMissed={(e) => {
+        if (e.type === 'click') setSelectedId(null);
+      }}
+    >
+      <group ref={groupRef}>
+        <AnimatedElementWrapper element={element}>
+          {element.shapeType === 'cube' && <DreiBox args={[1, 1, 1]}><meshStandardMaterial color={element.color || '#ffffff'} /></DreiBox>}
+          {element.shapeType === 'sphere' && <Sphere args={[0.5, 32, 32]}><meshStandardMaterial color={element.color || '#ffffff'} /></Sphere>}
+          {element.shapeType === 'cylinder' && <Cylinder args={[0.5, 0.5, 1, 32]}><meshStandardMaterial color={element.color || '#ffffff'} /></Cylinder>}
+        </AnimatedElementWrapper>
+      </group>
+
+      {isSelected && (
+        <TransformControls
+          ref={transformRef}
+          object={groupRef}
+          mode={mode}
+          onMouseUp={handleTransform}
+          translationSnap={isSnapping ? 0.5 : null}
+          rotationSnap={isSnapping ? Math.PI / 4 : null}
+          scaleSnap={isSnapping ? 0.25 : null}
+        />
+      )}
+      
+      {isSelected && <mesh><boxGeometry args={[1.05, 1.05, 1.05]} /><meshBasicMaterial color="#0ea5e9" wireframe transparent opacity={0.3} /></mesh>}
+    </group>
+  );
 }
 
 function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
@@ -771,6 +834,9 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
           )}
           
           {elements.filter(el => el.sceneId === currentSceneId).map(el => {
+            if (el.type === '3d_shape') {
+              return <ShapeElement key={el.id} element={el} mode={transformMode} />;
+            }
             if (el.type === '3d_model') {
               return <ModelElement key={el.id} element={el} mode={transformMode} />;
             }

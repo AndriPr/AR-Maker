@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot';
+export type ElementType = '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot';
 
 export interface EduComponent {
   id: string;
@@ -32,7 +32,8 @@ export interface SceneElement {
   name: string;
   url?: string;         // For models, images, videos
   content?: string;     // For text
-  color?: string;       // For text
+  color?: string;       // For text and shapes
+  shapeType?: 'cube' | 'sphere' | 'cylinder'; // For 3d shapes
   
   // Interactivity Properties
   availableAnimations?: string[]; // Extracted from 3D model GLTF

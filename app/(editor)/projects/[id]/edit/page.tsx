@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -568,6 +568,31 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           >
             <Box size={18} />
           </button>
+          
+          <div className="w-6 h-px bg-[#2b2d31]"></div>
+          
+          {/* Basic Shapes */}
+          <button 
+            onClick={() => addElement({ type: '3d_shape', shapeType: 'cube', name: 'Kubus Dasar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })} 
+            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Tambah Kubus (Cube)"
+          >
+            <Square size={18} />
+          </button>
+          <button 
+            onClick={() => addElement({ type: '3d_shape', shapeType: 'sphere', name: 'Bola Dasar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })} 
+            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Tambah Bola (Sphere)"
+          >
+            <div className="w-[18px] h-[18px] border-2 border-current rounded-full"></div>
+          </button>
+          <button 
+            onClick={() => addElement({ type: '3d_shape', shapeType: 'cylinder', name: 'Silinder Dasar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })} 
+            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Tambah Silinder (Cylinder)"
+          >
+            <Database size={18} />
+          </button>
+          
+          <div className="w-6 h-px bg-[#2b2d31]"></div>
+
           <button onClick={handleAddText} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Text">
             <Type size={18} />
           </button>
@@ -850,14 +875,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           >
             {isOrthographic ? <Square size={14} /> : <Box size={14} />}
           </button>
+          
         </div>
 
         {/* Right Sidebar (Properties - Blippar Style) */}
-        <aside className={`pointer-events-auto absolute md:absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#1a1b1e] border-l border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0 overflow-hidden`}>
+        <aside className={`pointer-events-auto absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#1a1b1e] border-l border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} overflow-hidden`}>
           <div className="bg-[#202227] p-3 border-b border-[#2b2d31] text-[10px] font-bold text-gray-400 uppercase flex items-center justify-between tracking-wider">
             PROPERTIES
-            <button className="md:hidden text-gray-500 hover:text-white" onClick={() => setRightPanelOpen(false)}>
-              <PanelRightClose size={14} />
+            {/* Properties Toggle */}
+            <button className="p-2 text-gray-400 hover:text-white" onClick={() => setRightPanelOpen(!isRightPanelOpen)}>
+              <Settings size={18} />
             </button>
           </div>
           
@@ -1730,6 +1757,45 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                                 />
                               </div>
                             )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {selectedElement.type === '3d_shape' && (
+                        <div className="p-4 space-y-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Box size={12} className="text-blue-400"/> Pengaturan Objek 3D Dasar
+                          </h4>
+                          
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10px] text-gray-400 font-medium">Bentuk Objek</label>
+                            <select
+                              value={selectedElement.shapeType || 'cube'}
+                              onChange={(e) => updateElement(selectedElement.id, { shapeType: e.target.value as any })}
+                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                            >
+                              <option value="cube">Kubus</option>
+                              <option value="sphere">Bola</option>
+                              <option value="cylinder">Silinder</option>
+                            </select>
+                          </div>
+                          
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10px] text-gray-400 font-medium">Warna Objek</label>
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="color" 
+                                value={selectedElement.color || '#ffffff'}
+                                onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                                className="w-8 h-8 bg-[#1a1b1e] border border-[#2b2d31] rounded cursor-pointer shrink-0"
+                              />
+                              <input 
+                                type="text" 
+                                value={selectedElement.color || '#ffffff'}
+                                onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                                className="flex-1 bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-xs text-white outline-none focus:border-pln-blue font-mono"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
