@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment } from '@react-three/drei';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -703,6 +703,13 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             return null;
           })}
         </Suspense>
+
+        <GizmoHelper
+          alignment="bottom-right"
+          margin={[80, 80]}
+        >
+          <GizmoViewport axisColors={['#ef4444', '#22c55e', '#3b82f6']} labelColor="black" />
+        </GizmoHelper>
 
         <OrbitControls makeDefault />
       </Canvas>
