@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -641,10 +641,16 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
   const environmentMap = useEditorStore(state => state.environmentMap);
   const trackingMode = useEditorStore(state => state.trackingMode);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
+  const isOrthographic = useEditorStore(state => state.isOrthographic);
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
-      <Canvas camera={{ position: [0, 4, 8], fov: 45 }} onPointerMissed={() => setSelectedId(null)}>
+      <Canvas onPointerMissed={() => setSelectedId(null)}>
+        {isOrthographic ? (
+          <OrthographicCamera makeDefault position={[0, 4, 8]} zoom={80} />
+        ) : (
+          <PerspectiveCamera makeDefault position={[0, 4, 8]} fov={45} />
+        )}
         <color attach="background" args={['#0f172a']} />
         
         {environmentMap !== 'none' && (

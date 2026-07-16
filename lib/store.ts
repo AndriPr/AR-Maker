@@ -114,6 +114,8 @@ interface EditorState {
   duplicateElement: (id: string) => void;
   setSelectedId: (id: string | null) => void;
   setIsSnapping: (val: boolean) => void;
+  isOrthographic: boolean;
+  setIsOrthographic: (val: boolean) => void;
   setTrackingMode: (mode: 'image' | 'face' | 'cylinder') => void;
   setMultisetMapId: (id: string) => void;
   setAmbientLightIntensity: (val: number) => void;
@@ -135,6 +137,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
+  isOrthographic: false,
   trackingMode: 'image',
   multisetMapId: '',
   ambientLightIntensity: 0.8,
@@ -200,6 +203,7 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   setSelectedId: (id) => set({ selectedId: id }),
   setIsSnapping: (val) => set({ isSnapping: val }),
+  setIsOrthographic: (val) => set({ isOrthographic: val }),
   setTrackingMode: (mode) => set({ trackingMode: mode }),
   setMultisetMapId: (id) => set({ multisetMapId: id }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),

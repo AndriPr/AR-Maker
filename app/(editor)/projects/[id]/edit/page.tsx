@@ -54,6 +54,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const redo = useEditorStore(state => state.redo);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const setIsSnapping = useEditorStore(state => state.setIsSnapping);
+  const isOrthographic = useEditorStore(state => state.isOrthographic);
+  const setIsOrthographic = useEditorStore(state => state.setIsOrthographic);
   
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const setAmbientLightIntensity = useEditorStore(state => state.setAmbientLightIntensity);
@@ -445,6 +447,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           </div>
           
           <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-2"></div>
+
+          {/* Camera Toggle */}
+          <button 
+            onClick={() => setIsOrthographic(!isOrthographic)}
+            className={`hidden sm:flex items-center px-2 py-1.5 text-[10px] font-bold rounded-md transition-all border ${isOrthographic ? 'bg-pln-blue/20 text-pln-blue border-pln-blue/50' : 'text-gray-400 border-[#36393f] hover:text-white hover:bg-[#36393f]'}`}
+            title="Toggle Orthographic / Perspective Camera"
+          >
+            <Box size={14} className="mr-1" />
+            {isOrthographic ? "Ortho" : "Persp"}
+          </button>
 
           <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white hover:bg-[#2b2d31] border border-transparent hover:border-[#36393f] rounded-md transition-all disabled:opacity-50">
             {saving ? <Loader2 size={14} className="animate-spin sm:mr-2" /> : <Save size={14} className="sm:mr-2" />}
