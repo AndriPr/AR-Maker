@@ -673,7 +673,7 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
         
         <Selection>
           <EffectComposer autoClear={false}>
-            <Outline blur visibleEdgeColor="#0ea5e9" hiddenEdgeColor="#0ea5e9" edgeStrength={10} width={1000} />
+            <Outline blur visibleEdgeColor={0x0ea5e9} hiddenEdgeColor={0x0ea5e9} edgeStrength={10} width={1000} />
           </EffectComposer>
         <Suspense fallback={null}>
           {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
