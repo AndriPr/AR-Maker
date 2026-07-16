@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
-import { OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera } from '@react-three/drei';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -671,10 +671,7 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
           position={[0, -0.02, 0]} 
         />
         
-        <Selection>
-          <EffectComposer autoClear={false}>
-            <Outline blur visibleEdgeColor={0x0ea5e9} hiddenEdgeColor={0x0ea5e9} edgeStrength={10} width={1000} />
-          </EffectComposer>
+        
         <Suspense fallback={null}>
           {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
           {trackingMode === 'face' && (
@@ -714,7 +711,6 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             return null;
           })}
         </Suspense>
-        </Selection>
 
         <GizmoHelper
           alignment="bottom-right"
