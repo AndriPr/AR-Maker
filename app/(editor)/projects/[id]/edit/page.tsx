@@ -439,24 +439,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Undo/Redo Placeholder */}
+          {/* Undo/Redo */}
           <div className="hidden sm:flex bg-[#2b2d31] rounded-md overflow-hidden border border-[#36393f]">
-            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Undo"><ArrowLeft size={16} /></button>
+            <button onClick={undo} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Undo"><ArrowLeft size={16} /></button>
             <div className="w-px bg-[#36393f]"></div>
-            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Redo"><ArrowLeft size={16} className="rotate-180" /></button>
+            <button onClick={redo} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Redo"><ArrowLeft size={16} className="rotate-180" /></button>
           </div>
           
           <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-2"></div>
 
-          {/* Camera Toggle */}
-          <button 
-            onClick={() => setIsOrthographic(!isOrthographic)}
-            className={`hidden sm:flex items-center px-2 py-1.5 text-[10px] font-bold rounded-md transition-all border ${isOrthographic ? 'bg-pln-blue/20 text-pln-blue border-pln-blue/50' : 'text-gray-400 border-[#36393f] hover:text-white hover:bg-[#36393f]'}`}
-            title="Toggle Orthographic / Perspective Camera"
-          >
-            <Box size={14} className="mr-1" />
-            {isOrthographic ? "Ortho" : "Persp"}
-          </button>
+
 
           <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white hover:bg-[#2b2d31] border border-transparent hover:border-[#36393f] rounded-md transition-all disabled:opacity-50">
             {saving ? <Loader2 size={14} className="animate-spin sm:mr-2" /> : <Save size={14} className="sm:mr-2" />}
@@ -775,6 +767,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <Magnet size={14} />
           </button>
 
+          <div className="w-px h-6 bg-gray-700 mx-1"></div>
+
+          <button 
+            onClick={() => setIsOrthographic(!isOrthographic)}
+            className={`p-2 sm:p-2.5 rounded-full transition-all ${isOrthographic ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-[#1a1b1e]'}`}
+            title={isOrthographic ? "Mode 2D (Orthographic)" : "Mode 3D (Perspective)"}
+          >
+            <Box size={14} />
+          </button>
         </div>
 
         {/* Right Sidebar (Properties - Blippar Style) */}
