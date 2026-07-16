@@ -444,7 +444,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           name: file.name,
           type: assetType,
           file_url: publicUrl,
-          file_path: filePath,
           size: file.size
         });
 
