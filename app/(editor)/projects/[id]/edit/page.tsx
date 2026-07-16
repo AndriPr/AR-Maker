@@ -222,11 +222,13 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       }
     }
 
-    const { data: assetsData } = await supabase
-      .from('assets')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
+    let assetsQuery = supabase.from('assets').select('*').order('created_at', { ascending: false });
+    if (activeWorkspace) {
+      assetsQuery = assetsQuery.eq('workspace_id', activeWorkspace.id);
+    } else {
+      assetsQuery = assetsQuery.eq('user_id', session.user.id).is('workspace_id', null);
+    }
+    const { data: assetsData } = await assetsQuery;
 
     if (assetsData) setAssets(assetsData);
     
@@ -235,7 +237,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     fetchEditorData();
-  }, [unwrappedParams.id, router]);
+  }, [unwrappedParams.id, router, activeWorkspace]);
 
   const handleSave = async (silent = false) => {
     if (!project) return;
@@ -441,10 +443,11 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         .from('assets')
         .insert({
           user_id: session.user.id,
+          workspace_id: activeWorkspace?.id || null,
           name: file.name,
           type: assetType,
           file_url: publicUrl,
-          size: file.size
+          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
         });
 
       if (dbError) throw dbError;
