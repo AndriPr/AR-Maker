@@ -1871,63 +1871,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           </button>
         </div>
 
-        {/* Floating AI Assistant Widget */}
-        <div className="absolute bottom-20 right-4 md:right-[310px] z-50 flex flex-col items-end pointer-events-none">
-          {isAIOpen && (
-            <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl w-80 h-96 mb-4 flex flex-col overflow-hidden pointer-events-auto transition-all animate-in slide-in-from-bottom-5">
-              <div className="bg-gradient-to-r from-pln-blue to-purple-600 p-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bot size={18} className="text-white" />
-                  <span className="font-bold text-sm text-white">AI Editor Assistant</span>
-                </div>
-                <button onClick={() => setIsAIOpen(false)} className="text-white/80 hover:text-white">
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar bg-gray-900/50">
-                {aiMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-xl p-2.5 text-xs ${msg.role === 'user' ? 'bg-pln-blue text-white rounded-tr-sm' : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'}`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                {isAIProcessing && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[85%] rounded-xl p-2.5 text-xs bg-gray-800 text-gray-400 border border-gray-700 rounded-tl-sm flex items-center gap-1">
-                      <span className="animate-bounce">.</span><span className="animate-bounce delay-75">.</span><span className="animate-bounce delay-150">.</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="p-3 border-t border-gray-800 bg-gray-900">
-                <form onSubmit={handleAISubmit} className="relative">
-                  <input
-                    type="text"
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    placeholder="Ketik 'buat gelap'..."
-                    className="w-full bg-gray-800 border border-gray-700 rounded-full py-2 pl-4 pr-10 text-xs text-white outline-none focus:border-pln-blue placeholder-gray-500"
-                    disabled={isAIProcessing}
-                  />
-                  <button 
-                    type="submit" 
-                    disabled={isAIProcessing || !aiInput.trim()}
-                    className="absolute right-1 top-1 bottom-1 w-8 bg-pln-blue hover:bg-pln-blue-dark rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
-                  >
-                    <Send size={12} className="text-white" />
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => setIsAIOpen(!isAIOpen)}
-            className="w-12 h-12 bg-gradient-to-tr from-pln-blue to-purple-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 transition-transform pointer-events-auto border-2 border-gray-900"
-          >
-            {isAIOpen ? <X size={20} className="text-white" /> : <MessageSquare size={20} className="text-white" />}
-          </button>
-        </div>
+
 
       </div>
 
