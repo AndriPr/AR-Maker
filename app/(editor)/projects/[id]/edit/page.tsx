@@ -557,10 +557,46 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 eduMaintenanceTasks: []
               });
             }} 
-            className="p-2 text-pln-yellow hover:text-yellow-300 hover:bg-[#2b2d31] rounded-lg transition-colors" 
+            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
             title="Add UI Dashboard (Edu Panel)"
           >
             <LayoutDashboard size={18} />
+          </button>
+          
+          <button 
+            onClick={() => {
+              addElement({
+                type: 'hotspot',
+                name: 'Hotspot',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+                hotspotText: 'Penjelasan...'
+              });
+            }} 
+            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
+            title="Add Hotspot Penjelasan"
+          >
+            <MapPin size={18} />
+          </button>
+
+          <button 
+            onClick={() => {
+              addElement({
+                type: 'vfx_sparkles',
+                name: 'Efek Salju/Bintang',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1],
+                sparkleColor: '#ffffff',
+                sparkleCount: 100,
+                sparkleSize: 2
+              });
+            }} 
+            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
+            title="Add Efek Visual (VFX)"
+          >
+            <Sparkles size={18} />
           </button>
         </aside>
 
@@ -739,97 +775,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <Magnet size={14} />
           </button>
 
-          <div className="w-px h-6 bg-[#2b2d31] mx-1"></div>
-
-          <button 
-            onClick={() => {
-              addElement({
-                type: '3d_text',
-                name: 'Teks 3D',
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-                content: 'Hello AR',
-                color: '#ffffff'
-              });
-            }} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all text-green-400 hover:text-green-300 hover:bg-[#1a1b1e]`}
-            title="Tambah Teks 3D"
-          >
-            <Type size={14} />
-          </button>
-
-          <button 
-            onClick={() => {
-              addElement({
-                type: 'ui_button',
-                name: 'Tombol AR',
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-                buttonText: 'Klik Saya'
-              });
-            }} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all text-blue-400 hover:text-blue-300 hover:bg-[#1a1b1e]`}
-            title="Tambah Tombol Interaktif"
-          >
-            <MousePointerClick size={14} />
-          </button>
-
-          <button 
-            onClick={() => {
-              addElement({
-                type: 'edu_panel',
-                name: 'Dashboard AR',
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-                panelTitle: 'INFORMASI',
-                eduComponents: [],
-                eduMaintenanceTasks: []
-              });
-            }} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all text-pln-yellow hover:text-yellow-300 hover:bg-[#1a1b1e]`}
-            title="Tambah Dashboard Informasi"
-          >
-            <LayoutDashboard size={14} />
-          </button>
-
-          <button 
-            onClick={() => {
-              addElement({
-                type: 'hotspot',
-                name: 'Hotspot',
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-                hotspotText: 'Penjelasan...'
-              });
-            }} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all text-orange-400 hover:text-orange-300 hover:bg-[#1a1b1e]`}
-            title="Tambah Hotspot Penjelasan"
-          >
-            <MapPin size={14} />
-          </button>
-
-          <button 
-            onClick={() => {
-              addElement({
-                type: 'vfx_sparkles',
-                name: 'Efek Salju/Bintang',
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-                sparkleColor: '#ffffff',
-                sparkleCount: 100,
-                sparkleSize: 2
-              });
-            }} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all text-yellow-400 hover:text-yellow-300 hover:bg-[#1a1b1e]`}
-            title="Tambah Efek Visual (VFX)"
-          >
-            <Sparkles size={14} />
-          </button>
         </div>
 
         {/* Right Sidebar (Properties - Blippar Style) */}
