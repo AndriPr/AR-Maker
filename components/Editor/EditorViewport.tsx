@@ -126,7 +126,7 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
       {isSelected && (
         <TransformControls
           ref={transformRef}
-          object={groupRef}
+          object={groupRef as any}
           mode={mode}
           onMouseUp={handleTransform}
           translationSnap={isSnapping ? 0.5 : null}
