@@ -654,45 +654,47 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
                 <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">SCENE HIERARCHY</button>
               </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-0.5 bg-[#202227] custom-scrollbar">
-                <div 
-                  className={`flex items-center gap-2 px-3 py-2 mt-1 rounded text-xs cursor-pointer transition-colors ${
-                    selectedId === null ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
-                  }`}
-                  onClick={() => setSelectedId(null)}
-                >
-                  <ImageIcon size={12} className="shrink-0" />
-                  <span className="truncate">Marker Image</span>
-                </div>
-                
-                {elements.map(el => (
+              <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 bg-[#202227]">
+                <div className="p-2 space-y-0.5">
                   <div 
-                    key={el.id}
-                    onClick={() => setSelectedId(el.id)}
-                    className={`flex items-center justify-between px-3 py-2 rounded text-xs cursor-pointer transition-colors ${
-                      selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                    className={`flex items-center gap-2 px-3 py-2 mt-1 rounded text-xs cursor-pointer transition-colors ${
+                      selectedId === null ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
                     }`}
+                    onClick={() => setSelectedId(null)}
                   >
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      {el.type === '3d_model' && <Box size={12} className="shrink-0" />}
-                      {el.type === '3d_text' && <Type size={12} className="shrink-0" />}
-                      {el.type === 'ui_button' && <MousePointerClick size={12} className="shrink-0" />}
-                      {el.type === 'edu_panel' && <LayoutDashboard size={12} className="shrink-0" />}
-                      {el.type === 'audio' && <Volume2 size={12} className="shrink-0" />}
-                      {el.type === 'video' && <Video size={12} className="shrink-0" />}
-                      {el.type === 'vfx_sparkles' && <Sparkles size={12} className="shrink-0" />}
-                      {el.type === 'hotspot' && <MapPin size={12} className="shrink-0" />}
-                      <span className="truncate">{el.name}</span>
-                    </div>
-                    {selectedId === el.id && (
-                      <div className="flex items-center">
-                        <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    )}
+                    <ImageIcon size={12} className="shrink-0" />
+                    <span className="truncate">Marker Image</span>
                   </div>
-                ))}
+                  
+                  {elements.map(el => (
+                    <div 
+                      key={el.id}
+                      onClick={() => setSelectedId(el.id)}
+                      className={`flex items-center justify-between px-3 py-2 rounded text-xs cursor-pointer transition-colors ${
+                        selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        {el.type === '3d_model' && <Box size={12} className="shrink-0" />}
+                        {el.type === '3d_text' && <Type size={12} className="shrink-0" />}
+                        {el.type === 'ui_button' && <MousePointerClick size={12} className="shrink-0" />}
+                        {el.type === 'edu_panel' && <LayoutDashboard size={12} className="shrink-0" />}
+                        {el.type === 'audio' && <Volume2 size={12} className="shrink-0" />}
+                        {el.type === 'video' && <Video size={12} className="shrink-0" />}
+                        {el.type === 'vfx_sparkles' && <Sparkles size={12} className="shrink-0" />}
+                        {el.type === 'hotspot' && <MapPin size={12} className="shrink-0" />}
+                        <span className="truncate">{el.name}</span>
+                      </div>
+                      {selectedId === el.id && (
+                        <div className="flex items-center">
+                          <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           ) : (
@@ -716,7 +718,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   UPLOAD ASSET
                 </button>
               </div>
-            <div className="flex-1 p-2 grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+              <div className="p-2 grid grid-cols-2 gap-2">
               {assets.map(asset => (
                 <div 
                   key={asset.id} 
@@ -794,6 +797,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   Belum ada aset.<br/>Upload dari halaman My Assets.
                 </div>
               )}
+              </div>
             </div>
           </>
           )}
