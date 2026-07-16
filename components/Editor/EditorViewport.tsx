@@ -139,8 +139,6 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
           scaleSnap={isSnapping ? 0.25 : null}
         />
       )}
-      
-      {isSelected && <mesh><boxGeometry args={[1.05, 1.05, 1.05]} /><meshBasicMaterial color="#0ea5e9" wireframe transparent opacity={0.3} /></mesh>}
     </group>
   );
 }
