@@ -33,7 +33,7 @@ export interface SceneElement {
   url?: string;         // For models, images, videos
   content?: string;     // For text
   color?: string;       // For text and shapes
-  shapeType?: 'cube' | 'sphere' | 'cylinder'; // For 3d shapes
+  shapeType?: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone' | 'torus' | 'tetrahedron' | 'icosahedron'; // For 3d shapes
   
   // Interactivity Properties
   availableAnimations?: string[]; // Extracted from 3D model GLTF

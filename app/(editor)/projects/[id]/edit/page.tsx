@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -23,7 +23,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   
   // Mobile Panel States
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
-  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library'>('hierarchy');
+  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library' | 'shapes'>('hierarchy');
   const [isRightPanelOpen, setRightPanelOpen] = useState(true);
 
   // AI Assistant State
@@ -571,24 +571,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           
           <div className="w-6 h-px bg-[#2b2d31]"></div>
           
-          {/* Basic Shapes */}
           <button 
-            onClick={() => addElement({ type: '3d_shape', shapeType: 'cube', name: 'Kubus Dasar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })} 
-            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Tambah Kubus (Cube)"
+            onClick={() => {
+              if (isLeftPanelOpen && leftPanelTab === 'shapes') setLeftPanelOpen(false);
+              else { setLeftPanelOpen(true); setLeftPanelTab('shapes'); }
+            }}
+            className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'shapes' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+            title="Basic Shapes"
           >
-            <Square size={18} />
-          </button>
-          <button 
-            onClick={() => addElement({ type: '3d_shape', shapeType: 'sphere', name: 'Bola Dasar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })} 
-            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Tambah Bola (Sphere)"
-          >
-            <div className="w-[18px] h-[18px] border-2 border-current rounded-full"></div>
-          </button>
-          <button 
-            onClick={() => addElement({ type: '3d_shape', shapeType: 'cylinder', name: 'Silinder Dasar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })} 
-            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Tambah Silinder (Cylinder)"
-          >
-            <Database size={18} />
+            <Shapes size={18} />
           </button>
           
           <div className="w-6 h-px bg-[#2b2d31]"></div>
@@ -676,7 +667,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         {/* Secondary Drawer (Library & Hierarchy) */}
         <aside className={`pointer-events-auto absolute top-14 bottom-0 left-12 z-20 w-64 bg-[#202227] border-r border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-[150%]'} overflow-hidden`}>
           
-          {leftPanelTab === 'hierarchy' ? (
+          {leftPanelTab === 'hierarchy' && (
             <>
               {/* Hierarchy View */}
               <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
@@ -725,7 +716,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 </div>
               </div>
             </>
-          ) : (
+          )}
+          
+          {leftPanelTab === 'library' && (
             <>
               {/* Library View */}
               <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
@@ -828,6 +821,37 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               </div>
             </div>
           </>
+          )}
+
+          {leftPanelTab === 'shapes' && (
+            <>
+              <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
+                <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">BASIC SHAPES</button>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                <div className="p-2 grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'cube', name: 'Kubus', icon: <Square size={20} className="mb-1" /> },
+                    { id: 'sphere', name: 'Bola', icon: <Circle size={20} className="mb-1" /> },
+                    { id: 'cylinder', name: 'Silinder', icon: <Database size={20} className="mb-1" /> },
+                    { id: 'plane', name: 'Bidang', icon: <Square size={20} className="mb-1" /> },
+                    { id: 'cone', name: 'Kerucut', icon: <Triangle size={20} className="mb-1" /> },
+                    { id: 'torus', name: 'Cincin', icon: <Circle size={20} className="mb-1" /> },
+                    { id: 'tetrahedron', name: 'Piramida', icon: <Triangle size={20} className="mb-1" /> },
+                    { id: 'icosahedron', name: 'Polihedron', icon: <Hexagon size={20} className="mb-1" /> },
+                  ].map(shape => (
+                    <div 
+                      key={shape.id} 
+                      onClick={() => addElement({ type: '3d_shape', shapeType: shape.id as any, name: shape.name, position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })}
+                      className="aspect-square rounded border border-[#2b2d31] flex flex-col items-center justify-center cursor-pointer transition-colors bg-[#202227] hover:border-pln-blue text-gray-500 hover:text-pln-blue"
+                    >
+                      {shape.icon}
+                      <span className="text-[10px] font-medium">{shape.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
         </aside>
@@ -1774,9 +1798,14 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               onChange={(e) => updateElement(selectedElement.id, { shapeType: e.target.value as any })}
                               className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
                             >
-                              <option value="cube">Kubus</option>
-                              <option value="sphere">Bola</option>
-                              <option value="cylinder">Silinder</option>
+                            <option value="cube">Kubus (Cube)</option>
+                            <option value="sphere">Bola (Sphere)</option>
+                            <option value="cylinder">Silinder (Cylinder)</option>
+                            <option value="plane">Bidang (Plane)</option>
+                            <option value="cone">Kerucut (Cone)</option>
+                            <option value="torus">Cincin (Torus)</option>
+                            <option value="tetrahedron">Piramida (Tetrahedron)</option>
+                            <option value="icosahedron">Polihedron (Icosahedron)</option>
                             </select>
                           </div>
                           
