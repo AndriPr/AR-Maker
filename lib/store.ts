@@ -77,6 +77,11 @@ export interface SceneElement {
   rotation: [number, number, number];
   scale: [number, number, number];
   
+  // Advanced Animations
+  entranceAnimation?: 'none' | 'fade' | 'scale' | 'slide-up';
+  idleAnimation?: 'none' | 'rotate' | 'hover' | 'both';
+  idleAnimationSpeed?: number;
+
   visibilityMode?: 'visible' | 'hidden'; // For 3D models toggling
 }
 

@@ -1,11 +1,81 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 
 import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
+
+function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null);
+  
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+    const group = groupRef.current;
+    
+    // Initialize entrance animation
+    if (element.entranceAnimation && element.entranceAnimation !== 'none' && group.userData.entranceProgress === undefined) {
+      group.userData.entranceProgress = 0;
+      if (element.entranceAnimation === 'scale') group.scale.set(0.001, 0.001, 0.001);
+      if (element.entranceAnimation === 'slide-up') group.position.set(0, -2, 0);
+      if (element.entranceAnimation === 'fade') {
+        group.traverse((child: any) => {
+          if (child.isMesh && child.material) {
+            child.userData.origTransparent = child.material.transparent;
+            child.material.transparent = true;
+            child.material.opacity = 0;
+          }
+        });
+      }
+    }
+
+    let currentEntranceProgress = 1;
+
+    // Run entrance animation
+    if (element.entranceAnimation && element.entranceAnimation !== 'none' && group.userData.entranceProgress < 1) {
+      group.userData.entranceProgress += delta * 1.5;
+      if (group.userData.entranceProgress > 1) group.userData.entranceProgress = 1;
+      
+      const p = group.userData.entranceProgress;
+      currentEntranceProgress = p;
+
+      if (element.entranceAnimation === 'scale') {
+         group.scale.set(p, p, p);
+      }
+      if (element.entranceAnimation === 'slide-up') {
+         group.position.set(0, -2 * (1 - p), 0);
+      }
+      if (element.entranceAnimation === 'fade') {
+         group.traverse((child: any) => {
+            if (child.isMesh && child.material) {
+               child.material.opacity = p;
+               if (p >= 1 && child.userData.origTransparent === false) {
+                 child.material.transparent = false;
+               }
+            }
+         });
+      }
+    }
+
+    // Run idle animation
+    if (element.idleAnimation && element.idleAnimation !== 'none') {
+       const speed = element.idleAnimationSpeed ?? 1;
+       
+       if (element.idleAnimation === 'rotate' || element.idleAnimation === 'both') {
+          group.rotation.y += delta * speed;
+       }
+       
+       if (element.idleAnimation === 'hover' || element.idleAnimation === 'both') {
+          const baseV = (element.entranceAnimation === 'slide-up' && currentEntranceProgress < 1) 
+              ? -2 * (1 - currentEntranceProgress) : 0;
+          group.position.y = baseV + Math.sin(state.clock.elapsedTime * 2 * speed) * 0.1;
+       }
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
 
 function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
   const { scene, animations } = useGLTF(element.url) as any;
@@ -91,16 +161,18 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   const primitiveObj = (
     <group ref={groupRef}>
-      <primitive 
-        object={clonedScene} 
-        onClick={(e: any) => {
-          e.stopPropagation();
-          setSelectedId(element.id);
-        }}
-        onPointerMissed={(e: any) => {
-          if (e.type === 'click') setSelectedId(null);
-        }}
-      />
+      <AnimatedElementWrapper element={element}>
+        <primitive 
+          object={clonedScene} 
+          onClick={(e: any) => {
+            e.stopPropagation();
+            setSelectedId(element.id);
+          }}
+          onPointerMissed={(e: any) => {
+            if (e.type === 'click') setSelectedId(null);
+          }}
+        />
+      </AnimatedElementWrapper>
     </group>
   );
 
@@ -201,26 +273,28 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
   }, [isSelected, element.id, updateElement]);
 
   const textObj = (
-    <Text 
-      color={element.color || "#ffffff"} 
-      fontSize={0.5} 
-      maxWidth={5} 
-      lineHeight={1}
-      letterSpacing={0.02} 
-      textAlign="center" 
-      font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff" 
-      anchorX="center" 
-      anchorY="middle"
-      onClick={(e: any) => {
-        e.stopPropagation();
-        setSelectedId(element.id);
-      }}
-      onPointerMissed={(e: any) => {
-        if (e.type === 'click') setSelectedId(null);
-      }}
-    >
-      {liveText}
-    </Text>
+    <AnimatedElementWrapper element={element}>
+      <Text 
+        color={element.color || "#ffffff"} 
+        fontSize={0.5} 
+        maxWidth={5} 
+        lineHeight={1}
+        letterSpacing={0.02} 
+        textAlign="center" 
+        font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff" 
+        anchorX="center" 
+        anchorY="middle"
+        onClick={(e: any) => {
+          e.stopPropagation();
+          setSelectedId(element.id);
+        }}
+        onPointerMissed={(e: any) => {
+          if (e.type === 'click') setSelectedId(null);
+        }}
+      >
+        {liveText}
+      </Text>
+    </AnimatedElementWrapper>
   );
 
   if (isSelected) {
@@ -275,21 +349,23 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
   }, [isSelected, element.id, updateElement]);
 
   const buttonObj = (
-    <group 
-      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
-      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
-    >
-      <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
-        <div className={`px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-2xl whitespace-nowrap cursor-pointer select-none border border-white/20 ${isSelected ? 'ring-4 ring-pln-yellow scale-105 transition-transform' : ''}`}>
-          👆 {element.buttonText || 'Tombol Aksi'}
-        </div>
-      </Html>
-      {/* Invisible hitbox */}
-      <mesh visible={false} scale={[2, 0.8, 0.1]}>
-         <boxGeometry />
-         <meshBasicMaterial />
-      </mesh>
-    </group>
+    <AnimatedElementWrapper element={element}>
+      <group 
+        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+      >
+        <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
+          <div className={`px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-2xl whitespace-nowrap cursor-pointer select-none border border-white/20 ${isSelected ? 'ring-4 ring-pln-yellow scale-105 transition-transform' : ''}`}>
+            👆 {element.buttonText || 'Tombol Aksi'}
+          </div>
+        </Html>
+        {/* Invisible hitbox */}
+        <mesh visible={false} scale={[2, 0.8, 0.1]}>
+           <boxGeometry />
+           <meshBasicMaterial />
+        </mesh>
+      </group>
+    </AnimatedElementWrapper>
   );
 
   if (isSelected) {
@@ -344,21 +420,23 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   }, [isSelected, element.id, updateElement]);
 
   const audioObj = (
-    <group 
-      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
-      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
-    >
-      <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
-        <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-pink-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-pink-500 scale-110 transition-transform bg-gray-700' : ''}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-        </div>
-      </Html>
-      {/* Invisible hitbox */}
-      <mesh visible={false} scale={[1, 1, 1]}>
-         <sphereGeometry args={[0.5, 16, 16]} />
-         <meshBasicMaterial />
-      </mesh>
-    </group>
+    <AnimatedElementWrapper element={element}>
+      <group 
+        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+      >
+        <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
+          <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-pink-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-pink-500 scale-110 transition-transform bg-gray-700' : ''}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+          </div>
+        </Html>
+        {/* Invisible hitbox */}
+        <mesh visible={false} scale={[1, 1, 1]}>
+           <sphereGeometry args={[0.5, 16, 16]} />
+           <meshBasicMaterial />
+        </mesh>
+      </group>
+    </AnimatedElementWrapper>
   );
 
   if (isSelected) {
@@ -413,25 +491,27 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   }, [isSelected, element.id, updateElement]);
 
   const videoObj = (
-    <group 
-      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
-      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
-    >
-      <mesh>
-        <planeGeometry args={[3, 1.68]} />
-        <meshBasicMaterial color="#374151" opacity={0.8} transparent />
-      </mesh>
-      <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
-        <div className={`w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-red-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-red-500 scale-110 transition-transform bg-gray-700' : ''}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        </div>
-      </Html>
-      {/* Invisible hitbox */}
-      <mesh visible={false} scale={[3, 1.68, 0.1]}>
-         <boxGeometry />
-         <meshBasicMaterial />
-      </mesh>
-    </group>
+    <AnimatedElementWrapper element={element}>
+      <group 
+        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+      >
+        <mesh>
+          <planeGeometry args={[3, 1.68]} />
+          <meshBasicMaterial color="#374151" opacity={0.8} transparent />
+        </mesh>
+        <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
+          <div className={`w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-red-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-red-500 scale-110 transition-transform bg-gray-700' : ''}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          </div>
+        </Html>
+        {/* Invisible hitbox */}
+        <mesh visible={false} scale={[3, 1.68, 0.1]}>
+           <boxGeometry />
+           <meshBasicMaterial />
+        </mesh>
+      </group>
+    </AnimatedElementWrapper>
   );
 
   if (isSelected) {
@@ -486,31 +566,33 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   }, [isSelected, element.id, updateElement]);
 
   const sparklesObj = (
-    <group 
-      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
-      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
-    >
-      <Sparkles 
-        count={element.sparkleCount || 100} 
-        scale={5} 
-        size={element.sparkleSize || 2} 
-        color={element.sparkleColor || "#ffffff"} 
-        speed={0.4} 
-        noise={1} 
-      />
-      {isSelected && (
-        <Html transform center position={[0,0,0]}>
-          <div className="px-2 py-1 bg-yellow-400 text-black text-[10px] font-bold rounded shadow-lg whitespace-nowrap">
-            ✨ VFX Zone
-          </div>
-        </Html>
-      )}
-      {/* Invisible hitbox */}
-      <mesh visible={false} scale={[2, 2, 2]}>
-         <sphereGeometry args={[1, 16, 16]} />
-         <meshBasicMaterial />
-      </mesh>
-    </group>
+    <AnimatedElementWrapper element={element}>
+      <group 
+        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+      >
+        <Sparkles 
+          count={element.sparkleCount || 100} 
+          scale={5} 
+          size={element.sparkleSize || 2} 
+          color={element.sparkleColor || "#ffffff"} 
+          speed={0.4} 
+          noise={1} 
+        />
+        {isSelected && (
+          <Html transform center position={[0,0,0]}>
+            <div className="px-2 py-1 bg-yellow-400 text-black text-[10px] font-bold rounded shadow-lg whitespace-nowrap">
+              ✨ VFX Zone
+            </div>
+          </Html>
+        )}
+        {/* Invisible hitbox */}
+        <mesh visible={false} scale={[2, 2, 2]}>
+           <sphereGeometry args={[1, 16, 16]} />
+           <meshBasicMaterial />
+        </mesh>
+      </group>
+    </AnimatedElementWrapper>
   );
 
   if (isSelected) {
@@ -565,30 +647,32 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
   }, [isSelected, element.id, updateElement]);
 
   const hotspotObj = (
-    <group 
-      onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
-      onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
-    >
-      {/* Glowing Dot */}
-      <mesh>
-        <sphereGeometry args={[0.2, 16, 16]} />
-        <meshBasicMaterial color="#fb923c" transparent opacity={0.8} />
-      </mesh>
-      <mesh scale={[1.5, 1.5, 1.5]}>
-        <sphereGeometry args={[0.2, 16, 16]} />
-        <meshBasicMaterial color="#f97316" transparent opacity={0.3} />
-      </mesh>
+    <AnimatedElementWrapper element={element}>
+      <group 
+        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+      >
+        {/* Glowing Dot */}
+        <mesh>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshBasicMaterial color="#fb923c" transparent opacity={0.8} />
+        </mesh>
+        <mesh scale={[1.5, 1.5, 1.5]}>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.3} />
+        </mesh>
 
-      {/* Label Box */}
-      <Html center position={[0, 0.5, 0]}>
-        <div className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl transition-all ${isSelected ? 'bg-orange-500 text-white ring-2 ring-white scale-110' : 'bg-gray-800 text-orange-400 border border-gray-700'}`}>
-          <div className="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            {element.hotspotText || "Hotspot"}
+        {/* Label Box */}
+        <Html center position={[0, 0.5, 0]}>
+          <div className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl transition-all ${isSelected ? 'bg-orange-500 text-white ring-2 ring-white scale-110' : 'bg-gray-800 text-orange-400 border border-gray-700'}`}>
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              {element.hotspotText || "Hotspot"}
+            </div>
           </div>
-        </div>
-      </Html>
-    </group>
+        </Html>
+      </group>
+    </AnimatedElementWrapper>
   );
 
   if (isSelected) {

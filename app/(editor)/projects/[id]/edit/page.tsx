@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
@@ -406,6 +406,60 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     });
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAsset, setIsUploadingAsset] = useState(false);
+
+  const handleUploadAsset = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingAsset(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `${session.user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath);
+
+      let assetType = 'image';
+      if (file.type.startsWith('video/')) assetType = 'video';
+      else if (file.type.startsWith('audio/')) assetType = 'audio';
+      else if (file.name.endsWith('.glb') || file.name.endsWith('.gltf')) assetType = '3d_model';
+
+      const { error: dbError } = await supabase
+        .from('assets')
+        .insert({
+          user_id: session.user.id,
+          name: file.name,
+          type: assetType,
+          file_url: publicUrl,
+          file_path: filePath,
+          size: file.size
+        });
+
+      if (dbError) throw dbError;
+
+      // refresh assets
+      fetchEditorData();
+    } catch (err: any) {
+      alert('Gagal mengunggah: ' + err.message);
+    } finally {
+      setIsUploadingAsset(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   if (loading) {
     return <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white"><Loader2 className="animate-spin" size={32} /></div>;
   }
@@ -441,9 +495,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         <div className="flex items-center gap-2">
           {/* Undo/Redo */}
           <div className="hidden sm:flex bg-[#2b2d31] rounded-md overflow-hidden border border-[#36393f]">
-            <button onClick={undo} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Undo"><ArrowLeft size={16} /></button>
+            <button onClick={() => undo()} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Undo"><ArrowLeft size={16} /></button>
             <div className="w-px bg-[#36393f]"></div>
-            <button onClick={redo} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Redo"><ArrowLeft size={16} className="rotate-180" /></button>
+            <button onClick={() => redo()} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Redo"><ArrowLeft size={16} className="rotate-180" /></button>
           </div>
           
           <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-2"></div>
@@ -647,7 +701,21 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               {/* Library View */}
               <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
                 <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">PROJECT ASSETS</button>
-                <Link href="/assets" target="_blank" className="flex-1 py-3 text-[10px] font-bold text-gray-500 hover:text-gray-300 bg-[#1a1b1e] text-center flex items-center justify-center border-l border-[#2b2d31]">UPLOAD ASSET</Link>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  onChange={handleUploadAsset} 
+                  accept="image/*,video/*,audio/*,.glb,.gltf"
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={isUploadingAsset}
+                  className="flex-1 py-3 text-[10px] font-bold text-gray-500 hover:text-gray-300 bg-[#1a1b1e] text-center flex items-center justify-center border-l border-[#2b2d31] disabled:opacity-50"
+                >
+                  {isUploadingAsset ? <Loader2 size={12} className="animate-spin mr-1" /> : <Plus size={12} className="mr-1" />}
+                  UPLOAD ASSET
+                </button>
               </div>
             <div className="flex-1 p-2 grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar">
               {assets.map(asset => (
@@ -774,7 +842,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             className={`p-2 sm:p-2.5 rounded-full transition-all ${isOrthographic ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-[#1a1b1e]'}`}
             title={isOrthographic ? "Mode 2D (Orthographic)" : "Mode 3D (Perspective)"}
           >
-            <Box size={14} />
+            {isOrthographic ? <Square size={14} /> : <Box size={14} />}
           </button>
         </div>
 
@@ -985,6 +1053,57 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   </div>
                 </div>
 
+                {/* Advanced Animations Panel (For all elements) */}
+                <div className="p-4 space-y-4 border-t border-[#2b2d31]">
+                  <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles size={12} className="text-purple-400"/> Animasi Lanjutan
+                  </h4>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] text-gray-400 font-medium">Animasi Muncul (Entrance)</label>
+                    <select
+                      value={selectedElement.entranceAnimation || 'none'}
+                      onChange={(e) => updateElement(selectedElement.id, { entranceAnimation: e.target.value as any })}
+                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue shadow-inner"
+                    >
+                      <option value="none">Tidak Ada (Langsung Muncul)</option>
+                      <option value="fade">Fade In (Mengudar)</option>
+                      <option value="scale">Pop/Scale In (Membesar)</option>
+                      <option value="slide-up">Slide Up (Naik dari Bawah)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] text-gray-400 font-medium">Animasi Diam (Idle)</label>
+                    <select
+                      value={selectedElement.idleAnimation || 'none'}
+                      onChange={(e) => updateElement(selectedElement.id, { idleAnimation: e.target.value as any })}
+                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue shadow-inner"
+                    >
+                      <option value="none">Diam</option>
+                      <option value="rotate">Berputar (Auto-Rotate)</option>
+                      <option value="hover">Melayang (Hover)</option>
+                      <option value="both">Berputar & Melayang</option>
+                    </select>
+                  </div>
+
+                  {selectedElement.idleAnimation && selectedElement.idleAnimation !== 'none' && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] text-gray-400 font-medium flex justify-between">
+                        Kecepatan Animasi Idle
+                        <span className="font-mono text-[10px]">{(selectedElement.idleAnimationSpeed ?? 1).toFixed(1)}x</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0.1" max="5" step="0.1" 
+                        value={selectedElement.idleAnimationSpeed ?? 1}
+                        onChange={(e) => updateElement(selectedElement.id, { idleAnimationSpeed: parseFloat(e.target.value) })}
+                        className="w-full accent-purple-400"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 {selectedElement.type === '3d_text' && (
                       <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
@@ -1056,7 +1175,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                             <MousePointerClick size={12} className="text-blue-400" /> Interaktivitas Tombol
                           </h4>
                           <p className="text-[10px] text-gray-500 leading-tight">
-                            Tombol ini akan muncul di layar HP saat AR digunakan. Anda bisa mengaturnya untuk memutar animasi pada model 3D.
+                            Pilih aksi yang terjadi saat tombol ini diklik di AR.
                           </p>
                           
                           <div className="flex flex-col gap-1.5">
@@ -1070,53 +1189,79 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                             />
                           </div>
 
-                          {elements.filter(el => el.type === '3d_model').length === 0 ? (
-                            <div className="bg-pln-yellow/10 border border-pln-yellow/30 p-3 rounded">
-                              <p className="text-[10px] text-pln-yellow font-medium">
-                                💡 Anda belum memasukkan Model 3D ke dalam Editor. Masukkan model 3D terlebih dahulu agar tombol ini bisa menggerakkannya!
-                              </p>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] text-gray-400 font-medium">Pilih Model 3D yang akan Bergerak</label>
-                                <select
-                                  value={selectedElement.actionTargetId || ''}
-                                  onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
-                                  className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                                >
-                                  <option value="">-- Pilih Model --</option>
-                                  {elements.filter(el => el.type === '3d_model').map(model => (
-                                    <option key={model.id} value={model.id}>{model.name}</option>
-                                  ))}
-                                </select>
-                              </div>
+                          <div className="flex flex-col gap-1.5 mt-2">
+                            <label className="text-[10px] text-gray-400 font-medium">Tipe Aksi Saat Diklik</label>
+                            <select
+                              value={selectedElement.onClickActionType || 'animation'}
+                              onChange={(e) => updateElement(selectedElement.id, { onClickActionType: e.target.value as any })}
+                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue shadow-inner"
+                            >
+                              <option value="none">Tidak Ada Aksi</option>
+                              <option value="animation">Mainkan Animasi 3D</option>
+                              <option value="url">Buka Tautan Website (URL)</option>
+                            </select>
+                          </div>
 
-                              {selectedElement.actionTargetId && (
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[10px] text-gray-400 font-medium">Pilih Animasi yang Diputar</label>
-                                  {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.length ? (
+                          {(selectedElement.onClickActionType === 'animation' || !selectedElement.onClickActionType) && (
+                            <>
+                              {elements.filter(el => el.type === '3d_model').length === 0 ? (
+                                <div className="bg-pln-yellow/10 border border-pln-yellow/30 p-3 rounded mt-2">
+                                  <p className="text-[10px] text-pln-yellow font-medium">
+                                    💡 Masukkan Model 3D terlebih dahulu agar tombol ini bisa menggerakkannya!
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="space-y-3 mt-2 bg-[#202227] p-3 rounded border border-[#2b2d31]">
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] text-gray-400 font-medium">Target Model 3D</label>
                                     <select
-                                      value={selectedElement.actionAnimation || ''}
-                                      onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
-                                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
+                                      value={selectedElement.actionTargetId || ''}
+                                      onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
+                                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
                                     >
-                                      <option value="">-- Pilih Animasi --</option>
-                                      <option value="*">✨ Mainkan Semua Animasi Bersamaan (*)</option>
-                                      {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
-                                        <option key={anim} value={anim}>{anim}</option>
+                                      <option value="">-- Pilih Model --</option>
+                                      {elements.filter(el => el.type === '3d_model').map(model => (
+                                        <option key={model.id} value={model.id}>{model.name}</option>
                                       ))}
                                     </select>
-                                  ) : (
-                                    <div className="bg-red-500/10 border border-red-500/30 p-2 rounded">
-                                      <p className="text-[10px] text-red-400">
-                                        Model yang Anda pilih tidak memiliki animasi bawaan. Silakan gunakan file .glb lain yang beranimasi.
-                                      </p>
+                                  </div>
+
+                                  {selectedElement.actionTargetId && (
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[10px] text-gray-400 font-medium">Pilih Animasi</label>
+                                      {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.length ? (
+                                        <select
+                                          value={selectedElement.actionAnimation || ''}
+                                          onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
+                                          className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                                        >
+                                          <option value="">-- Pilih Animasi --</option>
+                                          <option value="*">✨ Semua Bersamaan (*)</option>
+                                          {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
+                                            <option key={anim} value={anim}>{anim}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <p className="text-[10px] text-red-400">Model ini tidak memiliki animasi bawaan.</p>
+                                      )}
                                     </div>
                                   )}
                                 </div>
                               )}
                             </>
+                          )}
+
+                          {selectedElement.onClickActionType === 'url' && (
+                            <div className="flex flex-col gap-1.5 mt-2 bg-[#202227] p-3 rounded border border-[#2b2d31]">
+                              <label className="text-[10px] text-gray-400 font-medium">Masukkan URL (Tautan)</label>
+                              <input 
+                                type="url"
+                                value={selectedElement.onClickActionValue || ''}
+                                onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
+                                className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                                placeholder="https://google.com"
+                              />
+                            </div>
                           )}
                         </div>
                       )}
