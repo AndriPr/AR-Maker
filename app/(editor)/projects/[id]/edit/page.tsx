@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -1003,6 +1003,19 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         </div>
 
         {/* Right Sidebar (Properties - Blippar Style) */}
+        
+        {/* Properties Pull-out Tab (Visible when closed) */}
+        {!isRightPanelOpen && (
+          <button 
+            onClick={() => setRightPanelOpen(true)}
+            className="pointer-events-auto absolute top-1/2 right-0 -translate-y-1/2 bg-[#1a1b1e] border border-[#2b2d31] border-r-0 text-gray-400 hover:text-white p-2 py-6 rounded-l-md shadow-xl z-20 flex flex-col items-center justify-center transition-colors group"
+            title="Buka Properties"
+          >
+            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] uppercase font-bold [writing-mode:vertical-rl] rotate-180 mt-2 tracking-widest group-hover:text-pln-blue transition-colors">Properties</span>
+          </button>
+        )}
+
         <aside className={`pointer-events-auto absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#1a1b1e] border-l border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} overflow-hidden`}>
           <div className="bg-[#202227] p-3 border-b border-[#2b2d31] text-[10px] font-bold text-gray-400 uppercase flex items-center justify-between tracking-wider">
             PROPERTIES
