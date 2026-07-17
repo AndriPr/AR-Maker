@@ -746,10 +746,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 <div 
                   key={asset.id} 
                   onClick={() => {
-                    if (asset.type === 'image') {
-                      setTargetImageUrl(asset.file_url);
-                      setSelectedId(null);
-                    }
                     if (asset.type === '3d_model') {
                       addElement({
                          type: '3d_model',
@@ -789,7 +785,26 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   className={`aspect-square rounded border border-[#2b2d31] flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-[#202227] hover:border-pln-blue group`}
                 >
                   {asset.type === 'image' ? (
-                     <img src={asset.file_url} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                     <>
+                       <img src={asset.file_url} className="w-full h-full object-cover opacity-70 group-hover:opacity-30 transition-opacity" />
+                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity p-2">
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); setTargetImageUrl(asset.file_url); setSelectedId(null); }}
+                           className="w-full py-1.5 bg-pln-blue hover:bg-blue-600 text-white text-[9px] font-bold rounded shadow-lg"
+                         >
+                           Jadikan Marker
+                         </button>
+                         <button 
+                           onClick={(e) => { 
+                             e.stopPropagation(); 
+                             addElement({ type: 'image', name: asset.name, url: asset.file_url, position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }); 
+                           }}
+                           className="w-full py-1.5 bg-[#2b2d31] hover:bg-[#36393f] text-white text-[9px] font-bold rounded shadow-lg"
+                         >
+                           Tambah Objek
+                         </button>
+                       </div>
+                     </>
                   ) : asset.type === 'audio' ? (
                      <Music size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
                   ) : asset.type === 'video' ? (

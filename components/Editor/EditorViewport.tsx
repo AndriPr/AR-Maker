@@ -541,6 +541,79 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   );
 }
 
+function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const transformRef = useRef<any>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const isSelected = selectedId === element.id;
+  
+  // Optional: load the texture (if it fails, it just won't show)
+  const texture = useTexture(element.url || 'https://via.placeholder.com/150');
+  
+  // Calculate aspect ratio
+  const aspect = texture.image ? texture.image.width / texture.image.height : 1;
+  const width = aspect > 1 ? 3 : 3 * aspect;
+  const height = aspect > 1 ? 3 / aspect : 3;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; 
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const imageObj = (
+    <AnimatedElementWrapper element={element}>
+      <group 
+        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+      >
+        <mesh>
+          <planeGeometry args={[width, height]} />
+          <meshBasicMaterial map={texture} transparent side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+    </AnimatedElementWrapper>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls 
+        ref={transformRef} 
+        mode={mode} 
+        position={element.position as [number, number, number]} 
+        rotation={element.rotation as [number, number, number]} 
+        scale={element.scale as [number, number, number]}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 12 : null}
+        scaleSnap={isSnapping ? 0.5 : null}
+      >
+        {imageObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group position={element.position as [number, number, number]} rotation={element.rotation as [number, number, number]} scale={element.scale as [number, number, number]}>
+      {imageObj}
+    </group>
+  );
+}
+
 function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
   const transformRef = useRef<any>(null);
   const updateElement = useEditorStore(state => state.updateElement);
@@ -863,6 +936,9 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
             }
             if (el.type === 'audio') {
               return <AudioElement key={el.id} element={el} mode={transformMode} />;
+            }
+            if (el.type === 'image') {
+              return <ImageElement key={el.id} element={el} mode={transformMode} />;
             }
             if (el.type === 'video') {
               return <VideoElement key={el.id} element={el} mode={transformMode} />;
