@@ -39,6 +39,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   ]);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   
   const { activeWorkspace, activeRole, user } = useWorkspace();
   
@@ -288,6 +289,18 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   }, [elements, targetImageUrl]);
 
   const [publishProgress, setPublishProgress] = useState<string | null>(null);
+
+  const handlePreview = async () => {
+    if (!project) return;
+    if (!targetImageUrl) {
+      alert("Harap pilih atau unggah Target Image (Marker) terlebih dahulu untuk preview AR!");
+      return;
+    }
+    
+    // Save draft first to ensure preview is up to date
+    await handleSave(true);
+    setShowPreviewModal(true);
+  };
 
   const handlePublish = async () => {
     if (!project) return;
@@ -611,6 +624,11 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <span className="hidden sm:inline">Save</span>
           </button>
           
+          <button onClick={handlePreview} disabled={saving} className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-md shadow-sm transition-all disabled:opacity-50">
+            {saving ? <Loader2 size={14} className="animate-spin mr-2" /> : <Eye size={14} className="mr-2" />}
+            <span>Preview AR</span>
+          </button>
+
           <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center px-4 py-1.5 text-xs font-bold text-white rounded-md shadow-sm transition-all disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-pln-blue hover:bg-pln-blue-dark'}`}>
             {saving ? <Loader2 size={14} className="animate-spin mr-2" /> : <Rocket size={14} className="mr-2" />}
             <span>{(activeRole === 'editor') ? 'Request Publish' : 'Publish'}</span>
@@ -2322,6 +2340,58 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 >
                   <ExternalLink size={16} />
                   Buka AR Viewer Sekarang
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview AR Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <QrCode className="text-indigo-400" size={20} />
+                Preview WebXR
+              </h2>
+              <button onClick={() => setShowPreviewModal(false)} className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-gray-800">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 flex flex-col items-center">
+              <p className="text-sm text-gray-400 text-center mb-6">
+                Scan QR Code ini dengan HP kamu untuk mencoba langsung proyek AR ini.
+              </p>
+              
+              <div className="bg-white p-4 rounded-xl shadow-lg mb-6 border-4 border-indigo-500" id="preview-qr-code">
+                <QRCodeSVG 
+                  value={`${window.location.origin}/ar-viewer/${project?.id}`} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                  fgColor="#000000"
+                />
+              </div>
+              
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/ar-viewer/${project?.id}`);
+                    alert('Link berhasil disalin!');
+                  }}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-sm"
+                >
+                  <Copy size={16} className="mr-2" /> Salin Link
+                </button>
+                <Link 
+                  href={`/ar-viewer/${project?.id}`} 
+                  target="_blank"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-sm"
+                >
+                  Buka di Browser <ExternalLink size={16} className="ml-2" />
                 </Link>
               </div>
             </div>
