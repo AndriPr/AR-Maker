@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import dynamic from 'next/dynamic';
+import ShapePreview from '@/components/Editor/ShapePreview';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEditorStore } from '@/lib/store';
 
@@ -831,22 +832,22 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
                 <div className="p-2 grid grid-cols-2 gap-2">
                   {[
-                    { id: 'cube', name: 'Kubus', icon: <Square size={20} className="mb-1" /> },
-                    { id: 'sphere', name: 'Bola', icon: <Circle size={20} className="mb-1" /> },
-                    { id: 'cylinder', name: 'Silinder', icon: <Database size={20} className="mb-1" /> },
-                    { id: 'plane', name: 'Bidang', icon: <Square size={20} className="mb-1" /> },
-                    { id: 'cone', name: 'Kerucut', icon: <Triangle size={20} className="mb-1" /> },
-                    { id: 'torus', name: 'Cincin', icon: <Circle size={20} className="mb-1" /> },
-                    { id: 'tetrahedron', name: 'Piramida', icon: <Triangle size={20} className="mb-1" /> },
-                    { id: 'icosahedron', name: 'Polihedron', icon: <Hexagon size={20} className="mb-1" /> },
+                    { id: 'cube', name: 'Kubus' },
+                    { id: 'sphere', name: 'Bola' },
+                    { id: 'cylinder', name: 'Silinder' },
+                    { id: 'plane', name: 'Bidang' },
+                    { id: 'cone', name: 'Kerucut' },
+                    { id: 'torus', name: 'Cincin' },
+                    { id: 'tetrahedron', name: 'Piramida' },
+                    { id: 'icosahedron', name: 'Polihedron' },
                   ].map(shape => (
                     <div 
                       key={shape.id} 
                       onClick={() => addElement({ type: '3d_shape', shapeType: shape.id as any, name: shape.name, position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' })}
-                      className="aspect-square rounded border border-[#2b2d31] flex flex-col items-center justify-center cursor-pointer transition-colors bg-[#202227] hover:border-pln-blue text-gray-500 hover:text-pln-blue"
+                      className="aspect-square rounded border border-[#2b2d31] flex flex-col items-center justify-center cursor-pointer transition-colors bg-[#202227] hover:border-pln-blue text-gray-400 hover:text-white group relative overflow-hidden"
                     >
-                      {shape.icon}
-                      <span className="text-[10px] font-medium">{shape.name}</span>
+                      <ShapePreview type={shape.id} />
+                      <span className="text-[10px] font-medium mt-1 absolute bottom-1.5 z-10 bg-[#202227]/80 px-2 rounded-full">{shape.name}</span>
                     </div>
                   ))}
                 </div>
