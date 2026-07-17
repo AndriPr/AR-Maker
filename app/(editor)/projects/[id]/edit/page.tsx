@@ -469,6 +469,94 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
   const selectedElement = elements.find(el => el.id === selectedId);
 
+  const renderAssetCard = (asset: any) => (
+    <div 
+      key={asset.id} 
+      onClick={() => {
+        if (asset.type === '3d_model') {
+          addElement({
+             type: '3d_model',
+             name: asset.name,
+             url: asset.file_url,
+             position: [0, 0, 0],
+             rotation: [0, 0, 0],
+             scale: [1, 1, 1]
+          });
+        }
+        if (asset.type === 'audio') {
+          addElement({
+             type: 'audio',
+             name: asset.name,
+             url: asset.file_url,
+             position: [0, 0, 0],
+             rotation: [0, 0, 0],
+             scale: [1, 1, 1],
+             loop: true,
+             autoplay: true,
+             volume: 1
+          });
+        }
+        if (asset.type === 'video') {
+          addElement({
+             type: 'video',
+             name: asset.name,
+             url: asset.file_url,
+             position: [0, 0, 0],
+             rotation: [0, 0, 0],
+             scale: [1, 1, 1],
+             loop: true,
+             autoplay: true
+          });
+        }
+      }}
+      className={`aspect-square rounded border border-[#2b2d31] flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-[#202227] hover:border-pln-blue group`}
+    >
+      {asset.type === 'image' ? (
+         <>
+           <img src={asset.file_url} className="w-full h-full object-cover opacity-70 group-hover:opacity-30 transition-opacity" />
+           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity p-2">
+             <button 
+               onClick={(e) => { e.stopPropagation(); setTargetImageUrl(asset.file_url); setSelectedId(null); }}
+               className="w-full py-1.5 bg-pln-blue hover:bg-blue-600 text-white text-[9px] font-bold rounded shadow-lg"
+             >
+               Jadikan Marker
+             </button>
+             <button 
+               onClick={(e) => { 
+                 e.stopPropagation(); 
+                 addElement({ type: 'image', name: asset.name, url: asset.file_url, position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }); 
+               }}
+               className="w-full py-1.5 bg-[#2b2d31] hover:bg-[#36393f] text-white text-[9px] font-bold rounded shadow-lg"
+             >
+               Tambah Objek
+             </button>
+           </div>
+         </>
+      ) : asset.type === 'audio' ? (
+         <Music size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
+      ) : asset.type === 'video' ? (
+         <Video size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
+      ) : asset.type === '3d_model' ? (
+         <div className="w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+           {/* @ts-ignore */}
+           <model-viewer 
+             src={asset.file_url} 
+             auto-rotate 
+             style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+           >
+           {/* @ts-ignore */}
+           </model-viewer>
+         </div>
+      ) : (
+         <Box size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
+      )}
+      
+      {asset.type !== 'image' && (
+         <span className="text-[8px] text-gray-500 truncate w-full text-center px-1 mt-1 group-hover:text-gray-300">{asset.name}</span>
+      )}
+    </div>
+  );
+
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden bg-black relative">
       {/* Editor Header - Blippar Style */}
@@ -742,93 +830,31 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
               <div className="p-2 grid grid-cols-2 gap-2">
-              {assets.map(asset => (
-                <div 
-                  key={asset.id} 
-                  onClick={() => {
-                    if (asset.type === '3d_model') {
-                      addElement({
-                         type: '3d_model',
-                         name: asset.name,
-                         url: asset.file_url,
-                         position: [0, 0, 0],
-                         rotation: [0, 0, 0],
-                         scale: [1, 1, 1]
-                      });
-                    }
-                    if (asset.type === 'audio') {
-                      addElement({
-                         type: 'audio',
-                         name: asset.name,
-                         url: asset.file_url,
-                         position: [0, 0, 0],
-                         rotation: [0, 0, 0],
-                         scale: [1, 1, 1],
-                         loop: true,
-                         autoplay: true,
-                         volume: 1
-                      });
-                    }
-                    if (asset.type === 'video') {
-                      addElement({
-                         type: 'video',
-                         name: asset.name,
-                         url: asset.file_url,
-                         position: [0, 0, 0],
-                         rotation: [0, 0, 0],
-                         scale: [1, 1, 1],
-                         loop: true,
-                         autoplay: true
-                      });
-                    }
-                  }}
-                  className={`aspect-square rounded border border-[#2b2d31] flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden bg-[#202227] hover:border-pln-blue group`}
-                >
-                  {asset.type === 'image' ? (
-                     <>
-                       <img src={asset.file_url} className="w-full h-full object-cover opacity-70 group-hover:opacity-30 transition-opacity" />
-                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity p-2">
-                         <button 
-                           onClick={(e) => { e.stopPropagation(); setTargetImageUrl(asset.file_url); setSelectedId(null); }}
-                           className="w-full py-1.5 bg-pln-blue hover:bg-blue-600 text-white text-[9px] font-bold rounded shadow-lg"
-                         >
-                           Jadikan Marker
-                         </button>
-                         <button 
-                           onClick={(e) => { 
-                             e.stopPropagation(); 
-                             addElement({ type: 'image', name: asset.name, url: asset.file_url, position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }); 
-                           }}
-                           className="w-full py-1.5 bg-[#2b2d31] hover:bg-[#36393f] text-white text-[9px] font-bold rounded shadow-lg"
-                         >
-                           Tambah Objek
-                         </button>
-                       </div>
-                     </>
-                  ) : asset.type === 'audio' ? (
-                     <Music size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
-                  ) : asset.type === 'video' ? (
-                     <Video size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
-                  ) : asset.type === '3d_model' ? (
-                     <div className="w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       {/* @ts-ignore */}
-                       <model-viewer 
-                         src={asset.file_url} 
-                         auto-rotate 
-                         style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
-                       >
-                       {/* @ts-ignore */}
-                       </model-viewer>
-                     </div>
-                  ) : (
-                     <Box size={20} className="text-gray-500 group-hover:text-pln-blue mb-1 transition-colors" />
-                  )}
-                  
-                  {asset.type !== 'image' && (
-                     <span className="text-[8px] text-gray-500 truncate w-full text-center px-1 mt-1 group-hover:text-gray-300">{asset.name}</span>
-                  )}
-                </div>
-              ))}
+              {assets.filter(a => a.type === '3d_model').length > 0 && (
+                <>
+                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Objek 3D</span></div>
+                  {assets.filter(a => a.type === '3d_model').map(renderAssetCard)}
+                </>
+              )}
+              {assets.filter(a => a.type === 'image').length > 0 && (
+                <>
+                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gambar</span></div>
+                  {assets.filter(a => a.type === 'image').map(renderAssetCard)}
+                </>
+              )}
+              {assets.filter(a => a.type === 'video').length > 0 && (
+                <>
+                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Video</span></div>
+                  {assets.filter(a => a.type === 'video').map(renderAssetCard)}
+                </>
+              )}
+              {assets.filter(a => a.type === 'audio').length > 0 && (
+                <>
+                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Audio</span></div>
+                  {assets.filter(a => a.type === 'audio').map(renderAssetCard)}
+                </>
+              )}
+              
               {assets.length === 0 && (
                 <div className="col-span-2 flex flex-col items-center justify-center text-gray-500 text-[10px] text-center p-4">
                   Belum ada aset.<br/>Upload dari halaman My Assets.
