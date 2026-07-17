@@ -799,24 +799,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <MapPin size={18} />
           </button>
 
-          <button 
-            onClick={() => {
-              addElement({
-                type: 'vfx_sparkles',
-                name: 'Efek Salju/Bintang',
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [1, 1, 1],
-                sparkleColor: '#ffffff',
-                sparkleCount: 100,
-                sparkleSize: 2
-              });
-            }} 
-            className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
-            title="Add Efek Visual (VFX)"
-          >
-            <Sparkles size={18} />
-          </button>
+
         </aside>
 
         {/* Secondary Drawer (Library & Hierarchy) */}
