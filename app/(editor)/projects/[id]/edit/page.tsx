@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search, LayoutTemplate, Palette } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -28,7 +28,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   
   // Mobile Panel States
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
-  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library' | 'shapes'>('hierarchy');
+  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library' | 'shapes' | 'prefabs'>('hierarchy');
   const [isRightPanelOpen, setRightPanelOpen] = useState(true);
 
   // AI Assistant State
@@ -709,6 +709,19 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <Shapes size={18} />
           </button>
           
+          <div className="w-6 h-px bg-[#2b2d31]"></div>
+          
+          <button 
+            onClick={() => {
+              if (isLeftPanelOpen && leftPanelTab === 'prefabs') setLeftPanelOpen(false);
+              else { setLeftPanelOpen(true); setLeftPanelTab('prefabs'); }
+            }}
+            className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'prefabs' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+            title="Templates (Prefabs)"
+          >
+            <LayoutTemplate size={18} />
+          </button>
+
           <div className="w-6 h-px bg-[#2b2d31]"></div>
 
           <button onClick={handleAddText} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Text">
@@ -1824,6 +1837,47 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                         </div>
                       )}
 
+                      {/* 3D Model Custom Materials */}
+                      {selectedElement.type === '3d_model' && selectedElement.availableMaterials && selectedElement.availableMaterials.length > 0 && (
+                        <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Palette size={12} className="text-pln-blue"/> Material & Warna
+                          </h4>
+                          <div className="flex flex-col gap-2">
+                            {selectedElement.availableMaterials.map((matName: string, i: number) => (
+                              <div key={i} className="flex items-center justify-between bg-[#1a1b1e] border border-[#2b2d31] p-2 rounded">
+                                <span className="text-[10px] text-gray-300 truncate max-w-[120px]" title={matName}>{matName}</span>
+                                <div className="flex items-center gap-2">
+                                  <input 
+                                    type="color" 
+                                    value={selectedElement.customMaterials?.[matName] || '#ffffff'}
+                                    onChange={(e) => {
+                                      const newMats = { ...(selectedElement.customMaterials || {}) };
+                                      newMats[matName] = e.target.value;
+                                      updateElement(selectedElement.id, { customMaterials: newMats });
+                                    }}
+                                    className="w-6 h-6 p-0 border-0 rounded cursor-pointer"
+                                  />
+                                  {selectedElement.customMaterials?.[matName] && (
+                                    <button
+                                      onClick={() => {
+                                        const newMats = { ...(selectedElement.customMaterials || {}) };
+                                        delete newMats[matName];
+                                        updateElement(selectedElement.id, { customMaterials: newMats });
+                                      }}
+                                      className="text-red-400 hover:text-red-300 ml-1"
+                                      title="Reset Warna"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* 3D Model Animations Display */}
                       {selectedElement.type === '3d_model' && selectedElement.availableAnimations && selectedElement.availableAnimations.length > 0 && (
                         <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
@@ -2230,10 +2284,56 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     )}
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
+          )}
 
-          </div>
+          {leftPanelTab === 'prefabs' && (
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b border-[#2b2d31]">
+                <h3 className="text-white font-bold text-sm">Templates (Prefabs)</h3>
+                <p className="text-xs text-gray-400 mt-1">Gunakan template siap pakai untuk mempercepat pengerjaan.</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <button 
+                  onClick={() => {
+                    const sceneId = currentSceneId || undefined;
+                    addElement({ type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sceneId, color: '#ffffff' });
+                    addElement({ type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, 0, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], sceneId, color: '#aaaaaa' });
+                    addElement({ type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0, -0.8, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sceneId });
+                  }}
+                  className="w-full bg-[#1a1b1e] border border-[#2b2d31] p-3 rounded-lg flex flex-col items-center gap-2 hover:border-pln-blue transition-colors group text-left"
+                >
+                  <div className="w-full aspect-video bg-[#2b2d31] rounded flex items-center justify-center text-gray-500 group-hover:bg-pln-blue/10 group-hover:text-pln-blue transition-colors">
+                    <LayoutTemplate size={32} />
+                  </div>
+                  <div className="w-full">
+                    <div className="text-white text-xs font-bold">Kartu Nama AR</div>
+                    <div className="text-gray-400 text-[10px]">Teks Nama, Jabatan, dan Tombol Website</div>
+                  </div>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    const sceneId = currentSceneId || undefined;
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Frame 1', position: [-1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#333333' });
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Frame 2', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#444444' });
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Frame 3', position: [1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#555555' });
+                  }}
+                  className="w-full bg-[#1a1b1e] border border-[#2b2d31] p-3 rounded-lg flex flex-col items-center gap-2 hover:border-pln-blue transition-colors group text-left"
+                >
+                  <div className="w-full aspect-video bg-[#2b2d31] rounded flex items-center justify-center text-gray-500 group-hover:bg-pln-blue/10 group-hover:text-pln-blue transition-colors">
+                    <ImageIcon size={32} />
+                  </div>
+                  <div className="w-full">
+                    <div className="text-white text-xs font-bold">Galeri Foto</div>
+                    <div className="text-gray-400 text-[10px]">3 Frame Foto Melayang berdampingan</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
         </aside>
 
         {/* Bottom Scene Manager */}

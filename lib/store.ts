@@ -40,6 +40,8 @@ export interface SceneElement {
   
   // Interactivity Properties
   availableAnimations?: string[]; // Extracted from 3D model GLTF
+  availableMaterials?: string[];  // Extracted material names from 3D model
+  customMaterials?: Record<string, string>; // Material name -> hex color
   buttonText?: string;            // For UI button
   actionTargetId?: string;        // The ID of the model to animate
   actionAnimation?: string;       // The name of the animation to play

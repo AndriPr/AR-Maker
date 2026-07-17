@@ -184,11 +184,21 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         const s = 3 / maxDim;
         clone.scale.set(s, s, s);
       }
+
+      // Apply custom materials
+      clone.traverse((node: any) => {
+        if (node.isMesh && node.material && node.material.name) {
+          if (element.customMaterials && element.customMaterials[node.material.name]) {
+            node.material = node.material.clone();
+            node.material.color.set(element.customMaterials[node.material.name]);
+          }
+        }
+      });
     } catch (e) {
       console.error("Failed to process GLTF", e);
     }
     return clone;
-  }, [scene]);
+  }, [scene, element.customMaterials]);
 
   useEffect(() => {
     if (transformRef.current && isSelected) {
@@ -219,6 +229,22 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
       }
     }
   }, [animations, element.id, element.availableAnimations, updateElement]);
+
+  useEffect(() => {
+    if (scene) {
+      const matNames: string[] = [];
+      scene.traverse((node: any) => {
+        if (node.isMesh && node.material && node.material.name) {
+          if (!matNames.includes(node.material.name)) {
+            matNames.push(node.material.name);
+          }
+        }
+      });
+      if (JSON.stringify(element.availableMaterials) !== JSON.stringify(matNames)) {
+        updateElement(element.id, { availableMaterials: matNames });
+      }
+    }
+  }, [scene, element.id, element.availableMaterials, updateElement]);
 
   const { actions } = useAnimations(animations, groupRef);
 
