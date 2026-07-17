@@ -87,8 +87,10 @@ export default function NewProjectPage() {
       }
 
       let initialSceneData: any = { elements: [] };
+      let initialTargetImageUrl: string | null = null;
 
       if (selectedTemplate === 'business_card') {
+        initialTargetImageUrl = 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=800';
         initialSceneData.elements = [
           // Background Card
           { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Latar Kartu', position: [0, 0, 0], rotation: [0, 0, 0], scale: [3.5, 2, 1], color: '#2c3e50', sceneId: 'scene-1' },
@@ -101,6 +103,7 @@ export default function NewProjectPage() {
           { id: crypto.randomUUID(), type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0.3, -0.6, 0.05], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8], sceneId: 'scene-1' }
         ];
       } else if (selectedTemplate === 'catalog') {
+        initialTargetImageUrl = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800';
         initialSceneData.elements = [
           // Podium
           { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'cylinder', name: 'Podium', position: [0, -1, 0], rotation: [0, 0, 0], scale: [2, 0.2, 2], color: '#34495e', sceneId: 'scene-1' },
@@ -113,6 +116,7 @@ export default function NewProjectPage() {
           { id: crypto.randomUUID(), type: 'ui_button', name: 'Beli Sekarang', buttonText: 'Beli Sekarang', actionTargetId: '', actionAnimation: '', position: [0, -1.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sceneId: 'scene-1' }
         ];
       } else if (selectedTemplate === 'wedding') {
+        initialTargetImageUrl = 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800';
         initialSceneData.elements = [
           // Main Background
           { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Latar Undangan', position: [0, 0, -0.1], rotation: [0, 0, 0], scale: [4, 3, 1], color: '#fff0f5', sceneId: 'scene-1' },
@@ -136,7 +140,8 @@ export default function NewProjectPage() {
           tracking_type: trackingType,
           is_published: false,
           folder_id: finalFolderId,
-          scene_data: initialSceneData
+          scene_data: initialSceneData,
+          target_image_url: initialTargetImageUrl
         })
         .select()
         .single();
