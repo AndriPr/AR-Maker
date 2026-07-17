@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search, LayoutTemplate, Palette } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search, LayoutTemplate, Palette, Focus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -79,6 +79,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const addScene = useEditorStore(state => state.addScene);
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
   const removeScene = useEditorStore(state => state.removeScene);
+  const triggerCameraReset = useEditorStore(state => state.triggerCameraReset);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -1018,6 +1019,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             title={isSnapping ? "Matikan Snapping" : "Hidupkan Snapping"}
           >
             <Magnet size={14} />
+          </button>
+          
+          <div className="w-px h-6 bg-gray-700 mx-1"></div>
+          
+          <button 
+            onClick={() => triggerCameraReset()} 
+            className="p-2 sm:p-2.5 rounded-full transition-all text-gray-400 hover:text-white hover:bg-gray-800"
+            title="Reset Posisi Kamera (View Default)"
+          >
+            <Focus size={16} />
           </button>
 
           <div className="w-px h-6 bg-gray-700 mx-1"></div>

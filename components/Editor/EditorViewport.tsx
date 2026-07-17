@@ -937,6 +937,20 @@ function TargetImage({ url }: { url: string }) {
   );
 }
 
+function CameraController() {
+  const controlsRef = useRef<any>(null);
+  const cameraResetTrigger = useEditorStore(state => state.cameraResetTrigger);
+  const isOrthographic = useEditorStore(state => state.isOrthographic);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+    }
+  }, [cameraResetTrigger, isOrthographic]);
+
+  return <OrbitControls makeDefault ref={controlsRef} />;
+}
+
 export default function EditorViewport({ transformMode = 'translate' }: { transformMode?: 'translate' | 'rotate' | 'scale' }) {
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
   const elements = useEditorStore(state => state.elements);
@@ -1031,7 +1045,7 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
           <GizmoViewport axisColors={['#ef4444', '#22c55e', '#3b82f6']} labelColor="black" />
         </GizmoHelper>
 
-        <OrbitControls makeDefault />
+        <CameraController />
       </Canvas>
     </div>
   );

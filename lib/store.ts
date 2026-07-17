@@ -140,6 +140,10 @@ interface EditorState {
 
   undo: () => void;
   redo: () => void;
+  
+  // Camera
+  cameraResetTrigger: number;
+  triggerCameraReset: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -158,6 +162,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   currentSceneId: 'scene-1',
   past: [],
   future: [],
+  cameraResetTrigger: 0,
 
   setElements: (elements) => set({ elements }),
   
@@ -265,5 +270,7 @@ export const useEditorStore = create<EditorState>((set) => ({
       elements: next,
       selectedId: null
     };
-  })
+  }),
+
+  triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 }))
 }));
