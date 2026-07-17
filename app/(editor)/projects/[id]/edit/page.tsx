@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -21,6 +21,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Asset Filter States
+  const [assetSearchQuery, setAssetSearchQuery] = useState('');
+  const [assetFilter, setAssetFilter] = useState('all');
   
   // Mobile Panel States
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
@@ -828,38 +832,77 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   UPLOAD ASSET
                 </button>
               </div>
+              <div className="p-2 border-b border-[#2b2d31] bg-[#1a1b1e] flex gap-2">
+                <div className="relative flex-1">
+                  <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input 
+                    type="text" 
+                    placeholder="Cari aset..." 
+                    value={assetSearchQuery}
+                    onChange={(e) => setAssetSearchQuery(e.target.value)}
+                    className="w-full bg-[#2b2d31] text-white text-[10px] rounded px-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-pln-blue"
+                  />
+                </div>
+                <select 
+                  value={assetFilter}
+                  onChange={(e) => setAssetFilter(e.target.value)}
+                  className="bg-[#2b2d31] text-white text-[10px] rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-pln-blue cursor-pointer"
+                >
+                  <option value="all">Semua Kategori</option>
+                  <option value="3d_model">Objek 3D</option>
+                  <option value="image">Gambar</option>
+                  <option value="video">Video</option>
+                  <option value="audio">Audio</option>
+                </select>
+              </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
               <div className="p-2 grid grid-cols-2 gap-2">
-              {assets.filter(a => a.type === '3d_model').length > 0 && (
-                <>
-                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Objek 3D</span></div>
-                  {assets.filter(a => a.type === '3d_model').map(renderAssetCard)}
-                </>
-              )}
-              {assets.filter(a => a.type === 'image').length > 0 && (
-                <>
-                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gambar</span></div>
-                  {assets.filter(a => a.type === 'image').map(renderAssetCard)}
-                </>
-              )}
-              {assets.filter(a => a.type === 'video').length > 0 && (
-                <>
-                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Video</span></div>
-                  {assets.filter(a => a.type === 'video').map(renderAssetCard)}
-                </>
-              )}
-              {assets.filter(a => a.type === 'audio').length > 0 && (
-                <>
-                  <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Audio</span></div>
-                  {assets.filter(a => a.type === 'audio').map(renderAssetCard)}
-                </>
-              )}
-              
-              {assets.length === 0 && (
-                <div className="col-span-2 flex flex-col items-center justify-center text-gray-500 text-[10px] text-center p-4">
-                  Belum ada aset.<br/>Upload dari halaman My Assets.
-                </div>
-              )}
+              {(() => {
+                const filteredAssets = assets.filter(asset => {
+                  const matchesSearch = asset.name.toLowerCase().includes(assetSearchQuery.toLowerCase());
+                  const matchesFilter = assetFilter === 'all' || asset.type === assetFilter;
+                  return matchesSearch && matchesFilter;
+                });
+                
+                return (
+                  <>
+                    {filteredAssets.filter(a => a.type === '3d_model').length > 0 && (
+                      <>
+                        <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Objek 3D</span></div>
+                        {filteredAssets.filter(a => a.type === '3d_model').map(renderAssetCard)}
+                      </>
+                    )}
+                    {filteredAssets.filter(a => a.type === 'image').length > 0 && (
+                      <>
+                        <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gambar</span></div>
+                        {filteredAssets.filter(a => a.type === 'image').map(renderAssetCard)}
+                      </>
+                    )}
+                    {filteredAssets.filter(a => a.type === 'video').length > 0 && (
+                      <>
+                        <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Video</span></div>
+                        {filteredAssets.filter(a => a.type === 'video').map(renderAssetCard)}
+                      </>
+                    )}
+                    {filteredAssets.filter(a => a.type === 'audio').length > 0 && (
+                      <>
+                        <div className="col-span-2 mt-2 px-1 border-b border-[#2b2d31] pb-1"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Audio</span></div>
+                        {filteredAssets.filter(a => a.type === 'audio').map(renderAssetCard)}
+                      </>
+                    )}
+                    
+                    {filteredAssets.length === 0 && (
+                      <div className="col-span-2 flex flex-col items-center justify-center text-gray-500 text-[10px] text-center p-4">
+                        {assets.length === 0 ? (
+                          <>Belum ada aset.<br/>Upload dari halaman My Assets.</>
+                        ) : (
+                          <>Aset tidak ditemukan.</>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               </div>
             </div>
           </>
