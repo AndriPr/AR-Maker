@@ -90,22 +90,39 @@ export default function NewProjectPage() {
 
       if (selectedTemplate === 'business_card') {
         initialSceneData.elements = [
-          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' },
-          { id: crypto.randomUUID(), type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, 0, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], color: '#aaaaaa' },
-          { id: crypto.randomUUID(), type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0, -0.8, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+          // Background Card
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Latar Kartu', position: [0, 0, 0], rotation: [0, 0, 0], scale: [3.5, 2, 1], color: '#2c3e50' },
+          // Profile Picture Placeholder
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Profil', position: [-1, 0, 0.05], rotation: [0, 0, 0], scale: [1.2, 1.2, 1], color: '#ecf0f1' },
+          // Text Details
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.3, 0.05], rotation: [0, 0, 0], scale: [0.6, 0.6, 0.6], color: '#ffffff' },
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, -0.1, 0.05], rotation: [0, 0, 0], scale: [0.3, 0.3, 0.3], color: '#3498db' },
+          // Button
+          { id: crypto.randomUUID(), type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0.3, -0.6, 0.05], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8] }
         ];
       } else if (selectedTemplate === 'catalog') {
         initialSceneData.elements = [
-          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Produk', content: 'PRODUK SUPER', position: [0, 1.2, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' },
-          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'box', name: 'Kotak Produk', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#pln-blue' },
-          { id: crypto.randomUUID(), type: 'ui_button', name: 'Beli Sekarang', buttonText: 'Beli Sekarang', actionTargetId: '', actionAnimation: '', position: [0, -1.2, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+          // Podium
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'cylinder', name: 'Podium', position: [0, -1, 0], rotation: [0, 0, 0], scale: [2, 0.2, 2], color: '#34495e' },
+          // Product Placeholder
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'box', name: 'Kotak Produk', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1.2, 1.8, 1.2], color: '#f1c40f' },
+          // Product Info
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Produk', content: 'PRODUK SUPER', position: [0, 1.3, 0], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8], color: '#ffffff' },
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Harga', content: 'Rp 99.000', position: [0, 0.9, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], color: '#2ecc71' },
+          // Buy Button
+          { id: crypto.randomUUID(), type: 'ui_button', name: 'Beli Sekarang', buttonText: 'Beli Sekarang', actionTargetId: '', actionAnimation: '', position: [0, -1.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
         ];
       } else if (selectedTemplate === 'wedding') {
         initialSceneData.elements = [
-          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 1', position: [-1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], color: '#ffcccc' },
-          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Utama', position: [0, 0, 0.2], rotation: [0, 0, 0], scale: [1.2, 1.8, 1], color: '#ffffff' },
-          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 2', position: [1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], color: '#ccffcc' },
-          { id: crypto.randomUUID(), type: '3d_text', name: 'Teks Undangan', content: 'Undangan Pernikahan', position: [0, -1.2, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], color: '#ffffff' }
+          // Main Background
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Latar Undangan', position: [0, 0, -0.1], rotation: [0, 0, 0], scale: [4, 3, 1], color: '#fff0f5' },
+          // Photos
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 1', position: [-1.2, 0.2, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], color: '#ffcccc' },
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Utama', position: [0, 0.2, 0.1], rotation: [0, 0, 0], scale: [1.2, 1.8, 1], color: '#ffffff' },
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 2', position: [1.2, 0.2, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], color: '#ccffcc' },
+          // Texts
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Mempelai', content: 'Romeo & Juliet', position: [0, -1, 0.05], rotation: [0, 0, 0], scale: [0.7, 0.7, 0.7], color: '#d35400' },
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Tanggal', content: 'Minggu, 12 Desember 2026', position: [0, -1.4, 0.05], rotation: [0, 0, 0], scale: [0.3, 0.3, 0.3], color: '#7f8c8d' }
         ];
       }
 

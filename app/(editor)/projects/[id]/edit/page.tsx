@@ -2297,9 +2297,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 <button 
                   onClick={() => {
                     const sceneId = currentSceneId || undefined;
-                    addElement({ type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sceneId, color: '#ffffff' });
-                    addElement({ type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, 0, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], sceneId, color: '#aaaaaa' });
-                    addElement({ type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0, -0.8, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sceneId });
+                    // Background Card
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Latar Kartu', position: [0, 0, 0], rotation: [0, 0, 0], scale: [3.5, 2, 1], sceneId, color: '#2c3e50' });
+                    // Profile Picture Placeholder
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Profil', position: [-1, 0, 0.05], rotation: [0, 0, 0], scale: [1.2, 1.2, 1], sceneId, color: '#ecf0f1' });
+                    // Text Details
+                    addElement({ type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.3, 0.05], rotation: [0, 0, 0], scale: [0.6, 0.6, 0.6], sceneId, color: '#ffffff' });
+                    addElement({ type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, -0.1, 0.05], rotation: [0, 0, 0], scale: [0.3, 0.3, 0.3], sceneId, color: '#3498db' });
+                    // Button
+                    addElement({ type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0.3, -0.6, 0.05], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8], sceneId });
                   }}
                   className="w-full bg-[#1a1b1e] border border-[#2b2d31] p-3 rounded-lg flex flex-col items-center gap-2 hover:border-pln-blue transition-colors group text-left"
                 >
@@ -2315,9 +2321,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                 <button 
                   onClick={() => {
                     const sceneId = currentSceneId || undefined;
-                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Frame 1', position: [-1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#333333' });
-                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Frame 2', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#444444' });
-                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Frame 3', position: [1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#555555' });
+                    // Main Background
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Latar Undangan', position: [0, 0, -0.1], rotation: [0, 0, 0], scale: [4, 3, 1], sceneId, color: '#fff0f5' });
+                    // Photos
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 1', position: [-1.2, 0.2, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#ffcccc' });
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Utama', position: [0, 0.2, 0.1], rotation: [0, 0, 0], scale: [1.2, 1.8, 1], sceneId, color: '#ffffff' });
+                    addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 2', position: [1.2, 0.2, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#ccffcc' });
+                    // Texts
+                    addElement({ type: '3d_text', name: 'Nama Mempelai', content: 'Romeo & Juliet', position: [0, -1, 0.05], rotation: [0, 0, 0], scale: [0.7, 0.7, 0.7], sceneId, color: '#d35400' });
+                    addElement({ type: '3d_text', name: 'Tanggal', content: 'Minggu, 12 Desember 2026', position: [0, -1.4, 0.05], rotation: [0, 0, 0], scale: [0.3, 0.3, 0.3], sceneId, color: '#7f8c8d' });
                   }}
                   className="w-full bg-[#1a1b1e] border border-[#2b2d31] p-3 rounded-lg flex flex-col items-center gap-2 hover:border-pln-blue transition-colors group text-left"
                 >
