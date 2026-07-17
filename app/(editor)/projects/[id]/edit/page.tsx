@@ -1289,23 +1289,43 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[10px] text-gray-400 font-medium">Jenis Font</label>
-                          <select 
-                            value={selectedElement.fontFamily || 'https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff'}
-                            onChange={(e) => updateElement(selectedElement.id, { fontFamily: e.target.value })}
-                            className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
-                          >
-                            <option value="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff">Raleway</option>
-                            <option value="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.woff">Roboto</option>
-                            <option value="https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUtiZTaR.woff">Oswald</option>
-                            <option value="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.woff">Inter</option>
-                          </select>
+                          {selectedElement.is3D ? (
+                            <select 
+                              value={selectedElement.fontFamily || 'helvetiker'}
+                              onChange={(e) => updateElement(selectedElement.id, { fontFamily: e.target.value })}
+                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                            >
+                              <option value="helvetiker">Helvetiker</option>
+                              <option value="optimer">Optimer</option>
+                              <option value="gentilis">Gentilis</option>
+                              <option value="droid_sans">Droid Sans</option>
+                              <option value="droid_serif">Droid Serif</option>
+                            </select>
+                          ) : (
+                            <select 
+                              value={selectedElement.fontFamily || 'https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff'}
+                              onChange={(e) => updateElement(selectedElement.id, { fontFamily: e.target.value })}
+                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                            >
+                              <option value="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff">Raleway</option>
+                              <option value="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.woff">Roboto</option>
+                              <option value="https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUtiZTaR.woff">Oswald</option>
+                              <option value="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.woff">Inter</option>
+                            </select>
+                          )}
                         </div>
 
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[10px] text-gray-400 font-medium">Gaya Teks</label>
                           <select 
                             value={selectedElement.is3D ? '3d' : '2d'}
-                            onChange={(e) => updateElement(selectedElement.id, { is3D: e.target.value === '3d' })}
+                            onChange={(e) => {
+                              const is3D = e.target.value === '3d';
+                              updateElement(selectedElement.id, { 
+                                is3D, 
+                                fontFamily: is3D ? 'helvetiker' : 'https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff' 
+                              });
+                            }}
                             className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
                           >
                             <option value="2d">Datar (2D)</option>

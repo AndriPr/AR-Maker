@@ -350,10 +350,19 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
     }
   }, [isSelected, element.id, updateElement]);
 
-  const fontUrl = element.fontFamily || "https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff";
+  const fontUrl2D = element.fontFamily && element.fontFamily.startsWith('http') 
+    ? element.fontFamily 
+    : "https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff";
+    
+  const fontUrl3D = element.fontFamily && !element.fontFamily.startsWith('http')
+    ? `https://cdn.jsdelivr.net/npm/three/examples/fonts/${element.fontFamily}_regular.typeface.json`
+    : `https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json`;
+
   const color = element.color || "#ffffff";
   const isOutline = element.textEffect === 'outline';
   const isGlow = element.textEffect === 'glow';
+  
+  const safeText = liveText || " ";
 
   const textObj = (
     <AnimatedElementWrapper element={element}>
@@ -369,7 +378,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
         {element.is3D ? (
           <Center>
             <Text3D
-              font="https://unpkg.com/three@0.77.0/examples/fonts/helvetiker_regular.typeface.json"
+              font={fontUrl3D}
               size={0.5}
               height={0.1}
               curveSegments={12}
@@ -379,7 +388,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
               bevelOffset={0}
               bevelSegments={5}
             >
-              {liveText}
+              {safeText}
               <meshStandardMaterial 
                 color={color} 
                 emissive={isGlow ? color : '#000000'}
@@ -396,14 +405,14 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
             lineHeight={1}
             letterSpacing={0.02} 
             textAlign="center" 
-            font={fontUrl} 
+            font={fontUrl2D} 
             anchorX="center" 
             anchorY="middle"
             outlineWidth={isOutline ? 0.02 : (isGlow ? 0.05 : 0)}
             outlineColor={isOutline ? '#000000' : (isGlow ? color : 'transparent')}
             outlineOpacity={isGlow ? 0.5 : 1}
           >
-            {liveText}
+            {safeText}
             {isGlow && <meshBasicMaterial color={color} />}
           </Text>
         )}
