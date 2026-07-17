@@ -748,6 +748,21 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           >
             <MousePointerClick size={18} />
           </button>
+          
+          <div className="w-6 h-px bg-[#2b2d31]"></div>
+          
+          <button onClick={() => addElement({ type: 'video', name: 'Video Layar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' })} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Video">
+            <Video size={18} />
+          </button>
+          
+          <button onClick={() => addElement({ type: 'audio', name: 'Audio BGM', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' })} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Audio">
+            <Music size={18} />
+          </button>
+          
+          <button onClick={() => addElement({ type: 'vfx_sparkles', name: 'Efek Sparkles', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sparkleColor: '#f1c40f', sparkleCount: 50, sparkleSize: 4 })} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Particle VFX">
+            <Sparkles size={18} />
+          </button>
+
           <button 
             onClick={() => {
               addElement({ 
@@ -1460,6 +1475,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               <option value="none">Tidak Ada Aksi</option>
                               <option value="animation">Mainkan Animasi 3D</option>
                               <option value="url">Buka Tautan Website (URL)</option>
+                              <option value="change_scene">Pindah Scene (Ganti Layout)</option>
                             </select>
                           </div>
 
@@ -1524,6 +1540,100 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               />
                             </div>
                           )}
+
+                          {selectedElement.onClickActionType === 'change_scene' && (
+                            <div className="flex flex-col gap-1.5 mt-2 bg-[#202227] p-3 rounded border border-[#2b2d31]">
+                              <label className="text-[10px] text-gray-400 font-medium">Pilih Scene Tujuan</label>
+                              <select
+                                value={selectedElement.onClickActionValue || ''}
+                                onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
+                                className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                              >
+                                <option value="">-- Pilih Scene --</option>
+                                {scenes.map(sc => (
+                                  <option key={sc.id} value={sc.id}>{sc.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Media URL Properties (Video, Audio, Image) */}
+                      {(selectedElement.type === 'video' || selectedElement.type === 'audio' || selectedElement.type === 'image') && (
+                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <ExternalLink size={12} className="text-blue-400" /> Sumber Media
+                          </h4>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10px] text-gray-400 font-medium">URL {selectedElement.type}</label>
+                            <input 
+                              type="url"
+                              value={selectedElement.url || ''}
+                              onChange={(e) => updateElement(selectedElement.id, { url: e.target.value })}
+                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                              placeholder="https://example.com/media.mp4"
+                            />
+                            {selectedElement.type === 'audio' && (
+                              <p className="text-[9px] text-gray-500 mt-1">Audio akan otomatis berputar (loop) secara default.</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* VFX Sparkles Properties */}
+                      {selectedElement.type === 'vfx_sparkles' && (
+                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Sparkles size={12} className="text-yellow-400" /> Efek Partikel
+                          </h4>
+                          <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] text-gray-400 font-medium">Warna Partikel</label>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="color" 
+                                  value={selectedElement.sparkleColor || '#f1c40f'}
+                                  onChange={(e) => updateElement(selectedElement.id, { sparkleColor: e.target.value })}
+                                  className="w-8 h-8 rounded cursor-pointer bg-transparent border-0 p-0"
+                                />
+                                <input 
+                                  type="text" 
+                                  value={selectedElement.sparkleColor || '#f1c40f'}
+                                  onChange={(e) => updateElement(selectedElement.id, { sparkleColor: e.target.value })}
+                                  className="flex-1 bg-[#1a1b1e] border border-[#2b2d31] rounded px-2 text-xs text-white outline-none focus:border-pln-blue font-mono uppercase"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] text-gray-400 font-medium flex justify-between">
+                                Jumlah Partikel
+                                <span className="font-mono text-pln-blue">{selectedElement.sparkleCount || 50}</span>
+                              </label>
+                              <input 
+                                type="range" 
+                                min="10" max="500" step="10"
+                                value={selectedElement.sparkleCount || 50}
+                                onChange={(e) => updateElement(selectedElement.id, { sparkleCount: parseFloat(e.target.value) })}
+                                className="w-full accent-pln-blue"
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] text-gray-400 font-medium flex justify-between">
+                                Ukuran Partikel
+                                <span className="font-mono text-pln-blue">{selectedElement.sparkleSize || 4}</span>
+                              </label>
+                              <input 
+                                type="range" 
+                                min="1" max="20" step="1"
+                                value={selectedElement.sparkleSize || 4}
+                                onChange={(e) => updateElement(selectedElement.id, { sparkleSize: parseFloat(e.target.value) })}
+                                className="w-full accent-pln-blue"
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
 
