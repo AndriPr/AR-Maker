@@ -87,36 +87,33 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const isSnapping = useEditorStore(state => state.isSnapping);
 
   useEffect(() => {
-    if (isSelected && transformRef.current) {
-      transformRef.current.setMode(mode);
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return; // dragging started
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
     }
-  }, [isSelected, mode]);
+  }, [isSelected, element.id, updateElement]);
 
-  const handleTransform = () => {
-    if (transformRef.current && groupRef.current) {
-      const p = groupRef.current.position;
-      const r = groupRef.current.rotation;
-      const s = groupRef.current.scale;
-      updateElement(element.id, {
-        position: [p.x, p.y, p.z],
-        rotation: [r.x, r.y, r.z],
-        scale: [s.x, s.y, s.z]
-      });
-    }
-  };
-
-  return (
-    <group
-      position={element.position as [number, number, number]}
-      rotation={element.rotation as [number, number, number]}
-      scale={element.scale as [number, number, number]}
-      onClick={(e) => { e.stopPropagation(); setSelectedId(element.id); }}
-      onPointerMissed={(e) => {
-        if (e.type === 'click') setSelectedId(null);
-      }}
-    >
-      <group ref={groupRef}>
-        <AnimatedElementWrapper element={element}>
+  const shapeObj = (
+    <group ref={groupRef}>
+      <AnimatedElementWrapper element={element}>
+        <group
+          onClick={(e) => { e.stopPropagation(); setSelectedId(element.id); }}
+          onPointerMissed={(e) => {
+            if (e.type === 'click') setSelectedId(null);
+          }}
+        >
           {element.shapeType === 'cube' && <DreiBox args={[1, 1, 1]}><meshStandardMaterial color={element.color || '#ffffff'} /></DreiBox>}
           {element.shapeType === 'sphere' && <Sphere args={[0.5, 32, 32]}><meshStandardMaterial color={element.color || '#ffffff'} /></Sphere>}
           {element.shapeType === 'cylinder' && <Cylinder args={[0.5, 0.5, 1, 32]}><meshStandardMaterial color={element.color || '#ffffff'} /></Cylinder>}
@@ -125,20 +122,35 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
           {element.shapeType === 'torus' && <Torus args={[0.4, 0.1, 16, 100]}><meshStandardMaterial color={element.color || '#ffffff'} /></Torus>}
           {element.shapeType === 'tetrahedron' && <Tetrahedron args={[0.6]}><meshStandardMaterial color={element.color || '#ffffff'} /></Tetrahedron>}
           {element.shapeType === 'icosahedron' && <Icosahedron args={[0.5]}><meshStandardMaterial color={element.color || '#ffffff'} /></Icosahedron>}
-        </AnimatedElementWrapper>
-      </group>
+        </group>
+      </AnimatedElementWrapper>
+    </group>
+  );
 
-      {isSelected && (
-        <TransformControls
-          ref={transformRef}
-          object={groupRef as any}
-          mode={mode}
-          onMouseUp={handleTransform}
-          translationSnap={isSnapping ? 0.5 : null}
-          rotationSnap={isSnapping ? Math.PI / 4 : null}
-          scaleSnap={isSnapping ? 0.25 : null}
-        />
-      )}
+  if (isSelected) {
+    return (
+      <TransformControls
+        ref={transformRef}
+        mode={mode}
+        position={element.position as [number, number, number]}
+        rotation={element.rotation as [number, number, number]}
+        scale={element.scale as [number, number, number]}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 4 : null}
+        scaleSnap={isSnapping ? 0.25 : null}
+      >
+        {shapeObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group
+      position={element.position as [number, number, number]}
+      rotation={element.rotation as [number, number, number]}
+      scale={element.scale as [number, number, number]}
+    >
+      {shapeObj}
     </group>
   );
 }
