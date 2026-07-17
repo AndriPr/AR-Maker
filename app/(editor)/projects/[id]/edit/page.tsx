@@ -1303,14 +1303,14 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                             </select>
                           ) : (
                             <select 
-                              value={selectedElement.fontFamily || 'https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff'}
+                              value={selectedElement.fontFamily || 'https://cdn.jsdelivr.net/npm/@fontsource/raleway/files/raleway-latin-400-normal.woff'}
                               onChange={(e) => updateElement(selectedElement.id, { fontFamily: e.target.value })}
                               className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
                             >
-                              <option value="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff">Raleway</option>
-                              <option value="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.woff">Roboto</option>
-                              <option value="https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUtiZTaR.woff">Oswald</option>
-                              <option value="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.woff">Inter</option>
+                              <option value="https://cdn.jsdelivr.net/npm/@fontsource/raleway/files/raleway-latin-400-normal.woff">Raleway</option>
+                              <option value="https://cdn.jsdelivr.net/npm/@fontsource/roboto/files/roboto-latin-400-normal.woff">Roboto</option>
+                              <option value="https://cdn.jsdelivr.net/npm/@fontsource/oswald/files/oswald-latin-400-normal.woff">Oswald</option>
+                              <option value="https://cdn.jsdelivr.net/npm/@fontsource/inter/files/inter-latin-400-normal.woff">Inter</option>
                             </select>
                           )}
                         </div>
@@ -1323,7 +1323,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               const is3D = e.target.value === '3d';
                               updateElement(selectedElement.id, { 
                                 is3D, 
-                                fontFamily: is3D ? 'helvetiker' : 'https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff' 
+                                fontFamily: is3D ? 'helvetiker' : 'https://cdn.jsdelivr.net/npm/@fontsource/raleway/files/raleway-latin-400-normal.woff' 
                               });
                             }}
                             className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"

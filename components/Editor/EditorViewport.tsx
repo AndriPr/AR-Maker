@@ -352,7 +352,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
 
   const fontUrl2D = element.fontFamily && element.fontFamily.startsWith('http') 
     ? element.fontFamily 
-    : "https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff";
+    : "https://cdn.jsdelivr.net/npm/@fontsource/raleway/files/raleway-latin-400-normal.woff";
     
   const fontUrl3D = element.fontFamily && !element.fontFamily.startsWith('http')
     ? `https://cdn.jsdelivr.net/npm/three/examples/fonts/${element.fontFamily}_regular.typeface.json`
@@ -413,7 +413,6 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
             outlineOpacity={isGlow ? 0.5 : 1}
           >
             {safeText}
-            {isGlow && <meshBasicMaterial color={color} />}
           </Text>
         )}
       </group>
