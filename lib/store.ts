@@ -26,6 +26,15 @@ export interface EduMaintenanceTask {
   steps: EduMaintenanceStep[];
 }
 
+export type ActionType = 'play_animation' | 'play_audio' | 'toggle_visibility' | 'open_url' | 'change_scene';
+
+export interface ElementAction {
+  id: string;
+  type: ActionType;
+  targetId?: string; // ID of the target element (for animation, audio, visibility)
+  value?: string;    // URL for 'open_url', Scene ID for 'change_scene', or Animation Name
+}
+
 export interface SceneElement {
   id: string;
   type: ElementType;
@@ -43,12 +52,15 @@ export interface SceneElement {
   availableMaterials?: string[];  // Extracted material names from 3D model
   customMaterials?: Record<string, string>; // Material name -> hex color
   buttonText?: string;            // For UI button
-  actionTargetId?: string;        // The ID of the model to animate
-  actionAnimation?: string;       // The name of the animation to play
+  actionTargetId?: string;        // (Legacy) The ID of the model to animate
+  actionAnimation?: string;       // (Legacy) The name of the animation to play
   
   // No-Code On-Click Actions (For any element)
-  onClickActionType?: 'none' | 'url' | 'audio' | 'animation' | 'change_scene';
-  onClickActionValue?: string; // URL, Audio Element ID, Animation Name, or Scene ID
+  onClickActionType?: 'none' | 'url' | 'audio' | 'animation' | 'change_scene'; // Legacy
+  onClickActionValue?: string; // Legacy
+  
+  onClickActions?: ElementAction[]; // Advanced Triggers (New)
+  isHidden?: boolean; // Default visibility state
   
   // Audio Properties
   loop?: boolean;
@@ -127,6 +139,8 @@ interface EditorState {
   setIsSnapping: (val: boolean) => void;
   isOrthographic: boolean;
   setIsOrthographic: (val: boolean) => void;
+  isSimulating: boolean;
+  setIsSimulating: (val: boolean) => void;
   setTrackingMode: (mode: 'image' | 'face' | 'cylinder') => void;
   setMultisetMapId: (id: string) => void;
   setAmbientLightIntensity: (val: number) => void;
@@ -146,13 +160,14 @@ interface EditorState {
   triggerCameraReset: () => void;
 }
 
-export const useEditorStore = create<EditorState>((set) => ({
+export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
   selectedId: null,
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
   isOrthographic: false,
+  isSimulating: false,
   trackingMode: 'image',
   multisetMapId: '',
   ambientLightIntensity: 0.8,
@@ -220,6 +235,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   setSelectedId: (id) => set({ selectedId: id }),
   setIsSnapping: (val) => set({ isSnapping: val }),
   setIsOrthographic: (val) => set({ isOrthographic: val }),
+  setIsSimulating: (val) => set({ isSimulating: val, selectedId: val ? null : get().selectedId }),
   setTrackingMode: (mode) => set({ trackingMode: mode }),
   setMultisetMapId: (id) => set({ multisetMapId: id }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),

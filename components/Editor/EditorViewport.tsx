@@ -7,6 +7,63 @@ import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls,
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
+function useActionHandler() {
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const elements = useEditorStore(state => state.elements);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
+  const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
+
+  return (element: any) => {
+    if (!isSimulating) return false;
+    
+    // Process onClickActions
+    if (element.onClickActions && element.onClickActions.length > 0) {
+      element.onClickActions.forEach((action: any) => {
+        if (action.type === 'play_animation' && action.targetId) {
+          if (action.value === '*') {
+            setPreviewAnimationData({ targetId: action.targetId, animationName: '*' });
+          } else if (action.value) {
+            setPreviewAnimationData({ targetId: action.targetId, animationName: action.value });
+          }
+        } else if (action.type === 'change_scene' && action.value) {
+          setCurrentSceneId(action.value);
+        } else if (action.type === 'open_url' && action.value) {
+          window.open(action.value, '_blank');
+        } else if (action.type === 'toggle_visibility' && action.targetId) {
+          const targetEl = elements.find(e => e.id === action.targetId);
+          if (targetEl) {
+            updateElement(action.targetId, { isHidden: !targetEl.isHidden });
+          }
+        } else if (action.type === 'play_audio' && action.targetId) {
+           const targetEl = elements.find(e => e.id === action.targetId);
+           if (targetEl) {
+              // Toggle autoplay property simply to trigger audio component updates
+              updateElement(action.targetId, { autoplay: !targetEl.autoplay }); 
+           }
+        }
+      });
+      return true; // Actions triggered
+    }
+
+    // Legacy Fallback for older properties (if action wasn't migrated)
+    if (element.onClickActionType === 'change_scene' && element.onClickActionValue) {
+       setCurrentSceneId(element.onClickActionValue);
+       return true;
+    }
+    if (element.onClickActionType === 'url' && element.onClickActionValue) {
+       window.open(element.onClickActionValue, '_blank');
+       return true;
+    }
+    if (element.onClickActionType === 'animation' && element.actionTargetId) {
+       setPreviewAnimationData({ targetId: element.actionTargetId, animationName: element.actionAnimation || '*' });
+       return true;
+    }
+
+    return false; 
+  };
+}
+
 function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
   
@@ -496,10 +553,17 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
     }
   }, [isSelected, element.id, updateElement]);
 
+  const handleAction = useActionHandler();
+
   const buttonObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onClick={(e: any) => { 
+          e.stopPropagation(); 
+          if (!handleAction(element)) {
+            setSelectedId(element.id); 
+          }
+        }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
@@ -868,10 +932,17 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
     }
   }, [isSelected, element.id, updateElement]);
 
+  const handleAction = useActionHandler();
+
   const hotspotObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onClick={(e: any) => { 
+          e.stopPropagation(); 
+          if (!handleAction(element)) {
+            setSelectedId(element.id); 
+          }
+        }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         {/* Glowing Dot */}
@@ -951,7 +1022,7 @@ function CameraController() {
   return <OrbitControls makeDefault ref={controlsRef} />;
 }
 
-export default function EditorViewport({ transformMode = 'translate' }: { transformMode?: 'translate' | 'rotate' | 'scale' }) {
+export default function EditorViewport({ transformMode = 'translate', simulateMode = false }: { transformMode?: 'translate' | 'rotate' | 'scale', simulateMode?: boolean }) {
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
   const elements = useEditorStore(state => state.elements);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
@@ -981,15 +1052,17 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
         <directionalLight position={[10, 20, 10]} intensity={directionalLightIntensity} castShadow />
         <spotLight position={[-10, 10, -10]} intensity={1.2} color="#818cf8" />
         
-        <Grid 
-          infiniteGrid 
-          fadeDistance={40} 
-          sectionColor="#1e3a8a" 
-          sectionSize={1}
-          cellColor="#0f172a" 
-          cellSize={0.2}
-          position={[0, -0.02, 0]} 
-        />
+        {!simulateMode && (
+          <Grid 
+            infiniteGrid 
+            fadeDistance={40} 
+            sectionColor="#1e3a8a" 
+            sectionSize={1}
+            cellColor="#0f172a" 
+            cellSize={0.2}
+            position={[0, -0.02, 0]} 
+          />
+        )}
         
         
         <Suspense fallback={null}>
@@ -1007,43 +1080,33 @@ export default function EditorViewport({ transformMode = 'translate' }: { transf
           )}
           
           {elements.filter(el => el.sceneId === currentSceneId).map(el => {
-            if (el.type === '3d_shape') {
-              return <ShapeElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === '3d_model') {
-              return <ModelElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === '3d_text') {
-              return <TextElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === 'ui_button') {
-              return <UIButtonElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === 'audio') {
-              return <AudioElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === 'image') {
-              return <ImageElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === 'video') {
-              return <VideoElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === 'vfx_sparkles') {
-              return <SparklesElement key={el.id} element={el} mode={transformMode} />;
-            }
-            if (el.type === 'hotspot') {
-              return <HotspotElement key={el.id} element={el} mode={transformMode} />;
-            }
-            return null;
+            let component = null;
+            if (el.type === '3d_shape') component = <ShapeElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === '3d_model') component = <ModelElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === '3d_text') component = <TextElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'ui_button') component = <UIButtonElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'audio') component = <AudioElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'image') component = <ImageElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'video') component = <VideoElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'vfx_sparkles') component = <SparklesElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'hotspot') component = <HotspotElement key={el.id} element={el} mode={transformMode} />;
+            
+            return (
+              <group key={`wrapper-${el.id}`} visible={!el.isHidden}>
+                {component}
+              </group>
+            );
           })}
         </Suspense>
 
-        <GizmoHelper
-          alignment="bottom-right"
-          margin={[340, 80]}
-        >
-          <GizmoViewport axisColors={['#ef4444', '#22c55e', '#3b82f6']} labelColor="black" />
-        </GizmoHelper>
+        {!simulateMode && (
+          <GizmoHelper
+            alignment="bottom-right"
+            margin={[340, 80]}
+          >
+            <GizmoViewport axisColors={['#ef4444', '#22c55e', '#3b82f6']} labelColor="black" />
+          </GizmoHelper>
+        )}
 
         <CameraController />
       </Canvas>

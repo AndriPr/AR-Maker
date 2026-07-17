@@ -38,6 +38,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     { role: 'ai', text: 'Halo Bos! Saya Asisten AI Anda. Mau ganti suasana (misal: "buat suasana malam") atau tambah efek?' }
   ]);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
+
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showWebcamTestModal, setShowWebcamTestModal] = useState(false);
@@ -57,6 +58,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const updateElement = useEditorStore(state => state.updateElement);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const setIsSimulating = useEditorStore(state => state.setIsSimulating);
   const undo = useEditorStore(state => state.undo);
   const redo = useEditorStore(state => state.redo);
   const isSnapping = useEditorStore(state => state.isSnapping);
@@ -626,9 +629,14 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <span className="hidden sm:inline">Save</span>
           </button>
           
-          <button onClick={handlePreview} disabled={saving} className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-md shadow-sm transition-all disabled:opacity-50">
-            {saving ? <Loader2 size={14} className="animate-spin mr-2" /> : <Eye size={14} className="mr-2" />}
-            <span>Preview AR</span>
+          <button onClick={handlePreview} disabled={saving} className="hidden sm:flex items-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-md transition-all">
+            <QrCode size={14} className="mr-2 text-indigo-400" />
+            <span>Scan Preview</span>
+          </button>
+          
+          <button onClick={() => setIsSimulating(true)} className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-green-500 hover:bg-green-600 rounded-md shadow-sm transition-all">
+            <Play size={14} className="mr-2" />
+            <span>Simulate AR</span>
           </button>
 
           <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center px-4 py-1.5 text-xs font-bold text-white rounded-md shadow-sm transition-all disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-pln-blue hover:bg-pln-blue-dark'}`}>
@@ -1442,12 +1450,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                       {selectedElement.type === 'ui_button' && (
                         <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
                           <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <MousePointerClick size={12} className="text-blue-400" /> Interaktivitas Tombol
+                            <MousePointerClick size={12} className="text-blue-400" /> Tampilan Tombol
                           </h4>
-                          <p className="text-[10px] text-gray-500 leading-tight">
-                            Pilih aksi yang terjadi saat tombol ini diklik di AR.
-                          </p>
-                          
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10px] text-gray-400 font-medium">Teks pada Tombol</label>
                             <input 
@@ -1459,97 +1463,166 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                             />
                           </div>
 
-                          <div className="flex flex-col gap-1.5 mt-2">
-                            <label className="text-[10px] text-gray-400 font-medium">Tipe Aksi Saat Diklik</label>
-                            <select
-                              value={selectedElement.onClickActionType || 'animation'}
-                              onChange={(e) => updateElement(selectedElement.id, { onClickActionType: e.target.value as any })}
-                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue shadow-inner"
+                          <div className="h-px bg-[#2b2d31] my-2"></div>
+
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                              <Magnet size={12} className="text-yellow-400" /> Aksi Tombol (Events)
+                            </h4>
+                            <button 
+                              onClick={() => {
+                                const newActions = [...(selectedElement.onClickActions || [])];
+                                newActions.push({ id: crypto.randomUUID(), type: 'play_animation' });
+                                updateElement(selectedElement.id, { onClickActions: newActions });
+                              }}
+                              className="text-[10px] bg-pln-blue/20 text-pln-blue px-2 py-1 rounded border border-pln-blue/30 hover:bg-pln-blue/30 flex items-center gap-1"
                             >
-                              <option value="none">Tidak Ada Aksi</option>
-                              <option value="animation">Mainkan Animasi 3D</option>
-                              <option value="url">Buka Tautan Website (URL)</option>
-                              <option value="change_scene">Pindah Scene (Ganti Layout)</option>
-                            </select>
+                              <Plus size={10} /> Tambah Aksi
+                            </button>
                           </div>
 
-                          {(selectedElement.onClickActionType === 'animation' || !selectedElement.onClickActionType) && (
-                            <>
-                              {elements.filter(el => el.type === '3d_model').length === 0 ? (
-                                <div className="bg-pln-yellow/10 border border-pln-yellow/30 p-3 rounded mt-2">
-                                  <p className="text-[10px] text-pln-yellow font-medium">
-                                    💡 Masukkan Model 3D terlebih dahulu agar tombol ini bisa menggerakkannya!
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="space-y-3 mt-2 bg-[#202227] p-3 rounded border border-[#2b2d31]">
-                                  <div className="flex flex-col gap-1.5">
-                                    <label className="text-[10px] text-gray-400 font-medium">Target Model 3D</label>
+                          <div className="space-y-2 mt-2">
+                            {(!selectedElement.onClickActions || selectedElement.onClickActions.length === 0) && (
+                              <div className="text-[10px] text-gray-500 italic text-center py-3 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada aksi. Klik Tambah Aksi.</div>
+                            )}
+                            
+                            {selectedElement.onClickActions?.map((action, idx) => (
+                              <div key={action.id} className="bg-[#1a1b1e]/80 border border-gray-700 rounded p-2 space-y-2 relative">
+                                <button 
+                                  onClick={() => {
+                                    const newActions = selectedElement.onClickActions!.filter(a => a.id !== action.id);
+                                    updateElement(selectedElement.id, { onClickActions: newActions });
+                                  }}
+                                  className="absolute top-2 right-2 text-gray-500 hover:text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                                
+                                <select
+                                  value={action.type}
+                                  onChange={(e) => {
+                                    const newActions = [...selectedElement.onClickActions!];
+                                    newActions[idx].type = e.target.value as any;
+                                    newActions[idx].targetId = '';
+                                    newActions[idx].value = '';
+                                    updateElement(selectedElement.id, { onClickActions: newActions });
+                                  }}
+                                  className="w-[calc(100%-20px)] bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none focus:border-pln-blue"
+                                >
+                                  <option value="play_animation">Mainkan Animasi 3D</option>
+                                  <option value="play_audio">Putar Audio</option>
+                                  <option value="toggle_visibility">Tampilkan/Sembunyikan Objek</option>
+                                  <option value="open_url">Buka URL</option>
+                                  <option value="change_scene">Pindah Scene</option>
+                                </select>
+
+                                {/* Action Type Context */}
+                                {action.type === 'play_animation' && (
+                                  <>
                                     <select
-                                      value={selectedElement.actionTargetId || ''}
-                                      onChange={(e) => updateElement(selectedElement.id, { actionTargetId: e.target.value, actionAnimation: '' })}
-                                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                                      value={action.targetId || ''}
+                                      onChange={(e) => {
+                                        const newActions = [...selectedElement.onClickActions!];
+                                        newActions[idx].targetId = e.target.value;
+                                        newActions[idx].value = '';
+                                        updateElement(selectedElement.id, { onClickActions: newActions });
+                                      }}
+                                      className="w-full bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none"
                                     >
-                                      <option value="">-- Pilih Model --</option>
+                                      <option value="">-- Pilih Model 3D --</option>
                                       {elements.filter(el => el.type === '3d_model').map(model => (
                                         <option key={model.id} value={model.id}>{model.name}</option>
                                       ))}
                                     </select>
-                                  </div>
+                                    
+                                    {action.targetId && (
+                                      <select
+                                        value={action.value || ''}
+                                        onChange={(e) => {
+                                          const newActions = [...selectedElement.onClickActions!];
+                                          newActions[idx].value = e.target.value;
+                                          updateElement(selectedElement.id, { onClickActions: newActions });
+                                        }}
+                                        className="w-full bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none"
+                                      >
+                                        <option value="">-- Pilih Animasi --</option>
+                                        <option value="*">Semua Animasi (*)</option>
+                                        {elements.find(el => el.id === action.targetId)?.availableAnimations?.map(anim => (
+                                          <option key={anim} value={anim}>{anim}</option>
+                                        ))}
+                                      </select>
+                                    )}
+                                  </>
+                                )}
 
-                                  {selectedElement.actionTargetId && (
-                                    <div className="flex flex-col gap-1.5">
-                                      <label className="text-[10px] text-gray-400 font-medium">Pilih Animasi</label>
-                                      {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.length ? (
-                                        <select
-                                          value={selectedElement.actionAnimation || ''}
-                                          onChange={(e) => updateElement(selectedElement.id, { actionAnimation: e.target.value })}
-                                          className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
-                                        >
-                                          <option value="">-- Pilih Animasi --</option>
-                                          <option value="*">✨ Semua Bersamaan (*)</option>
-                                          {elements.find(el => el.id === selectedElement.actionTargetId)?.availableAnimations?.map(anim => (
-                                            <option key={anim} value={anim}>{anim}</option>
-                                          ))}
-                                        </select>
-                                      ) : (
-                                        <p className="text-[10px] text-red-400">Model ini tidak memiliki animasi bawaan.</p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          )}
+                                {action.type === 'play_audio' && (
+                                  <select
+                                    value={action.targetId || ''}
+                                    onChange={(e) => {
+                                      const newActions = [...selectedElement.onClickActions!];
+                                      newActions[idx].targetId = e.target.value;
+                                      updateElement(selectedElement.id, { onClickActions: newActions });
+                                    }}
+                                    className="w-full bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none"
+                                  >
+                                    <option value="">-- Pilih Audio --</option>
+                                    {elements.filter(el => el.type === 'audio').map(audio => (
+                                      <option key={audio.id} value={audio.id}>{audio.name}</option>
+                                    ))}
+                                  </select>
+                                )}
 
-                          {selectedElement.onClickActionType === 'url' && (
-                            <div className="flex flex-col gap-1.5 mt-2 bg-[#202227] p-3 rounded border border-[#2b2d31]">
-                              <label className="text-[10px] text-gray-400 font-medium">Masukkan URL (Tautan)</label>
-                              <input 
-                                type="url"
-                                value={selectedElement.onClickActionValue || ''}
-                                onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
-                                className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
-                                placeholder="https://google.com"
-                              />
-                            </div>
-                          )}
+                                {action.type === 'toggle_visibility' && (
+                                  <select
+                                    value={action.targetId || ''}
+                                    onChange={(e) => {
+                                      const newActions = [...selectedElement.onClickActions!];
+                                      newActions[idx].targetId = e.target.value;
+                                      updateElement(selectedElement.id, { onClickActions: newActions });
+                                    }}
+                                    className="w-full bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none"
+                                  >
+                                    <option value="">-- Pilih Objek --</option>
+                                    {elements.filter(el => el.id !== selectedElement.id).map(el => (
+                                      <option key={el.id} value={el.id}>{el.name}</option>
+                                    ))}
+                                  </select>
+                                )}
 
-                          {selectedElement.onClickActionType === 'change_scene' && (
-                            <div className="flex flex-col gap-1.5 mt-2 bg-[#202227] p-3 rounded border border-[#2b2d31]">
-                              <label className="text-[10px] text-gray-400 font-medium">Pilih Scene Tujuan</label>
-                              <select
-                                value={selectedElement.onClickActionValue || ''}
-                                onChange={(e) => updateElement(selectedElement.id, { onClickActionValue: e.target.value })}
-                                className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
-                              >
-                                <option value="">-- Pilih Scene --</option>
-                                {scenes.map(sc => (
-                                  <option key={sc.id} value={sc.id}>{sc.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                                {action.type === 'open_url' && (
+                                  <input 
+                                    type="url"
+                                    value={action.value || ''}
+                                    onChange={(e) => {
+                                      const newActions = [...selectedElement.onClickActions!];
+                                      newActions[idx].value = e.target.value;
+                                      updateElement(selectedElement.id, { onClickActions: newActions });
+                                    }}
+                                    className="w-full bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none"
+                                    placeholder="https://..."
+                                  />
+                                )}
+
+                                {action.type === 'change_scene' && (
+                                  <select
+                                    value={action.value || ''}
+                                    onChange={(e) => {
+                                      const newActions = [...selectedElement.onClickActions!];
+                                      newActions[idx].value = e.target.value;
+                                      updateElement(selectedElement.id, { onClickActions: newActions });
+                                    }}
+                                    className="w-full bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none"
+                                  >
+                                    <option value="">-- Pilih Scene --</option>
+                                    {scenes.map(sc => (
+                                      <option key={sc.id} value={sc.id}>{sc.name}</option>
+                                    ))}
+                                  </select>
+                                )}
+
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
@@ -2652,6 +2725,34 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               className="w-full h-full border-0"
               allow="camera; microphone; xr-spatial-tracking"
             ></iframe>
+          </div>
+        </div>
+      )}
+      {/* Simulator Modal */}
+      {isSimulating && (
+        <div className="fixed inset-0 bg-black z-[100] flex flex-col">
+          <div className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
+            <h2 className="text-white font-bold flex items-center gap-2">
+              <Play className="text-green-400" size={20} />
+              AR Simulator (End-User Preview)
+            </h2>
+            <div className="flex items-center gap-4">
+              <div className="text-xs text-gray-400 flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-md">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                Klik objek untuk menguji event (animasi/audio/URL)
+              </div>
+              <button 
+                onClick={() => setIsSimulating(false)} 
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm font-bold transition-colors flex items-center"
+              >
+                <X size={16} className="mr-1" /> Tutup Simulator
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 w-full bg-gradient-to-b from-[#111] to-[#222] relative">
+            <div className="absolute inset-0">
+               <EditorViewport simulateMode={true} />
+            </div>
           </div>
         </div>
       )}
