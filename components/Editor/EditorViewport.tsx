@@ -553,7 +553,8 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const texture = useTexture(element.url || 'https://via.placeholder.com/150');
   
   // Calculate aspect ratio
-  const aspect = texture.image ? texture.image.width / texture.image.height : 1;
+  const tex = texture as any;
+  const aspect = tex.image ? tex.image.width / tex.image.height : 1;
   const width = aspect > 1 ? 3 : 3 * aspect;
   const height = aspect > 1 ? 3 / aspect : 3;
 
@@ -584,7 +585,7 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
       >
         <mesh>
           <planeGeometry args={[width, height]} />
-          <meshBasicMaterial map={texture} transparent side={THREE.DoubleSide} />
+          <meshBasicMaterial map={tex} transparent side={THREE.DoubleSide} />
         </mesh>
       </group>
     </AnimatedElementWrapper>
