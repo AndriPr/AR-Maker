@@ -611,7 +611,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
           <button 
             onClick={() => setRightPanelOpen(!isRightPanelOpen)} 
-            className="md:hidden p-1.5 text-gray-400 hover:text-white bg-[#2b2d31] rounded-md transition-colors ml-1"
+            className="p-1.5 text-gray-400 hover:text-white bg-[#2b2d31] rounded-md transition-colors ml-1 hidden sm:block"
+            title="Toggle Properties"
+          >
+            <Settings size={18} />
+          </button>
+          
+          <button 
+            onClick={() => setRightPanelOpen(!isRightPanelOpen)} 
+            className="sm:hidden p-1.5 text-gray-400 hover:text-white bg-[#2b2d31] rounded-md transition-colors ml-1"
           >
             <Settings size={18} />
           </button>
@@ -992,8 +1000,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           <div className="bg-[#202227] p-3 border-b border-[#2b2d31] text-[10px] font-bold text-gray-400 uppercase flex items-center justify-between tracking-wider">
             PROPERTIES
             {/* Properties Toggle */}
-            <button className="p-2 text-gray-400 hover:text-white" onClick={() => setRightPanelOpen(!isRightPanelOpen)}>
-              <Settings size={18} />
+            <button className="p-2 text-gray-400 hover:text-white" onClick={() => setRightPanelOpen(false)}>
+              <X size={18} />
             </button>
           </div>
           
@@ -1277,6 +1285,45 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               className="flex-1 bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-xs text-white outline-none focus:border-pln-blue font-mono"
                             />
                           </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-gray-400 font-medium">Jenis Font</label>
+                          <select 
+                            value={selectedElement.fontFamily || 'https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff'}
+                            onChange={(e) => updateElement(selectedElement.id, { fontFamily: e.target.value })}
+                            className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                          >
+                            <option value="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff">Raleway</option>
+                            <option value="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.woff">Roboto</option>
+                            <option value="https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUtiZTaR.woff">Oswald</option>
+                            <option value="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.woff">Inter</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-gray-400 font-medium">Gaya Teks</label>
+                          <select 
+                            value={selectedElement.is3D ? '3d' : '2d'}
+                            onChange={(e) => updateElement(selectedElement.id, { is3D: e.target.value === '3d' })}
+                            className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                          >
+                            <option value="2d">Datar (2D)</option>
+                            <option value="3d">Timbul (3D)</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-gray-400 font-medium">Efek Spesial</label>
+                          <select 
+                            value={selectedElement.textEffect || 'none'}
+                            onChange={(e) => updateElement(selectedElement.id, { textEffect: e.target.value })}
+                            className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                          >
+                            <option value="none">Tidak Ada</option>
+                            <option value="outline">Garis Tepi (Outline)</option>
+                            <option value="glow">Menyala (Neon/Glow)</option>
+                          </select>
                         </div>
 
                         <div className="flex flex-col gap-1.5 pt-3 border-t border-[#2b2d31]/50">

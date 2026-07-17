@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron } from '@react-three/drei';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -350,18 +350,14 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
     }
   }, [isSelected, element.id, updateElement]);
 
+  const fontUrl = element.fontFamily || "https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff";
+  const color = element.color || "#ffffff";
+  const isOutline = element.textEffect === 'outline';
+  const isGlow = element.textEffect === 'glow';
+
   const textObj = (
     <AnimatedElementWrapper element={element}>
-      <Text 
-        color={element.color || "#ffffff"} 
-        fontSize={0.5} 
-        maxWidth={5} 
-        lineHeight={1}
-        letterSpacing={0.02} 
-        textAlign="center" 
-        font="https://fonts.gstatic.com/s/raleway/v14/1Ptrg8zYS_SKggPNwK4vaqI.woff" 
-        anchorX="center" 
-        anchorY="middle"
+      <group
         onClick={(e: any) => {
           e.stopPropagation();
           setSelectedId(element.id);
@@ -370,8 +366,48 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
           if (e.type === 'click') setSelectedId(null);
         }}
       >
-        {liveText}
-      </Text>
+        {element.is3D ? (
+          <Center>
+            <Text3D
+              font="https://unpkg.com/three@0.77.0/examples/fonts/helvetiker_regular.typeface.json"
+              size={0.5}
+              height={0.1}
+              curveSegments={12}
+              bevelEnabled
+              bevelThickness={0.02}
+              bevelSize={0.02}
+              bevelOffset={0}
+              bevelSegments={5}
+            >
+              {liveText}
+              <meshStandardMaterial 
+                color={color} 
+                emissive={isGlow ? color : '#000000'}
+                emissiveIntensity={isGlow ? 2 : 0}
+                wireframe={isOutline}
+              />
+            </Text3D>
+          </Center>
+        ) : (
+          <Text 
+            color={color} 
+            fontSize={0.5} 
+            maxWidth={5} 
+            lineHeight={1}
+            letterSpacing={0.02} 
+            textAlign="center" 
+            font={fontUrl} 
+            anchorX="center" 
+            anchorY="middle"
+            outlineWidth={isOutline ? 0.02 : (isGlow ? 0.05 : 0)}
+            outlineColor={isOutline ? '#000000' : (isGlow ? color : 'transparent')}
+            outlineOpacity={isGlow ? 0.5 : 1}
+          >
+            {liveText}
+            {isGlow && <meshBasicMaterial color={color} />}
+          </Text>
+        )}
+      </group>
     </AnimatedElementWrapper>
   );
 

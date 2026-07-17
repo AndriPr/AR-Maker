@@ -33,6 +33,9 @@ export interface SceneElement {
   url?: string;         // For models, images, videos
   content?: string;     // For text
   color?: string;       // For text and shapes
+  is3D?: boolean;       // For text
+  fontFamily?: string;  // For text
+  textEffect?: string;  // For text (none, outline, glow)
   shapeType?: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone' | 'torus' | 'tetrahedron' | 'icosahedron'; // For 3d shapes
   
   // Interactivity Properties
