@@ -40,6 +40,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showWebcamTestModal, setShowWebcamTestModal] = useState(false);
   
   const { activeWorkspace, activeRole, user } = useWorkspace();
   
@@ -2378,23 +2379,63 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
               
               <div className="flex gap-3 w-full">
                 <button 
+                  onClick={() => setShowWebcamTestModal(true)}
+                  className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-sm shadow-md"
+                >
+                  <Eye size={16} className="mr-2" /> Tes dengan Kamera PC
+                </button>
+              </div>
+              
+              <div className="flex gap-3 w-full mt-3">
+                <button 
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/ar-viewer/${project?.id}`);
                     alert('Link berhasil disalin!');
                   }}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-sm"
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-xs"
                 >
-                  <Copy size={16} className="mr-2" /> Salin Link
+                  <Copy size={14} className="mr-2" /> Salin Link
                 </button>
                 <Link 
                   href={`/ar-viewer/${project?.id}`} 
                   target="_blank"
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-sm"
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-xs"
                 >
-                  Buka di Browser <ExternalLink size={16} className="ml-2" />
+                  Buka di Browser <ExternalLink size={14} className="ml-2" />
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Webcam Test Modal */}
+      {showWebcamTestModal && (
+        <div className="fixed inset-0 bg-black z-[100] flex flex-col">
+          <div className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
+            <h2 className="text-white font-bold flex items-center gap-2">
+              <Eye className="text-indigo-400" size={20} />
+              Webcam Test Mode
+            </h2>
+            <div className="flex items-center gap-4">
+              <div className="text-xs text-gray-400 flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-md">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                Gunakan marker fisik di depan webcam
+              </div>
+              <button 
+                onClick={() => setShowWebcamTestModal(false)} 
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm font-bold transition-colors flex items-center"
+              >
+                <X size={16} className="mr-1" /> Tutup
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 w-full bg-black relative">
+            <iframe 
+              src={`/ar-viewer/${project?.id}`}
+              className="w-full h-full border-0"
+              allow="camera; microphone; xr-spatial-tracking"
+            ></iframe>
           </div>
         </div>
       )}

@@ -10,9 +10,9 @@ import * as THREE from 'three';
 import { MultisetClient, XRSessionManager } from '@multisetai/vps/core';
 import { ThreeAdapter } from '@multisetai/vps/three';
 
-function Model({ url, position, rotation, scale }: any) {
+function Model({ url, position, rotation, scale, onClick }: any) {
   const { scene } = useGLTF(url as string) as any;
-  return <primitive object={scene.clone()} position={position} rotation={rotation} scale={scale} />;
+  return <primitive object={scene.clone()} position={position} rotation={rotation} scale={scale} onClick={onClick} />;
 }
 
 // HACK: WebXR Viewer di iOS melempar error jika addEventListener dipanggil sebelum session dimulai.
@@ -126,6 +126,9 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
   const [isXrSupported, setIsXrSupported] = useState<boolean>(true);
   const [isIOS, setIsIOS] = useState<boolean>(false);
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  
+  // Scene State
+  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
 
   useEffect(() => {
     // Check for iOS
@@ -152,6 +155,9 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         if (data.scene_data && data.scene_data.multiset_map_id) {
           setMapId(data.scene_data.multiset_map_id);
         }
+        if (data.scene_data && data.scene_data.scenes && data.scene_data.scenes.length > 0) {
+          setActiveSceneId(data.scene_data.scenes[0].id);
+        }
       }
     };
     fetchProject();
@@ -159,7 +165,17 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
 
   if (!project) return <div className="text-white flex items-center justify-center h-full bg-gray-900">Memuat 3D Canvas...</div>;
 
-  const elements = project.scene_data?.elements || [];
+  const allElements = project.scene_data?.elements || [];
+  const currentElements = allElements.filter((el: any) => !el.sceneId || el.sceneId === activeSceneId);
+
+  const handleElementClick = (e: any, el: any) => {
+    e.stopPropagation();
+    if (el.onClickActionType === 'change_scene' && el.onClickActionValue) {
+      setActiveSceneId(el.onClickActionValue);
+    } else if (el.onClickActionType === 'url' && el.onClickActionValue) {
+      window.open(el.onClickActionValue, '_blank');
+    }
+  };
 
   return (
     <div className="w-full h-screen bg-gray-900 relative">
@@ -226,7 +242,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         
         {/* Konten 3D - ThreeAdapter dari MultiSet akan otomatis menyesuaikan ruang origin (0,0,0) agar pas dengan objek di dunia nyata */}
         <group position={[0, 0, 0]}> 
-          {elements.map((el: any) => {
+          {currentElements.map((el: any) => {
             if (el.type === '3d_model' && el.url) {
               return (
                 <Model 
@@ -235,6 +251,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
                   position={el.position}
                   rotation={el.rotation}
                   scale={el.scale}
+                  onClick={(e: any) => handleElementClick(e, el)}
                 />
               );
             }
@@ -248,6 +265,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
                   color={el.color || 'white'}
                   anchorX="center"
                   anchorY="middle"
+                  onClick={(e: any) => handleElementClick(e, el)}
                 >
                   {el.content}
                 </Text>
