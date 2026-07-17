@@ -117,6 +117,13 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, removeElement, undo, redo, setSelectedId]);
 
+  // Auto-open right panel when an element is selected
+  useEffect(() => {
+    if (selectedId) {
+      setRightPanelOpen(true);
+    }
+  }, [selectedId]);
+
   // AI Logic
   const handleAISubmit = (e: React.FormEvent) => {
     e.preventDefault();
