@@ -86,6 +86,29 @@ export default function NewProjectPage() {
         finalFolderId = folderId;
       }
 
+      let initialSceneData: any = { elements: [] };
+
+      if (selectedTemplate === 'business_card') {
+        initialSceneData.elements = [
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' },
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, 0, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], color: '#aaaaaa' },
+          { id: crypto.randomUUID(), type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0, -0.8, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+        ];
+      } else if (selectedTemplate === 'catalog') {
+        initialSceneData.elements = [
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Produk', content: 'PRODUK SUPER', position: [0, 1.2, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#ffffff' },
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'box', name: 'Kotak Produk', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], color: '#pln-blue' },
+          { id: crypto.randomUUID(), type: 'ui_button', name: 'Beli Sekarang', buttonText: 'Beli Sekarang', actionTargetId: '', actionAnimation: '', position: [0, -1.2, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+        ];
+      } else if (selectedTemplate === 'wedding') {
+        initialSceneData.elements = [
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 1', position: [-1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], color: '#ffcccc' },
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Utama', position: [0, 0, 0.2], rotation: [0, 0, 0], scale: [1.2, 1.8, 1], color: '#ffffff' },
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 2', position: [1.2, 0, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], color: '#ccffcc' },
+          { id: crypto.randomUUID(), type: '3d_text', name: 'Teks Undangan', content: 'Undangan Pernikahan', position: [0, -1.2, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], color: '#ffffff' }
+        ];
+      }
+
       // Insert new project to database
       const { data, error: dbError } = await supabase
         .from('ar_projects')
@@ -95,7 +118,8 @@ export default function NewProjectPage() {
           title: title,
           tracking_type: trackingType,
           is_published: false,
-          folder_id: finalFolderId
+          folder_id: finalFolderId,
+          scene_data: initialSceneData
         })
         .select()
         .single();
