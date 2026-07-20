@@ -122,6 +122,7 @@ interface EditorState {
   edges: any[];
   setNodes: (nodes: any[] | ((prev: any[]) => any[])) => void;
   setEdges: (edges: any[] | ((prev: any[]) => any[])) => void;
+  updateNodeData: (id: string, data: any) => void;
   onNodesChange: (changes: any[]) => void;
   onEdgesChange: (changes: any[]) => void;
   
@@ -211,6 +212,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   
   setNodes: (nodesUpdater) => set((state) => ({ nodes: typeof nodesUpdater === 'function' ? nodesUpdater(state.nodes) : nodesUpdater })),
   setEdges: (edgesUpdater) => set((state) => ({ edges: typeof edgesUpdater === 'function' ? edgesUpdater(state.edges) : edgesUpdater })),
+  updateNodeData: (id, data) => set((state) => ({
+    nodes: state.nodes.map((node) => {
+      if (node.id === id) {
+        return { ...node, data: { ...node.data, ...data } };
+      }
+      return node;
+    })
+  })),
   onNodesChange: (changes) => set((state) => {
     // Basic applyNodeChanges simulation (without importing reactflow here)
     // We'll rely on setNodes directly in the component for full reactflow support

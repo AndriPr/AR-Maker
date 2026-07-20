@@ -13,11 +13,48 @@ function useActionHandler() {
   const updateElement = useEditorStore(state => state.updateElement);
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
+  const nodes = useEditorStore(state => state.nodes);
+  const edges = useEditorStore(state => state.edges);
 
   return (element: any) => {
     if (!isSimulating) return false;
     
-    // Process onClickActions
+    let actionTriggered = false;
+
+    // 1. Process Visual Logic Nodes (New Engine)
+    const triggers = nodes.filter(n => n.type === 'trigger' && n.data?.triggerType === 'on_click' && n.data?.targetId === element.id);
+    
+    triggers.forEach(triggerNode => {
+      const connectedEdges = edges.filter(e => e.source === triggerNode.id);
+      
+      connectedEdges.forEach(edge => {
+        const actionNode = nodes.find(n => n.id === edge.target && n.type === 'action');
+        if (actionNode && actionNode.data) {
+          const { actionType, targetId, actionValue } = actionNode.data;
+          actionTriggered = true;
+
+          if (actionType === 'play_animation' && targetId) {
+            setPreviewAnimationData({ targetId, animationName: actionValue || '*' });
+          } else if (actionType === 'toggle_visibility' && targetId) {
+            const targetEl = elements.find(e => e.id === targetId);
+            if (targetEl) {
+              updateElement(targetId, { isHidden: !targetEl.isHidden });
+            }
+          } else if (actionType === 'open_url' && actionValue) {
+            window.open(actionValue, '_blank');
+          } else if (actionType === 'change_scene' && actionValue) {
+            setCurrentSceneId(actionValue);
+          } else if (actionType === 'play_audio' && targetId) {
+            const targetEl = elements.find(e => e.id === targetId);
+            if (targetEl) {
+              updateElement(targetId, { autoplay: !targetEl.autoplay });
+            }
+          }
+        }
+      });
+    });
+
+    // 2. Process legacy onClickActions
     if (element.onClickActions && element.onClickActions.length > 0) {
       element.onClickActions.forEach((action: any) => {
         if (action.type === 'play_animation' && action.targetId) {
@@ -38,15 +75,16 @@ function useActionHandler() {
         } else if (action.type === 'play_audio' && action.targetId) {
            const targetEl = elements.find(e => e.id === action.targetId);
            if (targetEl) {
-              // Toggle autoplay property simply to trigger audio component updates
               updateElement(action.targetId, { autoplay: !targetEl.autoplay }); 
            }
         }
       });
-      return true; // Actions triggered
+      actionTriggered = true;
     }
 
-    // Legacy Fallback for older properties (if action wasn't migrated)
+    if (actionTriggered) return true;
+
+    // 3. Legacy Fallback
     if (element.onClickActionType === 'change_scene' && element.onClickActionValue) {
        setCurrentSceneId(element.onClickActionValue);
        return true;
@@ -1107,9 +1145,55 @@ function CameraController() {
 }
 
 export default function EditorViewport({ transformMode = 'translate', simulateMode = false }: { transformMode?: 'translate' | 'rotate' | 'scale', simulateMode?: boolean }) {
-  const targetImageUrl = useEditorStore(state => state.targetImageUrl);
+  const isSimulating = simulateMode || useEditorStore(state => state.isSimulating);
   const elements = useEditorStore(state => state.elements);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const targetImageUrl = useEditorStore(state => state.targetImageUrl);
+  const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
+  const isOrthographic = useEditorStore(state => state.isOrthographic);
+  const trackingMode = useEditorStore(state => state.trackingMode);
+  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
+
+  // Logic Engine Setup
+  const nodes = useEditorStore(state => state.nodes);
+  const edges = useEditorStore(state => state.edges);
+  
+  useEffect(() => {
+    if (isSimulating) {
+      // Find "On Scene Start" triggers
+      const startTriggers = nodes.filter(n => n.type === 'trigger' && n.data?.triggerType === 'on_scene_start');
+      
+      startTriggers.forEach(triggerNode => {
+        const connectedEdges = edges.filter(e => e.source === triggerNode.id);
+        connectedEdges.forEach(edge => {
+          const actionNode = nodes.find(n => n.id === edge.target && n.type === 'action');
+          if (actionNode && actionNode.data) {
+            const { actionType, targetId, actionValue } = actionNode.data;
+            
+            // Execute action after a tiny delay to ensure scene is loaded
+            setTimeout(() => {
+              if (actionType === 'play_animation' && targetId) {
+                setPreviewAnimationData({ targetId, animationName: actionValue || '*' });
+              } else if (actionType === 'toggle_visibility' && targetId) {
+                const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
+                if (targetEl) updateElement(targetId, { isHidden: !targetEl.isHidden });
+              } else if (actionType === 'open_url' && actionValue) {
+                window.open(actionValue, '_blank');
+              } else if (actionType === 'change_scene' && actionValue) {
+                setCurrentSceneId(actionValue);
+              } else if (actionType === 'play_audio' && targetId) {
+                const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
+                if (targetEl) updateElement(targetId, { autoplay: !targetEl.autoplay });
+              }
+            }, 100);
+          }
+        });
+      });
+    }
+  }, [isSimulating, nodes, edges, setPreviewAnimationData, updateElement, setCurrentSceneId]);
+
   const isSnapping = useEditorStore(state => state.isSnapping);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
