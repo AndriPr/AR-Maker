@@ -107,6 +107,7 @@ export interface SceneElement {
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
+    easing?: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'bounce';
   }[];
 }
 

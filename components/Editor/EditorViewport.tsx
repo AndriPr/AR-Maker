@@ -314,6 +314,29 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
         let progress = 0;
         if (kf2.time > kf1.time) {
            progress = (tTime - kf1.time) / (kf2.time - kf1.time);
+           
+           // Apply Easing based on kf1's setting (how to get TO kf2)
+           const easing = kf1.easing || 'linear';
+           if (easing === 'ease-in') {
+             progress = progress * progress;
+           } else if (easing === 'ease-out') {
+             progress = progress * (2 - progress);
+           } else if (easing === 'ease-in-out') {
+             progress = progress < .5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+           } else if (easing === 'bounce') {
+             const n1 = 7.5625;
+             const d1 = 2.75;
+             let p = progress;
+             if (p < 1 / d1) {
+               progress = n1 * p * p;
+             } else if (p < 2 / d1) {
+               progress = n1 * (p -= 1.5 / d1) * p + 0.75;
+             } else if (p < 2.5 / d1) {
+               progress = n1 * (p -= 2.25 / d1) * p + 0.9375;
+             } else {
+               progress = n1 * (p -= 2.625 / d1) * p + 0.984375;
+             }
+           }
         }
 
         if (kf1.position && kf2.position) {

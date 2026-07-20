@@ -4,6 +4,94 @@ import React, { useState, useEffect } from 'react';
 import { Play, Pause, Plus, Trash2, Clock } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 
+// --- ENTERPRISE KEYFRAME NODE ---
+function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    if (e.button === 2) {
+       // Right click Context Menu
+       e.preventDefault();
+       setShowMenu(true);
+       setMenuPos({ x: e.clientX, y: e.clientY });
+       return;
+    }
+    
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const parentRect = e.currentTarget.parentElement?.getBoundingClientRect();
+    if (!parentRect) return;
+    
+    const x = e.clientX - parentRect.left;
+    let newTime = (x / parentRect.width) * duration;
+    newTime = Math.max(0, Math.min(duration, newTime));
+    newTime = parseFloat(newTime.toFixed(1)); // snap to 0.1s
+    
+    if (newTime !== kf.time) {
+      onUpdate(kf.time, { ...kf, time: newTime });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDragging) {
+      setIsDragging(false);
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  // Close context menu on global click
+  useEffect(() => {
+    const close = () => setShowMenu(false);
+    if (showMenu) document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [showMenu]);
+
+  return (
+    <>
+      <div 
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onContextMenu={(e) => e.preventDefault()}
+        className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 cursor-grab active:cursor-grabbing hover:scale-150 transition-transform ${kf.easing && kf.easing !== 'linear' ? 'bg-purple-500' : 'bg-orange-500'}`}
+        style={{ left: `${(kf.time / duration) * 100}%`, zIndex: isDragging ? 50 : 10 }}
+        title={`Keyframe at ${kf.time}s (${kf.easing || 'linear'})`}
+      ></div>
+
+      {showMenu && (
+        <div className="fixed z-[99999] bg-[#1a1b1e] border border-[#36393f] rounded shadow-2xl w-32 py-1 text-xs" style={{ left: menuPos.x, top: menuPos.y - 150 }}>
+          <div className="px-2 py-1 text-[10px] text-gray-500 font-bold uppercase border-b border-[#2b2d31]">Easing Type</div>
+          {['linear', 'ease-in', 'ease-out', 'ease-in-out', 'bounce'].map(ease => (
+             <button 
+               key={ease} 
+               className="w-full text-left px-3 py-1.5 text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex justify-between"
+               onClick={() => { onUpdate(kf.time, { ...kf, easing: ease }); setShowMenu(false); }}
+             >
+               {ease}
+               {kf.easing === ease || (!kf.easing && ease === 'linear') ? <span className="text-pln-blue text-[10px]">✔</span> : null}
+             </button>
+          ))}
+          <div className="border-t border-[#36393f] mt-1 pt-1">
+             <button 
+               className="w-full text-left px-3 py-1.5 text-red-400 hover:bg-red-500/20"
+               onClick={() => { onRemove(kf.time); setShowMenu(false); }}
+             >
+               Delete Keyframe
+             </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function TimelinePanel() {
   const elements = useEditorStore(state => state.elements);
   const selectedId = useEditorStore(state => state.selectedId);
@@ -59,10 +147,28 @@ export default function TimelinePanel() {
     updateElement(selectedElement.id, { keyframes: updatedKeyframes });
   };
 
-  const removeKeyframe = (time: number) => {
-    if (!selectedElement || !selectedElement.keyframes) return;
-    const updatedKeyframes = selectedElement.keyframes.filter(kf => kf.time !== time);
-    updateElement(selectedElement.id, { keyframes: updatedKeyframes });
+  const removeKeyframe = (elementId: string, time: number) => {
+    const el = elements.find(e => e.id === elementId);
+    if (!el || !el.keyframes) return;
+    const updatedKeyframes = el.keyframes.filter(kf => kf.time !== time);
+    updateElement(elementId, { keyframes: updatedKeyframes });
+  };
+
+  const updateKeyframe = (elementId: string, oldTime: number, newKeyframe: any) => {
+    const el = elements.find(e => e.id === elementId);
+    if (!el || !el.keyframes) return;
+    
+    // Replace the old keyframe with the new one
+    const updatedKeyframes = el.keyframes.map(kf => 
+      kf.time === oldTime ? newKeyframe : kf
+    ).sort((a, b) => a.time - b.time);
+    
+    // Remove duplicates if dragging on top of another keyframe (unless it's the exact same one)
+    const uniqueKeyframes = updatedKeyframes.filter((kf, index, self) => 
+      index === self.findIndex((k) => k.time === kf.time)
+    );
+    
+    updateElement(elementId, { keyframes: uniqueKeyframes });
   };
 
   return (
@@ -140,13 +246,14 @@ export default function TimelinePanel() {
             {elements.map((el, index) => (
               <div key={`track-${el.id}`} className="absolute left-0 right-0 h-8 border-b border-[#2b2d31]" style={{ top: `${index * 2}rem` }}>
                 {el.keyframes?.map(kf => (
-                  <div 
-                    key={`kf-${el.id}-${kf.time}`}
-                    onClick={(e) => { e.stopPropagation(); removeKeyframe(kf.time); }}
-                    className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rotate-45 bg-orange-500 cursor-pointer hover:scale-150 transition-transform"
-                    style={{ left: `${(kf.time / duration) * 100}%` }}
-                    title={`Delete Keyframe at ${kf.time}s`}
-                  ></div>
+                  <KeyframeNode 
+                    key={`kf-${el.id}-${kf.time}`} 
+                    elementId={el.id} 
+                    kf={kf} 
+                    duration={duration} 
+                    onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
+                    onRemove={(time: number) => removeKeyframe(el.id, time)}
+                  />
                 ))}
               </div>
             ))}
