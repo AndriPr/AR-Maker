@@ -7,6 +7,61 @@ import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls,
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
+// Logic Engine Hook
+function useLogicEngine() {
+  const nodes = useEditorStore(state => state.nodes);
+  const edges = useEditorStore(state => state.edges);
+  const elements = useEditorStore(state => state.elements);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
+  const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
+
+  const executeNode = (nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    if (node.type === 'action') {
+      const { actionType, targetId, actionValue } = node.data || {};
+      if (actionType === 'play_animation' && targetId) {
+        setPreviewAnimationData({ targetId, animationName: actionValue || '*' });
+      } else if (actionType === 'toggle_visibility' && targetId) {
+        const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
+        if (targetEl) updateElement(targetId, { isHidden: !targetEl.isHidden });
+      } else if (actionType === 'open_url' && actionValue) {
+        window.open(actionValue, '_blank');
+      } else if (actionType === 'change_scene' && actionValue) {
+        setCurrentSceneId(actionValue);
+      } else if (actionType === 'play_audio' && targetId) {
+        const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
+        if (targetEl) updateElement(targetId, { autoplay: !targetEl.autoplay });
+      }
+      
+      // Continue execution to next connected nodes
+      executeNextNodes(nodeId);
+    } 
+    else if (node.type === 'control') {
+      // Handle Delay
+      const delayTime = (node.data?.delayTime || 0) * 1000;
+      setTimeout(() => {
+        executeNextNodes(nodeId);
+      }, delayTime);
+    }
+    else {
+      // Triggers or other nodes, just pass through
+      executeNextNodes(nodeId);
+    }
+  };
+
+  const executeNextNodes = (sourceNodeId: string) => {
+    const connectedEdges = edges.filter(e => e.source === sourceNodeId);
+    connectedEdges.forEach(edge => {
+      executeNode(edge.target);
+    });
+  };
+
+  return { executeNextNodes, executeNode };
+}
+
 function useActionHandler() {
   const isSimulating = useEditorStore(state => state.isSimulating);
   const elements = useEditorStore(state => state.elements);
@@ -14,7 +69,8 @@ function useActionHandler() {
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
   const nodes = useEditorStore(state => state.nodes);
-  const edges = useEditorStore(state => state.edges);
+  
+  const { executeNextNodes } = useLogicEngine();
 
   return (element: any) => {
     if (!isSimulating) return false;
@@ -25,33 +81,8 @@ function useActionHandler() {
     const triggers = nodes.filter(n => n.type === 'trigger' && n.data?.triggerType === 'on_click' && n.data?.targetId === element.id);
     
     triggers.forEach(triggerNode => {
-      const connectedEdges = edges.filter(e => e.source === triggerNode.id);
-      
-      connectedEdges.forEach(edge => {
-        const actionNode = nodes.find(n => n.id === edge.target && n.type === 'action');
-        if (actionNode && actionNode.data) {
-          const { actionType, targetId, actionValue } = actionNode.data;
-          actionTriggered = true;
-
-          if (actionType === 'play_animation' && targetId) {
-            setPreviewAnimationData({ targetId, animationName: actionValue || '*' });
-          } else if (actionType === 'toggle_visibility' && targetId) {
-            const targetEl = elements.find(e => e.id === targetId);
-            if (targetEl) {
-              updateElement(targetId, { isHidden: !targetEl.isHidden });
-            }
-          } else if (actionType === 'open_url' && actionValue) {
-            window.open(actionValue, '_blank');
-          } else if (actionType === 'change_scene' && actionValue) {
-            setCurrentSceneId(actionValue);
-          } else if (actionType === 'play_audio' && targetId) {
-            const targetEl = elements.find(e => e.id === targetId);
-            if (targetEl) {
-              updateElement(targetId, { autoplay: !targetEl.autoplay });
-            }
-          }
-        }
-      });
+      actionTriggered = true;
+      executeNextNodes(triggerNode.id);
     });
 
     // 2. Process legacy onClickActions
@@ -1158,7 +1189,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
 
   // Logic Engine Setup
   const nodes = useEditorStore(state => state.nodes);
-  const edges = useEditorStore(state => state.edges);
+  const { executeNextNodes } = useLogicEngine();
   
   useEffect(() => {
     if (isSimulating) {
@@ -1166,33 +1197,12 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
       const startTriggers = nodes.filter(n => n.type === 'trigger' && n.data?.triggerType === 'on_scene_start');
       
       startTriggers.forEach(triggerNode => {
-        const connectedEdges = edges.filter(e => e.source === triggerNode.id);
-        connectedEdges.forEach(edge => {
-          const actionNode = nodes.find(n => n.id === edge.target && n.type === 'action');
-          if (actionNode && actionNode.data) {
-            const { actionType, targetId, actionValue } = actionNode.data;
-            
-            // Execute action after a tiny delay to ensure scene is loaded
-            setTimeout(() => {
-              if (actionType === 'play_animation' && targetId) {
-                setPreviewAnimationData({ targetId, animationName: actionValue || '*' });
-              } else if (actionType === 'toggle_visibility' && targetId) {
-                const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
-                if (targetEl) updateElement(targetId, { isHidden: !targetEl.isHidden });
-              } else if (actionType === 'open_url' && actionValue) {
-                window.open(actionValue, '_blank');
-              } else if (actionType === 'change_scene' && actionValue) {
-                setCurrentSceneId(actionValue);
-              } else if (actionType === 'play_audio' && targetId) {
-                const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
-                if (targetEl) updateElement(targetId, { autoplay: !targetEl.autoplay });
-              }
-            }, 100);
-          }
-        });
+        setTimeout(() => {
+          executeNextNodes(triggerNode.id);
+        }, 100);
       });
     }
-  }, [isSimulating, nodes, edges, setPreviewAnimationData, updateElement, setCurrentSceneId]);
+  }, [isSimulating, nodes, executeNextNodes]);
 
   const isSnapping = useEditorStore(state => state.isSnapping);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);

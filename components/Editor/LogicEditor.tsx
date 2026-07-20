@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { 
   ReactFlow, 
   MiniMap, 
@@ -12,133 +12,59 @@ import {
   Handle, 
   Position,
   Connection,
-  Edge
+  Edge,
+  Node,
+  useReactFlow,
+  ReactFlowProvider
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useEditorStore } from '@/lib/store';
-import { X, MousePointerClick, Zap, Play, Eye, Link as LinkIcon, Volume2, Globe } from 'lucide-react';
+import { X, MousePointerClick, Zap, Play, Timer, AlignLeft, Search } from 'lucide-react';
 
-const TriggerNode = ({ id, data }: any) => {
-  const elements = useEditorStore(state => state.elements);
-  const updateNodeData = useEditorStore(state => state.updateNodeData);
+// --- NODE COMPONENTS --- //
 
-  const handleChangeType = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateNodeData(id, { triggerType: e.target.value });
-  };
-
-  const handleChangeTarget = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateNodeData(id, { targetId: e.target.value });
-  };
-
+const TriggerNode = ({ data, selected }: any) => {
+  const typeLabel = data.triggerType === 'on_scene_start' ? 'On Scene Start' : 'On Click';
   return (
-    <div className="bg-[#1e1e1e] border border-orange-500/50 rounded-lg shadow-[0_0_15px_rgba(249,115,22,0.15)] min-w-[200px] overflow-hidden">
-      <div className="bg-gradient-to-r from-orange-600/20 to-orange-500/5 text-orange-400 font-bold text-xs p-2.5 flex items-center gap-2 border-b border-orange-500/20">
-        <MousePointerClick size={14} className="text-orange-500" /> 
-        <span>TRIGGER</span>
+    <div className={`bg-[#1e1e1e] border-2 ${selected ? 'border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'border-orange-500/30'} rounded shadow-lg min-w-[140px] overflow-hidden transition-all`}>
+      <div className="bg-gradient-to-r from-orange-600/30 to-orange-500/10 text-orange-400 font-bold text-[10px] p-2 flex items-center gap-1.5 border-b border-orange-500/20">
+        <MousePointerClick size={12} /> TRIGGER
       </div>
-      <div className="p-3 flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-gray-400 font-medium">When:</label>
-          <select 
-            value={data.triggerType || 'on_scene_start'} 
-            onChange={handleChangeType}
-            className="bg-[#121212] border border-[#333] text-gray-200 text-xs rounded p-1.5 focus:border-orange-500 outline-none"
-          >
-            <option value="on_scene_start">On Scene Start</option>
-            <option value="on_click">On Click Object</option>
-          </select>
-        </div>
-        
-        {data.triggerType === 'on_click' && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-gray-400 font-medium">Target Object:</label>
-            <select 
-              value={data.targetId || ''} 
-              onChange={handleChangeTarget}
-              className="bg-[#121212] border border-[#333] text-gray-200 text-xs rounded p-1.5 focus:border-orange-500 outline-none"
-            >
-              <option value="">-- Select Object --</option>
-              {elements.map(el => (
-                <option key={el.id} value={el.id}>{el.name} ({el.type})</option>
-              ))}
-            </select>
-          </div>
-        )}
+      <div className="p-2 text-center text-xs text-gray-200 font-medium">
+        {typeLabel}
       </div>
-      <Handle type="source" position={Position.Right} className="w-3 h-3 bg-orange-500 border-2 border-[#1e1e1e]" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 bg-orange-500 border-2 border-[#1e1e1e]" />
     </div>
   );
 };
 
-const ActionNode = ({ id, data }: any) => {
-  const elements = useEditorStore(state => state.elements);
-  const updateNodeData = useEditorStore(state => state.updateNodeData);
-
-  const handleChangeType = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateNodeData(id, { actionType: e.target.value });
-  };
-
-  const handleChangeTarget = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateNodeData(id, { targetId: e.target.value });
-  };
-  
-  const handleChangeValue = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateNodeData(id, { actionValue: e.target.value });
-  };
-
+const ActionNode = ({ data, selected }: any) => {
+  const typeLabel = data.actionType ? data.actionType.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Action';
   return (
-    <div className="bg-[#1e1e1e] border border-pln-blue/50 rounded-lg shadow-[0_0_15px_rgba(30,136,229,0.15)] min-w-[200px] overflow-hidden">
-      <Handle type="target" position={Position.Left} className="w-3 h-3 bg-pln-blue border-2 border-[#1e1e1e]" />
-      <div className="bg-gradient-to-r from-pln-blue/20 to-pln-blue/5 text-pln-blue font-bold text-xs p-2.5 flex items-center gap-2 border-b border-pln-blue/20">
-        <Zap size={14} className="text-pln-blue" /> 
-        <span>ACTION</span>
+    <div className={`bg-[#1e1e1e] border-2 ${selected ? 'border-pln-blue shadow-[0_0_15px_rgba(30,136,229,0.4)]' : 'border-pln-blue/30'} rounded shadow-lg min-w-[140px] overflow-hidden transition-all`}>
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 bg-pln-blue border-2 border-[#1e1e1e]" />
+      <div className="bg-gradient-to-r from-pln-blue/30 to-pln-blue/10 text-pln-blue font-bold text-[10px] p-2 flex items-center gap-1.5 border-b border-pln-blue/20">
+        <Zap size={12} /> ACTION
       </div>
-      <div className="p-3 flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-gray-400 font-medium">Do:</label>
-          <select 
-            value={data.actionType || 'play_animation'} 
-            onChange={handleChangeType}
-            className="bg-[#121212] border border-[#333] text-gray-200 text-xs rounded p-1.5 focus:border-pln-blue outline-none"
-          >
-            <option value="play_animation">Play Animation</option>
-            <option value="toggle_visibility">Toggle Visibility</option>
-            <option value="open_url">Open URL</option>
-            <option value="play_audio">Play Audio</option>
-            <option value="change_scene">Change Scene</option>
-          </select>
-        </div>
-
-        {['play_animation', 'toggle_visibility', 'play_audio'].includes(data.actionType || 'play_animation') && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-gray-400 font-medium">On Object:</label>
-            <select 
-              value={data.targetId || ''} 
-              onChange={handleChangeTarget}
-              className="bg-[#121212] border border-[#333] text-gray-200 text-xs rounded p-1.5 focus:border-pln-blue outline-none"
-            >
-              <option value="">-- Select Object --</option>
-              {elements.map(el => (
-                <option key={el.id} value={el.id}>{el.name} ({el.type})</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {(data.actionType === 'open_url' || data.actionType === 'change_scene' || data.actionType === 'play_animation') && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-gray-400 font-medium">Value / Params:</label>
-            <input 
-              type="text" 
-              value={data.actionValue || ''} 
-              onChange={handleChangeValue}
-              placeholder={data.actionType === 'open_url' ? "https://..." : data.actionType === 'play_animation' ? "Animation Name or *" : "Scene ID"}
-              className="bg-[#121212] border border-[#333] text-gray-200 text-xs rounded p-1.5 focus:border-pln-blue outline-none placeholder:text-gray-600"
-            />
-          </div>
-        )}
+      <div className="p-2 text-center text-xs text-gray-200 font-medium">
+        {typeLabel}
       </div>
-      <Handle type="source" position={Position.Right} className="w-3 h-3 bg-pln-blue border-2 border-[#1e1e1e]" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 bg-pln-blue border-2 border-[#1e1e1e]" />
+    </div>
+  );
+};
+
+const ControlNode = ({ data, selected }: any) => {
+  return (
+    <div className={`bg-[#1e1e1e] border-2 ${selected ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'border-yellow-500/30'} rounded shadow-lg min-w-[140px] overflow-hidden transition-all`}>
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 bg-yellow-500 border-2 border-[#1e1e1e]" />
+      <div className="bg-gradient-to-r from-yellow-600/30 to-yellow-500/10 text-yellow-500 font-bold text-[10px] p-2 flex items-center gap-1.5 border-b border-yellow-500/20">
+        <Timer size={12} /> CONTROL
+      </div>
+      <div className="p-2 text-center text-xs text-gray-200 font-medium">
+        Delay ({data.delayTime || 1}s)
+      </div>
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 bg-yellow-500 border-2 border-[#1e1e1e]" />
     </div>
   );
 };
@@ -146,100 +72,300 @@ const ActionNode = ({ id, data }: any) => {
 const nodeTypes = {
   trigger: TriggerNode,
   action: ActionNode,
+  control: ControlNode
 };
 
-export default function LogicEditor({ onClose }: { onClose: () => void }) {
+// --- PROPERTIES PANEL --- //
+function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) {
+  const nodes = useEditorStore(state => state.nodes);
+  const elements = useEditorStore(state => state.elements);
+  const updateNodeData = useEditorStore(state => state.updateNodeData);
+  
+  const node = nodes.find(n => n.id === selectedNodeId);
+  if (!node) return (
+    <div className="w-72 bg-[#161618] border-l border-[#2b2d31] flex flex-col items-center justify-center text-gray-500 text-xs p-6 text-center">
+      <AlignLeft size={24} className="mb-2 opacity-50" />
+      Select a node to view its properties
+    </div>
+  );
+
+  const { data, type } = node;
+
+  return (
+    <div className="w-72 bg-[#161618] border-l border-[#2b2d31] flex flex-col h-full">
+      <div className="h-12 border-b border-[#2b2d31] flex items-center px-4">
+        <h3 className="text-white font-bold text-xs">Properties</h3>
+      </div>
+      <div className="p-4 flex flex-col gap-4 overflow-y-auto">
+        
+        {/* Trigger Properties */}
+        {type === 'trigger' && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Trigger Event</label>
+              <select 
+                value={data.triggerType || 'on_scene_start'} 
+                onChange={(e) => updateNodeData(node.id, { triggerType: e.target.value })}
+                className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-orange-500 outline-none w-full"
+              >
+                <option value="on_scene_start">On Scene Start</option>
+                <option value="on_click">On Click Object</option>
+              </select>
+            </div>
+            
+            {data.triggerType === 'on_click' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Target Object</label>
+                <select 
+                  value={data.targetId || ''} 
+                  onChange={(e) => updateNodeData(node.id, { targetId: e.target.value })}
+                  className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-orange-500 outline-none w-full"
+                >
+                  <option value="">-- Select Object --</option>
+                  {elements.map(el => (
+                    <option key={el.id} value={el.id}>{el.name} ({el.type})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Action Properties */}
+        {type === 'action' && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Action Type</label>
+              <select 
+                value={data.actionType || 'play_animation'} 
+                onChange={(e) => updateNodeData(node.id, { actionType: e.target.value })}
+                className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none w-full"
+              >
+                <option value="play_animation">Play Animation</option>
+                <option value="toggle_visibility">Toggle Visibility</option>
+                <option value="open_url">Open URL</option>
+                <option value="play_audio">Play Audio</option>
+                <option value="change_scene">Change Scene</option>
+              </select>
+            </div>
+
+            {['play_animation', 'toggle_visibility', 'play_audio'].includes(data.actionType || 'play_animation') && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Target Object</label>
+                <select 
+                  value={data.targetId || ''} 
+                  onChange={(e) => updateNodeData(node.id, { targetId: e.target.value })}
+                  className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none w-full"
+                >
+                  <option value="">-- Select Object --</option>
+                  {elements.map(el => (
+                    <option key={el.id} value={el.id}>{el.name} ({el.type})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(data.actionType === 'open_url' || data.actionType === 'change_scene' || data.actionType === 'play_animation') && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Value / Params</label>
+                <input 
+                  type="text" 
+                  value={data.actionValue || ''} 
+                  onChange={(e) => updateNodeData(node.id, { actionValue: e.target.value })}
+                  placeholder={data.actionType === 'open_url' ? "https://..." : data.actionType === 'play_animation' ? "Animation Name or *" : "Scene ID"}
+                  className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none placeholder:text-gray-600 w-full"
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Control Properties */}
+        {type === 'control' && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Delay Time (Seconds)</label>
+            <input 
+              type="number" 
+              step="0.1"
+              min="0"
+              value={data.delayTime || 1} 
+              onChange={(e) => updateNodeData(node.id, { delayTime: parseFloat(e.target.value) || 0 })}
+              className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-yellow-500 outline-none w-full"
+            />
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// --- CONTEXT MENU --- //
+function FlowContextMenu({ x, y, onAdd, onClose }: { x: number, y: number, onAdd: (type: string, position: any) => void, onClose: () => void }) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as HTMLElement)) onClose();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div 
+      ref={menuRef}
+      className="absolute z-[99999] bg-[#1a1b1e] border border-[#36393f] rounded-lg shadow-2xl w-48 overflow-hidden"
+      style={{ left: x, top: y }}
+    >
+      <div className="p-2 border-b border-[#36393f] flex items-center gap-2">
+        <Search size={14} className="text-gray-400" />
+        <input autoFocus placeholder="Add Node..." className="bg-transparent text-xs text-white outline-none w-full" />
+      </div>
+      <div className="max-h-60 overflow-y-auto py-1">
+        <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Events</div>
+        <button onClick={() => onAdd('trigger', { triggerType: 'on_scene_start' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-orange-500/20 hover:text-orange-400 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-orange-500"></div> On Scene Start
+        </button>
+        <button onClick={() => onAdd('trigger', { triggerType: 'on_click' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-orange-500/20 hover:text-orange-400 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-orange-500"></div> On Click Object
+        </button>
+        
+        <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1 border-t border-[#36393f] pt-2">Control Flow</div>
+        <button onClick={() => onAdd('control', { delayTime: 1 })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-400 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div> Delay
+        </button>
+        
+        <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1 border-t border-[#36393f] pt-2">Actions</div>
+        <button onClick={() => onAdd('action', { actionType: 'play_animation' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-pln-blue"></div> Play Animation
+        </button>
+        <button onClick={() => onAdd('action', { actionType: 'toggle_visibility' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-pln-blue"></div> Toggle Visibility
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN WRAPPER --- //
+function EditorCanvas({ onClose }: { onClose: () => void }) {
   const storeNodes = useEditorStore(state => state.nodes);
   const storeEdges = useEditorStore(state => state.edges);
   const setStoreNodes = useEditorStore(state => state.setNodes);
   const setStoreEdges = useEditorStore(state => state.setEdges);
+  
+  const reactFlow = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes.length > 0 ? storeNodes : [
     { id: '1', type: 'trigger', position: { x: 100, y: 150 }, data: { triggerType: 'on_scene_start' } }
   ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
+  
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{x: number, y: number} | null>(null);
+
+  // Sync back to Zustand when internal nodes/edges change (for properties panel)
+  useEffect(() => {
+    setStoreNodes(nodes);
+  }, [nodes, setStoreNodes]);
+  useEffect(() => {
+    setStoreEdges(edges);
+  }, [edges, setStoreEdges]);
+  
+  // Re-sync local state if store changes from properties panel
+  useEffect(() => {
+    setNodes(storeNodes);
+  }, [storeNodes, setNodes]);
 
   const onConnect = useCallback((params: Connection | Edge) => {
-    // Add animated: true to connection line
     const edge = { ...params, animated: true, style: { stroke: '#ffffff', strokeWidth: 2 } };
     setEdges((eds) => addEdge(edge, eds));
   }, [setEdges]);
 
-  // Sync to store on unmount or save
-  const handleSave = () => {
-    setStoreNodes(nodes);
-    setStoreEdges(edges);
-    onClose();
-  };
+  const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    setMenuPos({ x: event.clientX, y: event.clientY });
+  }, []);
 
-  const addTriggerNode = () => {
+  const addNode = (type: string, data: any) => {
+    if (!menuPos) return;
+    const position = reactFlow.screenToFlowPosition({ x: menuPos.x, y: menuPos.y });
     const newNode = {
-      id: `trigger-${Date.now()}`,
-      type: 'trigger',
-      position: { x: Math.random() * 200 + 50, y: Math.random() * 200 + 50 },
-      data: { triggerType: 'on_click' },
+      id: `${type}-${Date.now()}`,
+      type,
+      position,
+      data,
     };
     setNodes((nds) => nds.concat(newNode));
+    setMenuPos(null);
   };
 
-  const addActionNode = () => {
-    const newNode = {
-      id: `action-${Date.now()}`,
-      type: 'action',
-      position: { x: Math.random() * 200 + 400, y: Math.random() * 200 + 50 },
-      data: { actionType: 'play_animation' },
-    };
-    setNodes((nds) => nds.concat(newNode));
-  };
+  const handleSelectionChange = useCallback(({ nodes }: any) => {
+    if (nodes.length === 1) {
+      setSelectedNodeId(nodes[0].id);
+    } else {
+      setSelectedNodeId(null);
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[#0a0a0b]/90 flex flex-col backdrop-blur-md">
-      <div className="h-16 bg-[#111113] border-b border-[#2b2d31] flex items-center justify-between px-6 shadow-xl">
+      <div className="h-14 bg-[#111113] border-b border-[#2b2d31] flex items-center justify-between px-6 shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-pln-blue to-pln-blue/60 rounded-lg shadow-lg shadow-pln-blue/20">
-            <Zap size={20} className="text-white" />
+          <div className="p-1.5 bg-gradient-to-br from-pln-blue to-pln-blue/60 rounded-md shadow-lg shadow-pln-blue/20">
+            <Zap size={16} className="text-white" />
           </div>
           <div>
-            <h2 className="text-white font-bold text-sm tracking-wide">VISUAL LOGIC SCRIPTING</h2>
-            <p className="text-[10px] text-gray-400">Node-based interaction builder</p>
+            <h2 className="text-white font-bold text-xs tracking-wide">ENTERPRISE LOGIC ENGINE</h2>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
-          <button onClick={addTriggerNode} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-orange-400 bg-orange-400/10 hover:bg-orange-400/20 rounded border border-orange-400/30 transition-all hover:scale-105">
-            <MousePointerClick size={14} /> Add Trigger
-          </button>
-          <button onClick={addActionNode} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-pln-blue bg-pln-blue/10 hover:bg-pln-blue/20 rounded border border-pln-blue/30 transition-all hover:scale-105">
-            <Play size={14} /> Add Action
-          </button>
-          <div className="w-px h-8 bg-[#2b2d31] mx-1"></div>
-          <button onClick={handleSave} className="px-5 py-2 text-xs font-bold text-white bg-pln-blue hover:bg-blue-600 rounded-md shadow-[0_0_15px_rgba(30,136,229,0.4)] transition-all hover:scale-105">
+          <span className="text-[10px] text-gray-500 mr-4 hidden sm:block">Right-Click canvas to add nodes</span>
+          <button onClick={onClose} className="px-4 py-1.5 text-xs font-bold text-white bg-pln-blue hover:bg-blue-600 rounded-md shadow-[0_0_15px_rgba(30,136,229,0.4)] transition-all hover:scale-105">
             Apply & Close
-          </button>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white bg-[#1e1e1e] hover:bg-red-500 rounded-md transition-all">
-            <X size={18} />
           </button>
         </div>
       </div>
-      <div className="flex-1 w-full bg-[#0a0a0b] relative" data-color-mode="dark">
-        {/* Subtle grid background pattern overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-5 mix-blend-screen" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-        <ReactFlow 
-          nodes={nodes} 
-          edges={edges} 
-          onNodesChange={onNodesChange} 
-          onEdgesChange={onEdgesChange} 
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          colorMode="dark"
-          defaultEdgeOptions={{ animated: true, style: { stroke: '#ffffff', strokeWidth: 2 } }}
-        >
-          <Controls className="bg-[#1e1e1e] border-[#2b2d31] fill-gray-300" showInteractive={false} />
-          <MiniMap nodeColor="#1e1e1e" maskColor="rgba(0,0,0,0.7)" className="bg-[#111113] border border-[#2b2d31] rounded-lg overflow-hidden" />
-          <Background color="#222" gap={30} size={2} />
-        </ReactFlow>
+      
+      <div className="flex-1 w-full bg-[#0a0a0b] relative flex" data-color-mode="dark">
+        {/* Editor Area */}
+        <div className="flex-1 relative" onContextMenu={onPaneContextMenu}>
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-screen" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+          <ReactFlow 
+            nodes={nodes} 
+            edges={edges} 
+            onNodesChange={onNodesChange} 
+            onEdgesChange={onEdgesChange} 
+            onConnect={onConnect}
+            onSelectionChange={handleSelectionChange}
+            nodeTypes={nodeTypes}
+            fitView
+            colorMode="dark"
+            defaultEdgeOptions={{ animated: true, style: { stroke: '#888', strokeWidth: 2 } }}
+          >
+            <Controls className="bg-[#1e1e1e] border-[#2b2d31] fill-gray-300" showInteractive={false} />
+            <MiniMap nodeColor="#1e1e1e" maskColor="rgba(0,0,0,0.7)" className="bg-[#111113] border border-[#2b2d31] rounded-lg overflow-hidden" />
+            <Background color="#333" gap={30} size={1.5} />
+          </ReactFlow>
+          
+          {menuPos && (
+            <FlowContextMenu x={menuPos.x} y={menuPos.y} onAdd={addNode} onClose={() => setMenuPos(null)} />
+          )}
+        </div>
+        
+        {/* Properties Panel */}
+        <PropertiesPanel selectedNodeId={selectedNodeId} />
       </div>
     </div>
+  );
+}
+
+export default function LogicEditor({ onClose }: { onClose: () => void }) {
+  return (
+    <ReactFlowProvider>
+      <EditorCanvas onClose={onClose} />
+    </ReactFlowProvider>
   );
 }
