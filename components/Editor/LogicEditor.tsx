@@ -21,7 +21,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useEditorStore } from '@/lib/store';
-import { X, MousePointerClick, Zap, Play, Timer, AlignLeft, Search } from 'lucide-react';
+import { X, MousePointerClick, Zap, Play, Timer, AlignLeft, Search, GitBranch } from 'lucide-react';
 
 // --- NODE COMPONENTS --- //
 
@@ -71,10 +71,36 @@ const ControlNode = ({ data, selected }: any) => {
   );
 };
 
+const ConditionNode = ({ data, selected }: any) => {
+  return (
+    <div className={`bg-[#1e1e1e] border-2 ${selected ? 'border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'border-purple-500/30'} rounded shadow-lg min-w-[140px] overflow-hidden transition-all`}>
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 bg-purple-500 border-2 border-[#1e1e1e]" />
+      <div className="bg-gradient-to-r from-purple-600/30 to-purple-500/10 text-purple-400 font-bold text-[10px] p-2 flex items-center gap-1.5 border-b border-purple-500/20">
+        <GitBranch size={12} /> LOGIC
+      </div>
+      <div className="p-2 text-center text-[10px] text-gray-200 font-medium">
+        {data.varName || 'Var'} {data.operator || '=='} {data.compareValue || '0'}
+      </div>
+      {/* Multiple source handles for True / False branch */}
+      <div className="flex flex-col w-full text-[9px] font-bold">
+        <div className="flex justify-between items-center bg-green-500/10 px-2 py-1 border-b border-[#2b2d31]">
+          <span className="text-green-400">True</span>
+          <Handle type="source" position={Position.Right} id="true" style={{ top: 'auto', bottom: 'auto', position: 'relative', right: '-12px', transform: 'none' }} className="w-2 h-2 bg-green-500 border border-[#1e1e1e]" />
+        </div>
+        <div className="flex justify-between items-center bg-red-500/10 px-2 py-1">
+          <span className="text-red-400">False</span>
+          <Handle type="source" position={Position.Right} id="false" style={{ top: 'auto', bottom: 'auto', position: 'relative', right: '-12px', transform: 'none' }} className="w-2 h-2 bg-red-500 border border-[#1e1e1e]" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const nodeTypes = {
   trigger: TriggerNode,
   action: ActionNode,
-  control: ControlNode
+  control: ControlNode,
+  condition: ConditionNode
 };
 
 // --- PROPERTIES PANEL --- //
@@ -164,6 +190,7 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
                 <option value="play_audio">Play Audio</option>
                 <option value="change_scene">Change Scene</option>
                 <option value="api_call">API Request (Fetch Data)</option>
+                <option value="set_variable">Set Variable (Logic)</option>
               </select>
             </div>
 
@@ -198,6 +225,45 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
               </div>
             )}
             
+            {data.actionType === 'set_variable' && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Variable Name</label>
+                  <input 
+                    type="text" 
+                    value={data.varName || ''} 
+                    onChange={(e) => updateNodeData(node.id, { varName: e.target.value })}
+                    placeholder="e.g. score"
+                    className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none w-full"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex flex-col gap-1.5 w-1/3">
+                    <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Operation</label>
+                    <select 
+                      value={data.varOperation || 'set'} 
+                      onChange={(e) => updateNodeData(node.id, { varOperation: e.target.value })}
+                      className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none w-full"
+                    >
+                      <option value="set">Set (=)</option>
+                      <option value="add">Add (+)</option>
+                      <option value="sub">Sub (-)</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5 w-2/3">
+                    <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Value</label>
+                    <input 
+                      type="text" 
+                      value={data.varValue || ''} 
+                      onChange={(e) => updateNodeData(node.id, { varValue: e.target.value })}
+                      placeholder="e.g. 1"
+                      className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none w-full"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+            
             {data.actionType === 'api_call' && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">HTTP Method</label>
@@ -227,6 +293,49 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
               className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-yellow-500 outline-none w-full"
             />
           </div>
+        )}
+
+        {/* Condition Properties */}
+        {type === 'condition' && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Variable to Check</label>
+              <input 
+                type="text" 
+                value={data.varName || ''} 
+                onChange={(e) => updateNodeData(node.id, { varName: e.target.value })}
+                placeholder="e.g. score"
+                className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-purple-500 outline-none w-full"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Condition Operator</label>
+              <select 
+                value={data.operator || '=='} 
+                onChange={(e) => updateNodeData(node.id, { operator: e.target.value })}
+                className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-purple-500 outline-none w-full"
+              >
+                <option value="==">Equal To (==)</option>
+                <option value="!=">Not Equal (!=)</option>
+                <option value=">">Greater Than (&gt;)</option>
+                <option value="<">Less Than (&lt;)</option>
+                <option value=">=">Greater or Equal (&gt;=)</option>
+                <option value="<=">Less or Equal (&lt;=)</option>
+              </select>
+            </div>
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Compare With Value</label>
+              <input 
+                type="text" 
+                value={data.compareValue || ''} 
+                onChange={(e) => updateNodeData(node.id, { compareValue: e.target.value })}
+                placeholder="e.g. 10"
+                className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-purple-500 outline-none w-full"
+              />
+            </div>
+          </>
         )}
 
       </div>
@@ -272,6 +381,9 @@ function FlowContextMenu({ x, y, onAdd, onClose }: { x: number, y: number, onAdd
         <button onClick={() => onAdd('control', { delayTime: 1 })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-400 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-yellow-500"></div> Delay
         </button>
+        <button onClick={() => onAdd('condition', { operator: '==', varName: 'score', compareValue: '10' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-purple-500/20 hover:text-purple-400 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-purple-500"></div> Logic (If/Else)
+        </button>
         
         <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1 border-t border-[#36393f] pt-2">Actions</div>
         <button onClick={() => onAdd('action', { actionType: 'play_animation' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
@@ -282,6 +394,9 @@ function FlowContextMenu({ x, y, onAdd, onClose }: { x: number, y: number, onAdd
         </button>
         <button onClick={() => onAdd('action', { actionType: 'api_call', apiMethod: 'GET' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-pln-blue"></div> Fetch API
+        </button>
+        <button onClick={() => onAdd('action', { actionType: 'set_variable', varOperation: 'set' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-pln-blue"></div> Set Variable
         </button>
       </div>
     </div>

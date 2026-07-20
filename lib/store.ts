@@ -123,6 +123,8 @@ interface EditorState {
   setNodes: (nodes: any[] | ((prev: any[]) => any[])) => void;
   setEdges: (edges: any[] | ((prev: any[]) => any[])) => void;
   updateNodeData: (id: string, data: any) => void;
+  logicVariables: Record<string, any>;
+  setLogicVariable: (key: string, value: any) => void;
   onNodesChange: (changes: any[]) => void;
   onEdgesChange: (changes: any[]) => void;
   
@@ -190,6 +192,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isSnapping: true,
   nodes: [],
   edges: [],
+  logicVariables: {},
   isOrthographic: false,
   isSimulating: false,
   trackingMode: 'image',
@@ -219,6 +222,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
       return node;
     })
+  })),
+  setLogicVariable: (key, value) => set((state) => ({
+    logicVariables: { ...state.logicVariables, [key]: value }
   })),
   onNodesChange: (changes) => set((state) => {
     // Basic applyNodeChanges simulation (without importing reactflow here)
