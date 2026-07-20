@@ -34,6 +34,13 @@ function useLogicEngine() {
       } else if (actionType === 'play_audio' && targetId) {
         const targetEl = useEditorStore.getState().elements.find(e => e.id === targetId);
         if (targetEl) updateElement(targetId, { autoplay: !targetEl.autoplay });
+      } else if (actionType === 'api_call' && actionValue) {
+        // Basic API Fetch (Enterprise logic feature)
+        const method = node.data.apiMethod || 'GET';
+        fetch(actionValue, { method })
+          .then(res => res.json())
+          .then(data => console.log(`API Call Success (${actionValue}):`, data))
+          .catch(err => console.error(`API Call Failed (${actionValue}):`, err));
       }
       
       // Continue execution to next connected nodes
@@ -1190,6 +1197,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   // Logic Engine Setup
   const nodes = useEditorStore(state => state.nodes);
   const { executeNextNodes } = useLogicEngine();
+  const proximityTriggered = useRef<Set<string>>(new Set());
   
   useEffect(() => {
     if (isSimulating) {
@@ -1201,8 +1209,36 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
           executeNextNodes(triggerNode.id);
         }, 100);
       });
+      
+      proximityTriggered.current.clear();
     }
   }, [isSimulating, nodes, executeNextNodes]);
+
+  useFrame(({ camera }) => {
+    if (!isSimulating) return;
+
+    const proximityTriggers = nodes.filter(n => n.type === 'trigger' && n.data?.triggerType === 'on_proximity');
+    proximityTriggers.forEach(triggerNode => {
+      const { targetId, distance = 2 } = triggerNode.data || {};
+      if (!targetId) return;
+
+      const targetEl = elements.find(e => e.id === targetId);
+      if (targetEl && targetEl.position) {
+        const elPos = new THREE.Vector3(...(targetEl.position as [number, number, number]));
+        const dist = camera.position.distanceTo(elPos);
+        
+        if (dist <= distance) {
+          if (!proximityTriggered.current.has(triggerNode.id)) {
+            proximityTriggered.current.add(triggerNode.id);
+            executeNextNodes(triggerNode.id);
+          }
+        } else {
+          // Reset if they move away, allowing it to trigger again
+          proximityTriggered.current.delete(triggerNode.id);
+        }
+      }
+    });
+  });
 
   const isSnapping = useEditorStore(state => state.isSnapping);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);

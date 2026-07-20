@@ -110,10 +110,11 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
               >
                 <option value="on_scene_start">On Scene Start</option>
                 <option value="on_click">On Click Object</option>
+                <option value="on_proximity">On Proximity (Near Object)</option>
               </select>
             </div>
             
-            {data.triggerType === 'on_click' && (
+            {(data.triggerType === 'on_click' || data.triggerType === 'on_proximity') && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Target Object</label>
                 <select 
@@ -126,6 +127,20 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
                     <option key={el.id} value={el.id}>{el.name} ({el.type})</option>
                   ))}
                 </select>
+              </div>
+            )}
+            
+            {data.triggerType === 'on_proximity' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Distance Threshold (m)</label>
+                <input 
+                  type="number" 
+                  step="0.5"
+                  min="0.5"
+                  value={data.distance || 2} 
+                  onChange={(e) => updateNodeData(node.id, { distance: parseFloat(e.target.value) || 2 })}
+                  className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-orange-500 outline-none w-full"
+                />
               </div>
             )}
           </>
@@ -146,6 +161,7 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
                 <option value="open_url">Open URL</option>
                 <option value="play_audio">Play Audio</option>
                 <option value="change_scene">Change Scene</option>
+                <option value="api_call">API Request (Fetch Data)</option>
               </select>
             </div>
 
@@ -165,16 +181,32 @@ function PropertiesPanel({ selectedNodeId }: { selectedNodeId: string | null }) 
               </div>
             )}
 
-            {(data.actionType === 'open_url' || data.actionType === 'change_scene' || data.actionType === 'play_animation') && (
+            {(data.actionType === 'open_url' || data.actionType === 'change_scene' || data.actionType === 'play_animation' || data.actionType === 'api_call') && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Value / Params</label>
+                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
+                  {data.actionType === 'api_call' ? 'API Endpoint URL' : 'Value / Params'}
+                </label>
                 <input 
                   type="text" 
                   value={data.actionValue || ''} 
                   onChange={(e) => updateNodeData(node.id, { actionValue: e.target.value })}
-                  placeholder={data.actionType === 'open_url' ? "https://..." : data.actionType === 'play_animation' ? "Animation Name or *" : "Scene ID"}
+                  placeholder={data.actionType === 'open_url' ? "https://..." : data.actionType === 'play_animation' ? "Animation Name or *" : data.actionType === 'api_call' ? "https://api.example.com/data" : "Scene ID"}
                   className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none placeholder:text-gray-600 w-full"
                 />
+              </div>
+            )}
+            
+            {data.actionType === 'api_call' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">HTTP Method</label>
+                <select 
+                  value={data.apiMethod || 'GET'} 
+                  onChange={(e) => updateNodeData(node.id, { apiMethod: e.target.value })}
+                  className="bg-[#0a0a0b] border border-[#333] text-gray-200 text-xs rounded p-2 focus:border-pln-blue outline-none w-full"
+                >
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                </select>
               </div>
             )}
           </>
@@ -230,6 +262,9 @@ function FlowContextMenu({ x, y, onAdd, onClose }: { x: number, y: number, onAdd
         <button onClick={() => onAdd('trigger', { triggerType: 'on_click' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-orange-500/20 hover:text-orange-400 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-orange-500"></div> On Click Object
         </button>
+        <button onClick={() => onAdd('trigger', { triggerType: 'on_proximity', distance: 2 })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-orange-500/20 hover:text-orange-400 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-orange-500"></div> On Proximity
+        </button>
         
         <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1 border-t border-[#36393f] pt-2">Control Flow</div>
         <button onClick={() => onAdd('control', { delayTime: 1 })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-400 flex items-center gap-2">
@@ -242,6 +277,9 @@ function FlowContextMenu({ x, y, onAdd, onClose }: { x: number, y: number, onAdd
         </button>
         <button onClick={() => onAdd('action', { actionType: 'toggle_visibility' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-pln-blue"></div> Toggle Visibility
+        </button>
+        <button onClick={() => onAdd('action', { actionType: 'api_call', apiMethod: 'GET' })} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-pln-blue"></div> Fetch API
         </button>
       </div>
     </div>
