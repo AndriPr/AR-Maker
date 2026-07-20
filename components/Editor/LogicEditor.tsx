@@ -15,7 +15,9 @@ import {
   Edge,
   Node,
   useReactFlow,
-  ReactFlowProvider
+  ReactFlowProvider,
+  applyNodeChanges,
+  applyEdgeChanges
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useEditorStore } from '@/lib/store';
@@ -295,31 +297,21 @@ function EditorCanvas({ onClose }: { onClose: () => void }) {
   
   const reactFlow = useReactFlow();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes.length > 0 ? storeNodes : [
-    { id: '1', type: 'trigger', position: { x: 100, y: 150 }, data: { triggerType: 'on_scene_start' } }
-  ]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
-  
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{x: number, y: number} | null>(null);
 
-  // Sync back to Zustand when internal nodes/edges change (for properties panel)
-  useEffect(() => {
-    setStoreNodes(nodes);
-  }, [nodes, setStoreNodes]);
-  useEffect(() => {
-    setStoreEdges(edges);
-  }, [edges, setStoreEdges]);
-  
-  // Re-sync local state if store changes from properties panel
-  useEffect(() => {
-    setNodes(storeNodes);
-  }, [storeNodes, setNodes]);
+  const onNodesChange = useCallback((changes: any) => {
+    setStoreNodes((nds: any[]) => applyNodeChanges(changes, nds));
+  }, [setStoreNodes]);
+
+  const onEdgesChange = useCallback((changes: any) => {
+    setStoreEdges((eds: any[]) => applyEdgeChanges(changes, eds));
+  }, [setStoreEdges]);
 
   const onConnect = useCallback((params: Connection | Edge) => {
     const edge = { ...params, animated: true, style: { stroke: '#ffffff', strokeWidth: 2 } };
-    setEdges((eds) => addEdge(edge, eds));
-  }, [setEdges]);
+    setStoreEdges((eds: any[]) => addEdge(edge, eds));
+  }, [setStoreEdges]);
 
   const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -335,7 +327,7 @@ function EditorCanvas({ onClose }: { onClose: () => void }) {
       position,
       data,
     };
-    setNodes((nds) => nds.concat(newNode));
+    setStoreNodes((nds: any[]) => nds.concat(newNode));
     setMenuPos(null);
   };
 
@@ -372,8 +364,8 @@ function EditorCanvas({ onClose }: { onClose: () => void }) {
         <div className="flex-1 relative" onContextMenu={onPaneContextMenu}>
           <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-screen" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
           <ReactFlow 
-            nodes={nodes} 
-            edges={edges} 
+            nodes={storeNodes} 
+            edges={storeEdges} 
             onNodesChange={onNodesChange} 
             onEdgesChange={onEdgesChange} 
             onConnect={onConnect}
