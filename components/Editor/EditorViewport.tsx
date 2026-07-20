@@ -137,9 +137,12 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
       
       if (keyframes.length === 1) {
          if (tTime >= keyframes[0].time) {
-            group.position.set(...(keyframes[0].position || [0,0,0]));
-            group.rotation.set(...(keyframes[0].rotation || [0,0,0]));
-            group.scale.set(...(keyframes[0].scale || [1,1,1]));
+            const pos = keyframes[0].position || [0,0,0];
+            const rot = keyframes[0].rotation || [0,0,0];
+            const scl = keyframes[0].scale || [1,1,1];
+            group.position.set(pos[0], pos[1], pos[2]);
+            group.rotation.set(rot[0], rot[1], rot[2]);
+            group.scale.set(scl[0], scl[1], scl[2]);
          }
       } else {
         // Find the two keyframes to interpolate between
