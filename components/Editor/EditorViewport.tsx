@@ -1198,9 +1198,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
   const environmentMap = useEditorStore(state => state.environmentMap);
-  const trackingMode = useEditorStore(state => state.trackingMode);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
-  const isOrthographic = useEditorStore(state => state.isOrthographic);
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
