@@ -100,6 +100,7 @@ export interface SceneElement {
   idleAnimationSpeed?: number;
 
   visibilityMode?: 'visible' | 'hidden'; // For 3D models toggling
+  isTimelineExpanded?: boolean; // For expanding Sub-tracks in Timeline
 
   // Keyframe Animations (Phase 3)
   keyframes?: {
@@ -183,6 +184,8 @@ interface EditorState {
   setTimelineTime: (time: number) => void;
   timelinePlaying: boolean;
   setTimelinePlaying: (playing: boolean) => void;
+  isAutoKeying: boolean;
+  setIsAutoKeying: (autoKeying: boolean) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -208,6 +211,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   cameraResetTrigger: 0,
   timelineTime: 0,
   timelinePlaying: false,
+  isAutoKeying: false,
 
   setElements: (elements) => set({ elements }),
   
@@ -228,8 +232,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     logicVariables: { ...state.logicVariables, [key]: value }
   })),
   onNodesChange: (changes) => set((state) => {
-    // Basic applyNodeChanges simulation (without importing reactflow here)
-    // We'll rely on setNodes directly in the component for full reactflow support
     return { nodes: state.nodes };
   }),
   onEdgesChange: (changes) => set((state) => {
@@ -250,13 +252,51 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  updateElement: (id, updates) => set((state) => ({
-    past: [...state.past, state.elements],
-    future: [],
-    elements: state.elements.map((el) => 
-      el.id === id ? { ...el, ...updates } : el
-    )
-  })),
+  updateElement: (id, data) => set((state) => {
+    // INTERCEPT AUTO-KEYING
+    if (state.isAutoKeying && state.timelineTime > 0) {
+      // Check if data contains transform changes (position, rotation, scale)
+      const hasTransformChanges = 'position' in data || 'rotation' in data || 'scale' in data;
+      
+      if (hasTransformChanges && !('keyframes' in data)) {
+        return {
+          elements: state.elements.map(e => {
+            if (e.id !== id) return e;
+            
+            let kfs = [...(e.keyframes || [])];
+            let existingKfIndex = kfs.findIndex(k => Math.abs(k.time - state.timelineTime) < 0.05);
+            
+            if (existingKfIndex >= 0) {
+              // Update existing keyframe with ONLY the changed properties
+              const updatedKf = { ...kfs[existingKfIndex] };
+              if ('position' in data) updatedKf.position = data.position;
+              if ('rotation' in data) updatedKf.rotation = data.rotation;
+              if ('scale' in data) updatedKf.scale = data.scale;
+              kfs[existingKfIndex] = updatedKf;
+            } else {
+              // Create new property-specific keyframe
+              const newKf: any = { time: state.timelineTime };
+              if ('position' in data) newKf.position = data.position;
+              if ('rotation' in data) newKf.rotation = data.rotation;
+              if ('scale' in data) newKf.scale = data.scale;
+              kfs.push(newKf);
+              kfs.sort((a, b) => a.time - b.time);
+            }
+            
+            return { ...e, keyframes: kfs };
+          })
+        };
+      }
+    }
+
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: state.elements.map((el) => 
+        el.id === id ? { ...el, ...data } : el
+      )
+    };
+  }),
 
   removeElement: (id) => set((state) => ({
     past: [...state.past, state.elements],
@@ -344,4 +384,5 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   
   setTimelineTime: (time) => set({ timelineTime: time }),
   setTimelinePlaying: (playing) => set({ timelinePlaying: playing }),
+  setIsAutoKeying: (autoKeying) => set({ isAutoKeying: autoKeying }),
 }));

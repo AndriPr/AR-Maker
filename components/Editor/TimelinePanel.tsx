@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Plus, Trash2, Clock } from 'lucide-react';
+import { Play, Pause, Plus, Clock, Circle } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 
 // --- ENTERPRISE KEYFRAME NODE ---
@@ -100,6 +100,8 @@ export default function TimelinePanel() {
   const setTimelineTime = useEditorStore(state => state.setTimelineTime);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
   const setTimelinePlaying = useEditorStore(state => state.setTimelinePlaying);
+  const isAutoKeying = useEditorStore(state => state.isAutoKeying);
+  const setIsAutoKeying = useEditorStore(state => state.setIsAutoKeying);
 
   const [duration, setDuration] = useState(10); // 10 seconds default
 
@@ -184,7 +186,13 @@ export default function TimelinePanel() {
         <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f]">
           {timelineTime.toFixed(1)}s
         </div>
-        <div className="w-px h-4 bg-[#36393f]"></div>
+        <button 
+          onClick={() => setIsAutoKeying(!isAutoKeying)}
+          className={`flex items-center gap-1 px-2 py-1 text-[10px] font-bold border rounded transition-colors ${isAutoKeying ? 'bg-red-500/20 text-red-500 border-red-500/50 animate-pulse' : 'text-gray-400 border-gray-600 hover:bg-[#36393f]'}`}
+          title="Auto-Key (Record Mode)"
+        >
+          <Circle size={10} fill={isAutoKeying ? 'currentColor' : 'none'} /> REC
+        </button>
         <button 
           onClick={addKeyframe}
           disabled={!selectedElement}
@@ -212,12 +220,22 @@ export default function TimelinePanel() {
         {/* Track Headers */}
         <div className="w-48 bg-[#1a1b1e] border-r border-[#2b2d31] overflow-y-auto">
           {elements.map(el => (
-            <div 
-              key={`header-${el.id}`} 
-              className={`h-8 border-b border-[#2b2d31] flex items-center px-2 text-[10px] ${selectedId === el.id ? 'bg-[#2b2d31] text-white font-bold' : 'text-gray-400'}`}
-            >
-              <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: el.keyframes?.length ? '#f59e0b' : '#36393f' }}></div>
-              <span className="truncate">{el.name}</span>
+            <div key={`header-${el.id}`}>
+              <div 
+                className={`h-8 border-b border-[#2b2d31] flex items-center px-2 text-[10px] cursor-pointer hover:bg-[#2b2d31]/50 ${selectedId === el.id ? 'bg-[#2b2d31] text-white font-bold' : 'text-gray-400'}`}
+                onClick={() => updateElement(el.id, { isTimelineExpanded: !el.isTimelineExpanded })}
+              >
+                <div className="mr-1 w-3 text-center">{el.isTimelineExpanded ? '▼' : '▶'}</div>
+                <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: el.keyframes?.length ? '#f59e0b' : '#36393f' }}></div>
+                <span className="truncate">{el.name}</span>
+              </div>
+              {el.isTimelineExpanded && (
+                <div className="bg-[#151618]">
+                  <div className="h-6 border-b border-[#2b2d31]/50 flex items-center px-8 text-[9px] text-red-400/80">Position</div>
+                  <div className="h-6 border-b border-[#2b2d31]/50 flex items-center px-8 text-[9px] text-green-400/80">Rotation</div>
+                  <div className="h-6 border-b border-[#2b2d31]/50 flex items-center px-8 text-[9px] text-blue-400/80">Scale</div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -243,20 +261,70 @@ export default function TimelinePanel() {
             ))}
             
             {/* Tracks */}
-            {elements.map((el, index) => (
-              <div key={`track-${el.id}`} className="absolute left-0 right-0 h-8 border-b border-[#2b2d31]" style={{ top: `${index * 2}rem` }}>
-                {el.keyframes?.map(kf => (
-                  <KeyframeNode 
-                    key={`kf-${el.id}-${kf.time}`} 
-                    elementId={el.id} 
-                    kf={kf} 
-                    duration={duration} 
-                    onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
-                    onRemove={(time: number) => removeKeyframe(el.id, time)}
-                  />
-                ))}
-              </div>
-            ))}
+            <div className="relative w-full" style={{ paddingTop: '1.25rem' }}>
+              {elements.map((el) => (
+                <div key={`track-${el.id}`}>
+                  {/* Main Summary Track */}
+                  <div className="relative h-8 border-b border-[#2b2d31]">
+                    {el.keyframes?.map(kf => (
+                      <KeyframeNode 
+                        key={`kf-${el.id}-${kf.time}`} 
+                        elementId={el.id} 
+                        kf={kf} 
+                        duration={duration} 
+                        onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
+                        onRemove={(time: number) => removeKeyframe(el.id, time)}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Expanded Sub-tracks */}
+                  {el.isTimelineExpanded && (
+                    <div className="bg-[#151618]">
+                      {/* Position Track */}
+                      <div className="relative h-6 border-b border-[#2b2d31]/50">
+                        {el.keyframes?.filter(k => k.position).map(kf => (
+                          <KeyframeNode 
+                            key={`kf-pos-${el.id}-${kf.time}`} 
+                            elementId={el.id} 
+                            kf={kf} 
+                            duration={duration} 
+                            onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
+                            onRemove={(time: number) => removeKeyframe(el.id, time)}
+                          />
+                        ))}
+                      </div>
+                      {/* Rotation Track */}
+                      <div className="relative h-6 border-b border-[#2b2d31]/50">
+                        {el.keyframes?.filter(k => k.rotation).map(kf => (
+                          <KeyframeNode 
+                            key={`kf-rot-${el.id}-${kf.time}`} 
+                            elementId={el.id} 
+                            kf={kf} 
+                            duration={duration} 
+                            onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
+                            onRemove={(time: number) => removeKeyframe(el.id, time)}
+                          />
+                        ))}
+                      </div>
+                      {/* Scale Track */}
+                      <div className="relative h-6 border-b border-[#2b2d31]/50">
+                        {el.keyframes?.filter(k => k.scale).map(kf => (
+                          <KeyframeNode 
+                            key={`kf-scl-${el.id}-${kf.time}`} 
+                            elementId={el.id} 
+                            kf={kf} 
+                            duration={duration} 
+                            onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
+                            onRemove={(time: number) => removeKeyframe(el.id, time)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
