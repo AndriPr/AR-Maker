@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as THREE from 'three';
 
 export type ElementType = '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
 
@@ -101,6 +102,15 @@ export interface SceneElement {
 
   visibilityMode?: 'visible' | 'hidden'; // For 3D models toggling
   isTimelineExpanded?: boolean; // For expanding Sub-tracks in Timeline
+  
+  // Phase 7: Mesh Separation
+  targetMeshName?: string; // If set, only render this specific mesh from the GLTF
+  meshPositionOffset?: [number, number, number]; // Visual offset to center the pivot
+  availableSubMeshes?: {
+    name: string;
+    position: [number, number, number];
+    offset: [number, number, number];
+  }[];
 
   // Keyframe Animations (Phase 3)
   keyframes?: {
@@ -155,7 +165,10 @@ interface EditorState {
   updateElement: (id: string, element: Partial<SceneElement>) => void;
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
+  explodeModel: (id: string) => void;
   setSelectedId: (id: string | null) => void;
+  
+  // Undo/Redo
   setIsSnapping: (val: boolean) => void;
   isOrthographic: boolean;
   setIsOrthographic: (val: boolean) => void;
@@ -321,6 +334,41 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       future: [],
       elements: [...state.elements, newElement],
       selectedId: newElement.id
+    };
+  }),
+
+  explodeModel: (id) => set((state) => {
+    const el = state.elements.find(e => e.id === id);
+    if (!el || el.type !== '3d_model' || !el.availableSubMeshes || el.availableSubMeshes.length === 0) return state;
+
+    const newElements = el.availableSubMeshes.map(subMesh => {
+      const parentPos = new THREE.Vector3(...el.position);
+      const parentRot = new THREE.Euler(...el.rotation);
+      const parentScale = new THREE.Vector3(...el.scale);
+      
+      const localCenter = new THREE.Vector3(...subMesh.position);
+      localCenter.multiply(parentScale);
+      localCenter.applyEuler(parentRot);
+      
+      const newPos = parentPos.add(localCenter);
+
+      return {
+        ...el,
+        id: Math.random().toString(36).substring(2, 9),
+        name: subMesh.name,
+        targetMeshName: subMesh.name,
+        meshPositionOffset: subMesh.offset,
+        position: [newPos.x, newPos.y, newPos.z] as [number, number, number],
+        availableSubMeshes: undefined,
+        keyframes: []
+      };
+    });
+
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: [...state.elements.filter(e => e.id !== id), ...newElements],
+      selectedId: null
     };
   }),
 

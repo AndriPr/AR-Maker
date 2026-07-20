@@ -434,7 +434,9 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
       rotation={element.rotation as [number, number, number]}
       scale={element.scale as [number, number, number]}
     >
-      {shapeObj}
+      <group position={element.meshPositionOffset || [0, 0, 0]}>
+        {shapeObj}
+      </group>
     </group>
   );
 }
@@ -478,6 +480,18 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
           }
         }
       });
+
+      // Phase 7: Exploded Mesh separation
+      if (element.targetMeshName) {
+        clone.traverse((node: any) => {
+           if (node.isMesh) {
+             if (node.name !== element.targetMeshName) {
+               node.visible = false;
+             }
+           }
+        });
+      }
+
     } catch (e) {
       console.error("Failed to process GLTF", e);
     }
@@ -502,6 +516,31 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
       return () => controls.removeEventListener('dragging-changed', callback);
     }
   }, [isSelected, element.id, updateElement]);
+
+  useEffect(() => {
+    if (clonedScene && !element.targetMeshName) {
+      const subMeshes: {name: string, position: [number, number, number], offset: [number, number, number]}[] = [];
+      clonedScene.updateMatrixWorld(true);
+      clonedScene.traverse((node: any) => {
+        if (node.isMesh && node.geometry) {
+           const box = new THREE.Box3().setFromObject(node);
+           const center = box.getCenter(new THREE.Vector3());
+           subMeshes.push({
+              name: node.name,
+              position: [center.x, center.y, center.z],
+              offset: [-center.x, -center.y, -center.z]
+           });
+        }
+      });
+      // Sort alphabetically for stable comparison
+      subMeshes.sort((a, b) => a.name.localeCompare(b.name));
+      
+      if (JSON.stringify(element.availableSubMeshes) !== JSON.stringify(subMeshes)) {
+        // Use timeout to prevent state update during render
+        setTimeout(() => updateElement(element.id, { availableSubMeshes: subMeshes }), 0);
+      }
+    }
+  }, [clonedScene, element.id, element.targetMeshName, element.availableSubMeshes, updateElement]);
 
   useEffect(() => {
     // Extract available animations from the GLTF model
@@ -550,16 +589,18 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const primitiveObj = (
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
-        <primitive 
-          object={clonedScene} 
-          onClick={(e: any) => {
-            e.stopPropagation();
-            setSelectedId(element.id);
-          }}
-          onPointerMissed={(e: any) => {
-            if (e.type === 'click') setSelectedId(null);
-          }}
-        />
+        <group position={element.meshPositionOffset || [0, 0, 0]}>
+          <primitive 
+            object={clonedScene} 
+            onClick={(e: any) => {
+              e.stopPropagation();
+              setSelectedId(element.id);
+            }}
+            onPointerMissed={(e: any) => {
+              if (e.type === 'click') setSelectedId(null);
+            }}
+          />
+        </group>
       </AnimatedElementWrapper>
     </group>
   );

@@ -59,6 +59,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const addElement = useEditorStore(state => state.addElement);
   const removeElement = useEditorStore(state => state.removeElement);
   const duplicateElement = useEditorStore(state => state.duplicateElement);
+  const explodeModel = useEditorStore(state => state.explodeModel);
   const updateElement = useEditorStore(state => state.updateElement);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
@@ -2118,6 +2119,29 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               </div>
                             ))}
                           </div>
+                        </div>
+                      )}
+
+                      {/* Phase 7: Mesh Separation (Explode) */}
+                      {selectedElement.type === '3d_model' && !selectedElement.targetMeshName && selectedElement.availableSubMeshes && selectedElement.availableSubMeshes.length > 0 && (
+                        <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Layers size={12} className="text-orange-400"/> Pisah Objek (Blender Outliner)
+                          </h4>
+                          <p className="text-[10px] text-gray-400 leading-tight">
+                            Terdeteksi <strong>{selectedElement.availableSubMeshes.length}</strong> komponen di dalam model ini. Anda bisa memisahkannya menjadi elemen-elemen terpisah agar bisa dianimasikan secara mandiri (roda, pintu, dll).
+                          </p>
+                          <button
+                            onClick={() => {
+                              if (confirm('Apakah Anda yakin ingin memecah model ini? Tindakan ini tidak bisa dibatalkan dan akan memisahkan semua mesh ke Timeline.')) {
+                                explodeModel(selectedElement.id);
+                              }
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-orange-500/20 text-orange-400 border border-orange-500/50 hover:bg-orange-500 hover:text-white transition-all rounded text-[11px] font-bold"
+                          >
+                            <Box size={14} />
+                            Pecah Model (Explode)
+                          </button>
                         </div>
                       )}
 
