@@ -1316,6 +1316,109 @@ function CameraController() {
   return <OrbitControls makeDefault ref={controlsRef} />;
 }
 
+// Recursive Node Renderer
+function RecursiveNode({ element, elements, transformMode }: { element: any, elements: any[], transformMode: 'translate' | 'rotate' | 'scale' }) {
+  const children = elements.filter(el => el.parentId === element.id);
+  
+  let component = null;
+  if (element.type === 'group_folder') component = <GroupFolderElement element={element} mode={transformMode}>{children.map(child => <RecursiveNode key={child.id} element={child} elements={elements} transformMode={transformMode} />)}</GroupFolderElement>;
+  else if (element.type === '3d_shape') component = <ShapeElement element={element} mode={transformMode} />;
+  else if (element.type === '3d_model') component = <ModelElement element={element} mode={transformMode} />;
+  else if (element.type === '3d_text') component = <TextElement element={element} mode={transformMode} />;
+  else if (element.type === 'ui_button') component = <UIButtonElement element={element} mode={transformMode} />;
+  else if (element.type === 'audio') component = <AudioElement element={element} mode={transformMode} />;
+  else if (element.type === 'image') component = <ImageElement element={element} mode={transformMode} />;
+  else if (element.type === 'video') component = <VideoElement element={element} mode={transformMode} />;
+  else if (element.type === 'vfx_sparkles') component = <SparklesElement element={element} mode={transformMode} />;
+  else if (element.type === 'hotspot') component = <HotspotElement element={element} mode={transformMode} />;
+  else if (element.type === 'occluder_plane' || element.type === 'occluder_cube') component = <OccluderElement element={element} mode={transformMode} />;
+
+  return (
+    <group visible={!element.isHidden}>
+      {component}
+      {/* If it's NOT a group folder, but somehow has children, we render them here attached to the parent's pivot. */}
+      {element.type !== 'group_folder' && children.length > 0 && (
+        <group position={element.position as [number, number, number]} rotation={element.rotation as [number, number, number]} scale={element.scale as [number, number, number]}>
+          {children.map(child => <RecursiveNode key={child.id} element={child} elements={elements} transformMode={transformMode} />)}
+        </group>
+      )}
+    </group>
+  );
+}
+
+function GroupFolderElement({ element, mode, children }: { element: any, mode: 'translate' | 'rotate' | 'scale', children: React.ReactNode }) {
+  const transformRef = useRef<any>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const updateElement = useEditorStore(state => state.updateElement);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const isSelected = selectedId === element.id;
+
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      const callback = (e: any) => {
+        if (e.value) return;
+        const obj = controls.object;
+        if (obj) {
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+      controls.addEventListener('dragging-changed', callback);
+      return () => controls.removeEventListener('dragging-changed', callback);
+    }
+  }, [isSelected, element.id, updateElement]);
+
+  const groupObj = (
+    <group ref={groupRef}>
+      <AnimatedElementWrapper element={element}>
+        <group
+          onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+          onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        >
+          {/* Visible bounding box helper for the group when selected, otherwise invisible */}
+          <DreiBox args={[1, 1, 1]} visible={isSelected}>
+            <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.3} />
+          </DreiBox>
+          {children}
+        </group>
+      </AnimatedElementWrapper>
+    </group>
+  );
+
+  if (isSelected) {
+    return (
+      <TransformControls
+        ref={transformRef}
+        mode={mode}
+        position={element.position as [number, number, number]}
+        rotation={element.rotation as [number, number, number]}
+        scale={element.scale as [number, number, number]}
+        translationSnap={isSnapping ? 0.5 : null}
+        rotationSnap={isSnapping ? Math.PI / 4 : null}
+        scaleSnap={isSnapping ? 0.25 : null}
+      >
+        {groupObj}
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group
+      position={element.position as [number, number, number]}
+      rotation={element.rotation as [number, number, number]}
+      scale={element.scale as [number, number, number]}
+    >
+      {groupObj}
+    </group>
+  );
+}
+
 export default function EditorViewport({ transformMode = 'translate', simulateMode = false }: { transformMode?: 'translate' | 'rotate' | 'scale', simulateMode?: boolean }) {
   const isSimulating = simulateMode || useEditorStore(state => state.isSimulating);
   const elements = useEditorStore(state => state.elements);
@@ -1398,25 +1501,10 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             </group>
           )}
           
-          {elements.filter(el => el.sceneId === currentSceneId).map(el => {
-            let component = null;
-            if (el.type === '3d_shape') component = <ShapeElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === '3d_model') component = <ModelElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === '3d_text') component = <TextElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'ui_button') component = <UIButtonElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'audio') component = <AudioElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'image') component = <ImageElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'video') component = <VideoElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'vfx_sparkles') component = <SparklesElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'hotspot') component = <HotspotElement key={el.id} element={el} mode={transformMode} />;
-            if (el.type === 'occluder_plane' || el.type === 'occluder_cube') component = <OccluderElement key={el.id} element={el} mode={transformMode} />;
-            
-            return (
-              <group key={`wrapper-${el.id}`} visible={!el.isHidden}>
-                {component}
-              </group>
-            );
-          })}
+          {/* Render Root Elements Only (those without a parent) */}
+          {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+            <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+          ))}
         </Suspense>
 
         {!simulateMode && (

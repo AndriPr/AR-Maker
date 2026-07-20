@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
 
-export type ElementType = '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
+export type ElementType = 'group_folder' | '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
 
 export interface EduComponent {
   id: string;
@@ -111,6 +111,9 @@ export interface SceneElement {
     position: [number, number, number];
     offset: [number, number, number];
   }[];
+  
+  // Phase 8: Grouping
+  parentId?: string; // If set, this element renders relative to its parent group
 
   // Keyframe Animations (Phase 3)
   keyframes?: {

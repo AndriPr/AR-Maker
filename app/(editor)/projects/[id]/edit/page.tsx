@@ -888,34 +888,77 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     <span className="truncate">Marker Image</span>
                   </div>
                   
-                  {elements.map(el => (
-                    <div 
-                      key={el.id}
-                      onClick={() => setSelectedId(el.id)}
-                      className={`flex items-center justify-between px-3 py-2 rounded text-xs cursor-pointer transition-colors ${
-                        selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        {el.type === '3d_model' && <Box size={12} className="shrink-0" />}
-                        {el.type === '3d_text' && <Type size={12} className="shrink-0" />}
-                        {el.type === 'ui_button' && <MousePointerClick size={12} className="shrink-0" />}
-                        {el.type === 'edu_panel' && <LayoutDashboard size={12} className="shrink-0" />}
-                        {el.type === 'audio' && <Volume2 size={12} className="shrink-0" />}
-                        {el.type === 'video' && <Video size={12} className="shrink-0" />}
-                        {el.type === 'vfx_sparkles' && <Sparkles size={12} className="shrink-0" />}
-                        {el.type === 'hotspot' && <MapPin size={12} className="shrink-0" />}
-                        <span className="truncate">{el.name}</span>
-                      </div>
-                      {selectedId === el.id && (
-                        <div className="flex items-center">
-                          <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
-                            <Trash2 size={12} />
-                          </button>
+                  {/* Add Group Button */}
+                  <button 
+                    onClick={() => {
+                      addElement({
+                        type: 'group_folder',
+                        name: 'New Group',
+                        position: [0, 0, 0],
+                        rotation: [0, 0, 0],
+                        scale: [1, 1, 1],
+                        sceneId: currentSceneId
+                      });
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 mb-2 rounded text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors"
+                  >
+                    <FolderOpen size={12} />
+                    Buat Grup Baru
+                  </button>
+
+                  {/* Recursive Hierarchy */}
+                  {(() => {
+                    const renderHierarchyNode = (el: any, depth: number = 0) => {
+                      const children = elements.filter(child => child.parentId === el.id);
+                      return (
+                        <div key={el.id} className="space-y-0.5 mt-0.5">
+                          <div 
+                            onClick={() => setSelectedId(el.id)}
+                            className={`flex items-center justify-between px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${
+                              selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                            }`}
+                            style={{ paddingLeft: `${0.75 + (depth * 1.5)}rem` }}
+                          >
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              {el.type === 'group_folder' ? (
+                                <FolderOpen size={12} className={selectedId === el.id ? "text-pln-blue" : "text-gray-400"} />
+                              ) : el.type === '3d_model' ? (
+                                <Box size={12} className="shrink-0" />
+                              ) : el.type === '3d_text' ? (
+                                <Type size={12} className="shrink-0" />
+                              ) : el.type === 'ui_button' ? (
+                                <MousePointerClick size={12} className="shrink-0" />
+                              ) : el.type === 'edu_panel' ? (
+                                <LayoutDashboard size={12} className="shrink-0" />
+                              ) : el.type === 'audio' ? (
+                                <Volume2 size={12} className="shrink-0" />
+                              ) : el.type === 'video' ? (
+                                <Video size={12} className="shrink-0" />
+                              ) : el.type === 'vfx_sparkles' ? (
+                                <Sparkles size={12} className="shrink-0" />
+                              ) : el.type === 'hotspot' ? (
+                                <MapPin size={12} className="shrink-0" />
+                              ) : (
+                                <Box size={12} className="shrink-0 text-gray-500" />
+                              )}
+                              <span className="truncate">{el.name}</span>
+                            </div>
+                            {selectedId === el.id && (
+                              <div className="flex items-center">
+                                <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {children.map(child => renderHierarchyNode(child, depth + 1))}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    };
+
+                    // Only render root elements, they will recursively render their children
+                    return elements.filter(el => !el.parentId).map(el => renderHierarchyNode(el, 0));
+                  })()}
                 </div>
               </div>
             </>
@@ -2411,6 +2454,26 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                           </div>
                         </div>
                       )}
+
+                <div className="p-4 border-b border-[#2b2d31]">
+                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <FolderOpen size={12} className="text-gray-400" /> Parent Group
+                  </h3>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] text-gray-400 font-medium">Grup Induk (Hierarchy)</label>
+                    <select 
+                      value={selectedElement.parentId || ''}
+                      onChange={(e) => updateElement(selectedElement.id, { parentId: e.target.value || undefined })}
+                      className="w-full bg-[#1a1b1e] text-white text-xs p-2 rounded border border-[#2b2d31] focus:border-pln-blue focus:outline-none"
+                    >
+                      <option value="">-- Tidak Ada (Root) --</option>
+                      {elements.filter(el => el.type === 'group_folder' && el.id !== selectedElement.id).map(group => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-[9px] text-gray-500 mt-1">Jika diatur, posisi dan skala objek ini akan relatif terhadap grup induknya.</p>
+                  </div>
+                </div>
 
                 <div className="p-4">
                   <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">Transform</h3>
