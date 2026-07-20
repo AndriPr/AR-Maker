@@ -17,18 +17,17 @@ export default function TimelinePanel() {
 
   const selectedElement = elements.find(el => el.id === selectedId);
 
-  // Playback loop
   useEffect(() => {
     let interval: any;
     if (timelinePlaying) {
       interval = setInterval(() => {
-        setTimelineTime((prev) => {
-          if (prev >= duration) {
-            setTimelinePlaying(false);
-            return 0;
-          }
-          return prev + 0.1;
-        });
+        const prev = useEditorStore.getState().timelineTime;
+        if (prev >= duration) {
+          setTimelinePlaying(false);
+          setTimelineTime(0);
+        } else {
+          setTimelineTime(prev + 0.1);
+        }
       }, 100);
     }
     return () => clearInterval(interval);
