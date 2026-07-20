@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ElementType = '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot';
+export type ElementType = '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
 
 export interface EduComponent {
   id: string;
@@ -95,12 +95,19 @@ export interface SceneElement {
   rotation: [number, number, number];
   scale: [number, number, number];
   
-  // Advanced Animations
   entranceAnimation?: 'none' | 'fade' | 'scale' | 'slide-up';
   idleAnimation?: 'none' | 'rotate' | 'hover' | 'both';
   idleAnimationSpeed?: number;
 
   visibilityMode?: 'visible' | 'hidden'; // For 3D models toggling
+
+  // Keyframe Animations (Phase 3)
+  keyframes?: {
+    time: number; // in seconds
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: [number, number, number];
+  }[];
 }
 
 interface EditorState {
@@ -109,6 +116,14 @@ interface EditorState {
   targetImageUrl: string | null;
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
+  
+  // Logic Nodes
+  nodes: any[];
+  edges: any[];
+  setNodes: (nodes: any[] | ((prev: any[]) => any[])) => void;
+  setEdges: (edges: any[] | ((prev: any[]) => any[])) => void;
+  onNodesChange: (changes: any[]) => void;
+  onEdgesChange: (changes: any[]) => void;
   
   // Project Settings
   trackingMode: 'image' | 'face' | 'cylinder';
@@ -158,6 +173,12 @@ interface EditorState {
   // Camera
   cameraResetTrigger: number;
   triggerCameraReset: () => void;
+
+  // Timeline
+  timelineTime: number;
+  setTimelineTime: (time: number) => void;
+  timelinePlaying: boolean;
+  setTimelinePlaying: (playing: boolean) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -166,6 +187,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
+  nodes: [],
+  edges: [],
   isOrthographic: false,
   isSimulating: false,
   trackingMode: 'image',
@@ -178,11 +201,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   past: [],
   future: [],
   cameraResetTrigger: 0,
+  timelineTime: 0,
+  timelinePlaying: false,
 
   setElements: (elements) => set({ elements }),
   
   setTargetImageUrl: (url) => set({ targetImageUrl: url }),
   setPreviewAnimationData: (data) => set({ previewAnimationData: data }),
+  
+  setNodes: (nodesUpdater) => set((state) => ({ nodes: typeof nodesUpdater === 'function' ? nodesUpdater(state.nodes) : nodesUpdater })),
+  setEdges: (edgesUpdater) => set((state) => ({ edges: typeof edgesUpdater === 'function' ? edgesUpdater(state.edges) : edgesUpdater })),
+  onNodesChange: (changes) => set((state) => {
+    // Basic applyNodeChanges simulation (without importing reactflow here)
+    // We'll rely on setNodes directly in the component for full reactflow support
+    return { nodes: state.nodes };
+  }),
+  onEdgesChange: (changes) => set((state) => {
+    return { edges: state.edges };
+  }),
   
   addElement: (element) => set((state) => {
     const newElement = { 
@@ -288,5 +324,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 }))
+  triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 })),
+  
+  setTimelineTime: (time) => set({ timelineTime: time }),
+  setTimelinePlaying: (playing) => set({ timelinePlaying: playing }),
 }));

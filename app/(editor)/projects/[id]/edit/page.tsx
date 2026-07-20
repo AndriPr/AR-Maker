@@ -10,6 +10,8 @@ import dynamic from 'next/dynamic';
 import ShapePreview from '@/components/Editor/ShapePreview';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEditorStore } from '@/lib/store';
+import LogicEditor from '@/components/Editor/LogicEditor';
+import TimelinePanel from '@/components/Editor/TimelinePanel';
 
 const EditorViewport = dynamic(() => import('@/components/Editor/EditorViewport'), { ssr: false });
 
@@ -42,6 +44,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showWebcamTestModal, setShowWebcamTestModal] = useState(false);
+  const [showLogicEditor, setShowLogicEditor] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
   
   const { activeWorkspace, activeRole, user } = useWorkspace();
   
@@ -737,6 +741,24 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <Type size={18} />
           </button>
           <button 
+            onClick={() => setShowLogicEditor(true)} 
+            className="p-2 text-orange-400 hover:text-white hover:bg-orange-500/20 bg-orange-500/10 rounded-lg border border-orange-500/30 transition-colors" 
+            title="Open Visual Scripting (Logic Nodes)"
+          >
+            <Wrench size={18} />
+          </button>
+          
+          <button 
+            onClick={() => setShowTimeline(!showTimeline)} 
+            className={`p-2 rounded-lg transition-colors border ${showTimeline ? 'text-pln-blue bg-pln-blue/20 border-pln-blue/30' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31] border-transparent'}`} 
+            title="Toggle Timeline Animation"
+          >
+            <Clock size={18} />
+          </button>
+          
+          <div className="w-6 h-px bg-[#2b2d31]"></div>
+          
+          <button 
             onClick={() => {
               const animatedModels = elements.filter(el => el.type === '3d_model' && el.availableAnimations && el.availableAnimations.length > 0);
               const defaultTarget = animatedModels.length > 0 ? animatedModels[0].id : '';
@@ -808,6 +830,39 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <MapPin size={18} />
           </button>
 
+          <div className="w-6 h-px bg-[#2b2d31]"></div>
+          
+          <button 
+            onClick={() => {
+              addElement({
+                type: 'occluder_plane',
+                name: 'Occluder Plane',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1]
+              });
+            }} 
+            className="p-2 text-gray-400 hover:text-[#ff00ff] hover:bg-[#2b2d31] rounded-lg transition-colors" 
+            title="Add Occluder Plane (Depth Masking)"
+          >
+            <Square size={18} />
+          </button>
+
+          <button 
+            onClick={() => {
+              addElement({
+                type: 'occluder_cube',
+                name: 'Occluder Cube',
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1]
+              });
+            }} 
+            className="p-2 text-gray-400 hover:text-[#ff00ff] hover:bg-[#2b2d31] rounded-lg transition-colors" 
+            title="Add Occluder Cube (Depth Masking)"
+          >
+            <Box size={18} />
+          </button>
 
         </aside>
 
@@ -912,7 +967,18 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
               <div className="p-2 grid grid-cols-2 gap-2">
               {(() => {
-                const filteredAssets = assets.filter(asset => {
+                const premiumAssets = [
+                  { id: 'pa-1', type: '3d_model', name: 'Duck', file_url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb' },
+                  { id: 'pa-2', type: '3d_model', name: 'Avocado', file_url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb' },
+                  { id: 'pa-3', type: '3d_model', name: 'Flight Helmet', file_url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF/FlightHelmet.gltf' },
+                  { id: 'pa-4', type: '3d_model', name: 'Damaged Helmet', file_url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb' },
+                  { id: 'pa-5', type: 'image', name: 'Premium Abstract', file_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop' },
+                  { id: 'pa-6', type: 'image', name: 'Modern Texture', file_url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2000&auto=format&fit=crop' }
+                ];
+                
+                const allAssets = [...premiumAssets, ...assets];
+                
+                const filteredAssets = allAssets.filter(asset => {
                   const matchesSearch = asset.name.toLowerCase().includes(assetSearchQuery.toLowerCase());
                   const matchesFilter = assetFilter === 'all' || asset.type === assetFilter;
                   return matchesSearch && matchesFilter;
@@ -2756,6 +2822,15 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           </div>
         </div>
       )}
+
+      {showLogicEditor && (
+        <LogicEditor onClose={() => setShowLogicEditor(false)} />
+      )}
+      
+      {showTimeline && (
+        <TimelinePanel />
+      )}
+
     </div>
   );
 }

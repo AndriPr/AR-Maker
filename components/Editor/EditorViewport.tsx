@@ -129,6 +129,61 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
           group.position.y = baseV + Math.sin(state.clock.elapsedTime * 2 * speed) * 0.1;
        }
     }
+
+    // Keyframe Animation (Timeline)
+    if (element.keyframes && element.keyframes.length > 0) {
+      const tTime = useEditorStore.getState().timelineTime;
+      const keyframes = element.keyframes;
+      
+      if (keyframes.length === 1) {
+         if (tTime >= keyframes[0].time) {
+            group.position.set(...(keyframes[0].position || [0,0,0]));
+            group.rotation.set(...(keyframes[0].rotation || [0,0,0]));
+            group.scale.set(...(keyframes[0].scale || [1,1,1]));
+         }
+      } else {
+        // Find the two keyframes to interpolate between
+        let kf1 = keyframes[0];
+        let kf2 = keyframes[keyframes.length - 1];
+        
+        if (tTime <= keyframes[0].time) {
+           kf1 = keyframes[0];
+           kf2 = keyframes[0];
+        } else if (tTime >= keyframes[keyframes.length - 1].time) {
+           kf1 = keyframes[keyframes.length - 1];
+           kf2 = keyframes[keyframes.length - 1];
+        } else {
+           for (let i = 0; i < keyframes.length - 1; i++) {
+             if (tTime >= keyframes[i].time && tTime <= keyframes[i+1].time) {
+               kf1 = keyframes[i];
+               kf2 = keyframes[i+1];
+               break;
+             }
+           }
+        }
+
+        let progress = 0;
+        if (kf2.time > kf1.time) {
+           progress = (tTime - kf1.time) / (kf2.time - kf1.time);
+        }
+
+        if (kf1.position && kf2.position) {
+           group.position.x = THREE.MathUtils.lerp(kf1.position[0], kf2.position[0], progress);
+           group.position.y = THREE.MathUtils.lerp(kf1.position[1], kf2.position[1], progress);
+           group.position.z = THREE.MathUtils.lerp(kf1.position[2], kf2.position[2], progress);
+        }
+        if (kf1.rotation && kf2.rotation) {
+           group.rotation.x = THREE.MathUtils.lerp(kf1.rotation[0], kf2.rotation[0], progress);
+           group.rotation.y = THREE.MathUtils.lerp(kf1.rotation[1], kf2.rotation[1], progress);
+           group.rotation.z = THREE.MathUtils.lerp(kf1.rotation[2], kf2.rotation[2], progress);
+        }
+        if (kf1.scale && kf2.scale) {
+           group.scale.x = THREE.MathUtils.lerp(kf1.scale[0], kf2.scale[0], progress);
+           group.scale.y = THREE.MathUtils.lerp(kf1.scale[1], kf2.scale[1], progress);
+           group.scale.z = THREE.MathUtils.lerp(kf1.scale[2], kf2.scale[2], progress);
+        }
+      }
+    }
   });
 
   return <group ref={groupRef}>{children}</group>;
@@ -994,17 +1049,43 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
 
 
 function TargetImage({ url }: { url: string }) {
-  const texture = useTexture(url);
-  const img = texture.image as any;
-  const aspect = img ? img.width / img.height : 1;
-  const width = 3;
-  const height = width / aspect;
-
+  const texture = useLoader(THREE.TextureLoader, url);
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-      <planeGeometry args={[width, height]} />
-      <meshBasicMaterial map={texture} side={THREE.DoubleSide} transparent opacity={0.8} />
+    <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[2, 2 * (texture.image?.height / texture.image?.width || 1)]} />
+      <meshBasicMaterial map={texture} opacity={0.5} transparent />
     </mesh>
+  );
+}
+
+function OccluderElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  
+  return (
+    <AnimatedElementWrapper element={element}>
+      <mesh>
+        {element.type === 'occluder_cube' ? (
+          <boxGeometry args={[1, 1, 1]} />
+        ) : (
+          <planeGeometry args={[1, 1]} />
+        )}
+        {/* colorWrite={false} makes the material invisible but still writes to the depth buffer, occluding anything behind it */}
+        <meshBasicMaterial 
+          colorWrite={!isSimulating} // Show slightly in editor, hide in simulation
+          opacity={isSimulating ? 1 : 0.2}
+          transparent={!isSimulating}
+          color="#ff00ff"
+          wireframe={!isSimulating}
+        />
+      </mesh>
+      {!isSimulating && (
+        <Html center position={[0, 0, 0]}>
+          <div className="bg-[#ff00ff]/80 text-white text-[8px] px-1 py-0.5 rounded font-bold whitespace-nowrap pointer-events-none">
+            OCCLUDER
+          </div>
+        </Html>
+      )}
+    </AnimatedElementWrapper>
   );
 }
 
@@ -1090,6 +1171,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             if (el.type === 'video') component = <VideoElement key={el.id} element={el} mode={transformMode} />;
             if (el.type === 'vfx_sparkles') component = <SparklesElement key={el.id} element={el} mode={transformMode} />;
             if (el.type === 'hotspot') component = <HotspotElement key={el.id} element={el} mode={transformMode} />;
+            if (el.type === 'occluder_plane' || el.type === 'occluder_cube') component = <OccluderElement key={el.id} element={el} mode={transformMode} />;
             
             return (
               <group key={`wrapper-${el.id}`} visible={!el.isHidden}>
