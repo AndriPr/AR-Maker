@@ -367,6 +367,7 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSelected = selectedId === element.id;
   const isSnapping = useEditorStore(state => state.isSnapping);
 
@@ -393,7 +394,7 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e) => { e.stopPropagation(); setSelectedId(element.id); }}
+          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
           onPointerMissed={(e) => {
             if (e.type === 'click') setSelectedId(null);
           }}
@@ -449,6 +450,7 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const isSnapping = useEditorStore(state => state.isSnapping);
 
@@ -594,7 +596,7 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
             object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
-              setSelectedId(element.id);
+              handleElementClick(element.id, e.shiftKey);
             }}
             onPointerMissed={(e: any) => {
               if (e.type === 'click') setSelectedId(null);
@@ -635,6 +637,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
 
   const isSelected = selectedId === element.id;
@@ -720,7 +723,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
       <group
         onClick={(e: any) => {
           e.stopPropagation();
-          setSelectedId(element.id);
+          handleElementClick(element.id, e.shiftKey);
         }}
         onPointerMissed={(e: any) => {
           if (e.type === 'click') setSelectedId(null);
@@ -799,6 +802,7 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
@@ -829,7 +833,7 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            setSelectedId(element.id); 
+            handleElementClick(element.id, e.shiftKey); 
           }
         }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
@@ -877,6 +881,7 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
@@ -902,7 +907,7 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const audioObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
@@ -948,6 +953,7 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
   
@@ -982,7 +988,7 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const imageObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <mesh>
@@ -1022,6 +1028,7 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
@@ -1047,7 +1054,7 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const videoObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <mesh>
@@ -1097,6 +1104,7 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
@@ -1122,7 +1130,7 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   const sparklesObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <Sparkles 
@@ -1178,6 +1186,7 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
@@ -1208,7 +1217,7 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            setSelectedId(element.id); 
+            handleElementClick(element.id, e.shiftKey); 
           }
         }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
@@ -1352,6 +1361,7 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
@@ -1378,7 +1388,7 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e: any) => { e.stopPropagation(); setSelectedId(element.id); }}
+          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
           onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
         >
           {/* Visible bounding box helper for the group when selected, otherwise invisible */}
@@ -1425,6 +1435,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
   const isOrthographic = useEditorStore(state => state.isOrthographic);

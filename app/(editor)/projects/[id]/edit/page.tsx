@@ -60,6 +60,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const removeElement = useEditorStore(state => state.removeElement);
   const duplicateElement = useEditorStore(state => state.duplicateElement);
   const explodeModel = useEditorStore(state => state.explodeModel);
+  const multiSelectedIds = useEditorStore(state => state.multiSelectedIds);
+  const setMultiSelectedIds = useEditorStore(state => state.setMultiSelectedIds);
+  const groupSelectedElements = useEditorStore(state => state.groupSelectedElements);
   const updateElement = useEditorStore(state => state.updateElement);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
@@ -103,10 +106,19 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         case 'w': setTransformMode('translate'); break;
         case 'e': setTransformMode('rotate'); break;
         case 'r': setTransformMode('scale'); break;
-        case 'escape': setSelectedId(null); break;
+        case 'escape': 
+          setSelectedId(null); 
+          setMultiSelectedIds([]);
+          break;
         case 'delete':
         case 'backspace':
           if (selectedId) removeElement(selectedId);
+          break;
+        case 'g':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            groupSelectedElements();
+          }
           break;
         case 'z':
           if (e.ctrlKey || e.metaKey) {
@@ -126,7 +138,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, removeElement, undo, redo, setSelectedId]);
+  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements]);
 
   // Auto-open right panel when an element is selected
   useEffect(() => {
@@ -882,7 +894,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     className={`flex items-center gap-2 px-3 py-2 mt-1 rounded text-xs cursor-pointer transition-colors ${
                       selectedId === null ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
                     }`}
-                    onClick={() => setSelectedId(null)}
+                    onClick={() => { setSelectedId(null); setMultiSelectedIds([]); }}
                   >
                     <ImageIcon size={12} className="shrink-0" />
                     <span className="truncate">Marker Image</span>
@@ -910,18 +922,58 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                   {(() => {
                     const renderHierarchyNode = (el: any, depth: number = 0) => {
                       const children = elements.filter(child => child.parentId === el.id);
+                      const isMultiSelected = multiSelectedIds.includes(el.id);
+                      const isPrimarySelected = selectedId === el.id;
+                      const isSelected = isPrimarySelected || isMultiSelected;
+
                       return (
                         <div key={el.id} className="space-y-0.5 mt-0.5">
                           <div 
-                            onClick={() => setSelectedId(el.id)}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', el.id);
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.add('bg-[#2b2d31]');
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove('bg-[#2b2d31]');
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.remove('bg-[#2b2d31]');
+                              const draggedId = e.dataTransfer.getData('text/plain');
+                              if (draggedId && draggedId !== el.id) {
+                                if (el.type === 'group_folder') {
+                                  updateElement(draggedId, { parentId: el.id });
+                                } else {
+                                  // Drop on a non-folder makes it a sibling
+                                  updateElement(draggedId, { parentId: el.parentId });
+                                }
+                              }
+                            }}
+                            onClick={(e) => {
+                              if (e.shiftKey) {
+                                if (isMultiSelected || isPrimarySelected) {
+                                  setMultiSelectedIds(multiSelectedIds.filter(id => id !== el.id));
+                                  if (isPrimarySelected) setSelectedId(null);
+                                } else {
+                                  setMultiSelectedIds([...multiSelectedIds, el.id]);
+                                }
+                              } else {
+                                setSelectedId(el.id);
+                                setMultiSelectedIds([]);
+                              }
+                            }}
                             className={`flex items-center justify-between px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-                              selectedId === el.id ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                              isSelected ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
                             }`}
                             style={{ paddingLeft: `${0.75 + (depth * 1.5)}rem` }}
                           >
-                            <div className="flex items-center gap-2 overflow-hidden">
+                            <div className="flex items-center gap-2 overflow-hidden pointer-events-none">
                               {el.type === 'group_folder' ? (
-                                <FolderOpen size={12} className={selectedId === el.id ? "text-pln-blue" : "text-gray-400"} />
+                                <FolderOpen size={12} className={isSelected ? "text-pln-blue" : "text-gray-400"} />
                               ) : el.type === '3d_model' ? (
                                 <Box size={12} className="shrink-0" />
                               ) : el.type === '3d_text' ? (
@@ -943,7 +995,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               )}
                               <span className="truncate">{el.name}</span>
                             </div>
-                            {selectedId === el.id && (
+                            {isSelected && (
                               <div className="flex items-center">
                                 <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
                                   <Trash2 size={12} />

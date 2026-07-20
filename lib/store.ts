@@ -171,6 +171,12 @@ interface EditorState {
   explodeModel: (id: string) => void;
   setSelectedId: (id: string | null) => void;
   
+  // Phase 9: Multi-select & Grouping
+  multiSelectedIds: string[];
+  setMultiSelectedIds: (ids: string[]) => void;
+  groupSelectedElements: () => void;
+  handleElementClick: (id: string, shiftKey: boolean) => void;
+  
   // Undo/Redo
   setIsSnapping: (val: boolean) => void;
   isOrthographic: boolean;
@@ -207,6 +213,7 @@ interface EditorState {
 export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
   selectedId: null,
+  multiSelectedIds: [],
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
@@ -375,7 +382,61 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  setSelectedId: (id) => set({ selectedId: id }),
+  setSelectedId: (id) => set({ selectedId: id, multiSelectedIds: [] }),
+  setMultiSelectedIds: (ids) => set({ multiSelectedIds: ids }),
+  handleElementClick: (id, shiftKey) => set((state) => {
+    if (shiftKey) {
+      const isMulti = state.multiSelectedIds.includes(id);
+      const isPrimary = state.selectedId === id;
+      if (isMulti || isPrimary) {
+        return {
+          multiSelectedIds: state.multiSelectedIds.filter(mid => mid !== id),
+          selectedId: isPrimary ? null : state.selectedId
+        };
+      } else {
+        return { multiSelectedIds: [...state.multiSelectedIds, id] };
+      }
+    } else {
+      return { selectedId: id, multiSelectedIds: [] };
+    }
+  }),
+  groupSelectedElements: () => set((state) => {
+    const allSelected = state.selectedId 
+      ? [state.selectedId, ...state.multiSelectedIds].filter((v, i, a) => a.indexOf(v) === i) 
+      : state.multiSelectedIds;
+      
+    if (allSelected.length < 2) return state; // Need at least 2 elements to group
+    
+    const firstEl = state.elements.find(e => e.id === allSelected[0]);
+    if (!firstEl) return state;
+    
+    const newGroupId = Math.random().toString(36).substring(2, 9);
+    const newGroup: SceneElement = {
+      id: newGroupId,
+      type: 'group_folder',
+      name: 'Group ' + Math.floor(Math.random() * 100),
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      sceneId: firstEl.sceneId || state.currentSceneId,
+      parentId: firstEl.parentId // Optional: place group in the same parent as the first selected item
+    };
+    
+    const newElements = state.elements.map(el => {
+      if (allSelected.includes(el.id)) {
+        return { ...el, parentId: newGroupId };
+      }
+      return el;
+    });
+
+    return {
+      elements: [...newElements, newGroup],
+      selectedId: newGroupId,
+      multiSelectedIds: [],
+      past: [...state.past, state.elements],
+      future: []
+    };
+  }),
   setIsSnapping: (val) => set({ isSnapping: val }),
   setIsOrthographic: (val) => set({ isOrthographic: val }),
   setIsSimulating: (val) => set({ isSimulating: val, selectedId: val ? null : get().selectedId }),
