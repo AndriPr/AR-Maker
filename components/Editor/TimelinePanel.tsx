@@ -104,8 +104,48 @@ export default function TimelinePanel() {
   const setIsAutoKeying = useEditorStore(state => state.setIsAutoKeying);
 
   const [duration, setDuration] = useState(10); // 10 seconds default
+  const [panelHeight, setPanelHeight] = useState(192); // 48rem * 4 = 192px default
 
   const selectedElement = elements.find(el => el.id === selectedId);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
+      
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setTimelinePlaying(!useEditorStore.getState().timelinePlaying);
+      } else if (e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        addKeyframe();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, elements]); // Need dependencies for addKeyframe to work correctly or use refs
+
+  // Panel Resize Logic
+  const [isResizing, setIsResizing] = useState(false);
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newHeight = window.innerHeight - e.clientY;
+      setPanelHeight(Math.max(100, Math.min(newHeight, window.innerHeight * 0.8)));
+    };
+    const handleMouseUp = () => setIsResizing(false);
+    
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   useEffect(() => {
     let interval: any;
@@ -123,19 +163,23 @@ export default function TimelinePanel() {
     return () => clearInterval(interval);
   }, [timelinePlaying, duration, setTimelineTime, setTimelinePlaying]);
 
-  const addKeyframe = () => {
-    if (!selectedElement) return;
+  const addKeyframe = (specificId?: string) => {
+    const idToKeyframe = specificId || selectedId;
+    if (!idToKeyframe) return;
+    
+    const targetElement = elements.find(e => e.id === idToKeyframe);
+    if (!targetElement) return;
 
-    const currentKeyframes = selectedElement.keyframes || [];
+    const currentKeyframes = targetElement.keyframes || [];
     
     // Check if keyframe already exists at this time (allow 0.1s tolerance)
     const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - timelineTime) < 0.05);
     
     const newKeyframe = {
       time: parseFloat(timelineTime.toFixed(1)),
-      position: [...selectedElement.position] as [number, number, number],
-      rotation: [...selectedElement.rotation] as [number, number, number],
-      scale: [...selectedElement.scale] as [number, number, number],
+      position: [...targetElement.position] as [number, number, number],
+      rotation: [...targetElement.rotation] as [number, number, number],
+      scale: [...targetElement.scale] as [number, number, number],
     };
 
     let updatedKeyframes;
@@ -146,7 +190,7 @@ export default function TimelinePanel() {
       updatedKeyframes = [...currentKeyframes, newKeyframe].sort((a, b) => a.time - b.time);
     }
 
-    updateElement(selectedElement.id, { keyframes: updatedKeyframes });
+    updateElement(idToKeyframe, { keyframes: updatedKeyframes });
   };
 
   const removeKeyframe = (elementId: string, time: number) => {
@@ -174,7 +218,13 @@ export default function TimelinePanel() {
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-48 bg-[#1a1b1e] border-t border-[#2b2d31] flex flex-col z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+    <div className="absolute bottom-0 left-0 right-0 bg-[#1a1b1e] border-t border-[#2b2d31] flex flex-col z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]" style={{ height: panelHeight }}>
+      {/* Drag Handle to Resize */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-50 hover:bg-pln-blue/50"
+        onMouseDown={() => setIsResizing(true)}
+      ></div>
+      
       {/* Header / Controls */}
       <div className="h-10 bg-[#202227] border-b border-[#2b2d31] flex items-center px-4 gap-4">
         <button 
@@ -194,7 +244,7 @@ export default function TimelinePanel() {
           <Circle size={10} fill={isAutoKeying ? 'currentColor' : 'none'} /> REC
         </button>
         <button 
-          onClick={addKeyframe}
+          onClick={() => addKeyframe()}
           disabled={!selectedElement}
           className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-orange-400 border border-orange-400/30 rounded hover:bg-orange-400/10 disabled:opacity-50 transition-colors"
         >
@@ -222,12 +272,19 @@ export default function TimelinePanel() {
           {elements.map(el => (
             <div key={`header-${el.id}`}>
               <div 
-                className={`h-8 border-b border-[#2b2d31] flex items-center px-2 text-[10px] cursor-pointer hover:bg-[#2b2d31]/50 ${selectedId === el.id ? 'bg-[#2b2d31] text-white font-bold' : 'text-gray-400'}`}
+                className={`group h-8 border-b border-[#2b2d31] flex items-center px-2 text-[10px] cursor-pointer hover:bg-[#2b2d31]/50 ${selectedId === el.id ? 'bg-[#2b2d31] text-white font-bold' : 'text-gray-400'}`}
                 onClick={() => updateElement(el.id, { isTimelineExpanded: !el.isTimelineExpanded })}
               >
                 <div className="mr-1 w-3 text-center">{el.isTimelineExpanded ? '▼' : '▶'}</div>
                 <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: el.keyframes?.length ? '#f59e0b' : '#36393f' }}></div>
-                <span className="truncate">{el.name}</span>
+                <span className="flex-1 truncate">{el.name}</span>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); addKeyframe(el.id); }}
+                  className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Add Keyframe (K)"
+                >
+                  ♦
+                </button>
               </div>
               {el.isTimelineExpanded && (
                 <div className="bg-[#151618]">
@@ -242,22 +299,43 @@ export default function TimelinePanel() {
         
         {/* Track Grid */}
         <div className="flex-1 bg-[#1e1e1e] relative overflow-x-auto overflow-y-auto custom-scrollbar">
-          {/* Time Scrubber Background */}
-          <div className="absolute top-0 bottom-0 border-l-2 border-red-500 z-10 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
-            <div className="w-2 h-2 bg-red-500 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-          </div>
-          
-          <div className="relative w-full min-w-[800px] h-full" onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const percentage = Math.max(0, Math.min(1, x / rect.width));
-            setTimelineTime(percentage * duration);
-          }}>
+          <div className="relative w-full min-w-[800px] h-full">
+            {/* Ruler for Scrubbing */}
+            <div 
+              className="absolute top-0 left-0 right-0 h-5 bg-[#1a1b1e]/80 border-b border-[#36393f] z-20 cursor-ew-resize select-none"
+              onPointerDown={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const updateTime = (evt: React.PointerEvent | PointerEvent) => {
+                  const x = evt.clientX - rect.left;
+                  const percentage = Math.max(0, Math.min(1, x / rect.width));
+                  setTimelineTime(percentage * duration);
+                };
+                updateTime(e);
+                
+                const onMove = (evt: PointerEvent) => updateTime(evt);
+                const onUp = () => {
+                  window.removeEventListener('pointermove', onMove);
+                  window.removeEventListener('pointerup', onUp);
+                };
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+              }}
+            >
+              {Array.from({ length: duration + 1 }).map((_, i) => (
+                <div key={`tick-${i}`} className="absolute top-0 bottom-0 border-l border-[#36393f]" style={{ left: `${(i / duration) * 100}%` }}>
+                  <span className="absolute top-0 left-1 text-[8px] text-gray-400 font-mono">{i}s</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Time Scrubber Background */}
+            <div className="absolute top-0 bottom-0 border-l-2 border-red-500 z-10 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
+              <div className="w-3 h-3 bg-red-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-red-500/50"></div>
+            </div>
+
             {/* Grid lines */}
             {Array.from({ length: duration + 1 }).map((_, i) => (
-              <div key={`grid-${i}`} className="absolute top-0 bottom-0 border-l border-[#36393f]/50 pointer-events-none" style={{ left: `${(i / duration) * 100}%` }}>
-                <span className="absolute top-0 -translate-x-1/2 text-[8px] text-gray-600 bg-[#1e1e1e] px-1">{i}s</span>
-              </div>
+              <div key={`grid-${i}`} className="absolute top-0 bottom-0 border-l border-[#36393f]/30 pointer-events-none" style={{ left: `${(i / duration) * 100}%` }}></div>
             ))}
             
             {/* Tracks */}
