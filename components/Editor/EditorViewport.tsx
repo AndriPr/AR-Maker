@@ -362,28 +362,31 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
   const isSelected = useEditorStore(state => state.selectedId === element.id || state.multiSelectedIds.includes(element.id));
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
+  const helper = useHelper(isSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, isSelected ? '#f97316' : 'white');
 
-
+  useEffect(() => {
+    if (helper && helper.current) {
+      helper.current.raycast = () => null;
+    }
+  }, [helper, isSelected, isHovered]);
 
   return (
-    <Select enabled={isSelected || isHovered}>
-      <group 
-        ref={groupRef}
-        onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
-        onPointerOut={(e: any) => { setHoveredId(null); }}
-        onDoubleClick={(e: any) => {
-          e.stopPropagation();
-          const setCameraFocusTarget = useEditorStore.getState().setCameraFocusTarget;
-          const targetPos = new THREE.Vector3();
-          if (groupRef.current) {
-            (groupRef.current as any).getWorldPosition(targetPos);
-            setCameraFocusTarget([targetPos.x, targetPos.y, targetPos.z]);
-          }
-        }}
-      >
-        {children}
-      </group>
-    </Select>
+    <group 
+      ref={groupRef}
+      onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
+      onPointerOut={(e: any) => { setHoveredId(null); }}
+      onDoubleClick={(e: any) => {
+        e.stopPropagation();
+        const setCameraFocusTarget = useEditorStore.getState().setCameraFocusTarget;
+        const targetPos = new THREE.Vector3();
+        if (groupRef.current) {
+          (groupRef.current as any).getWorldPosition(targetPos);
+          setCameraFocusTarget([targetPos.x, targetPos.y, targetPos.z]);
+        }
+      }}
+    >
+      {children}
+    </group>
   );
 }
 
@@ -1618,12 +1621,10 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
               </group>
             )}
             
-            <Selection>
-              {/* Render Root Elements Only (those without a parent) */}
-              {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-                <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-              ))}
-            </Selection>
+            {/* Render Root Elements Only (those without a parent) */}
+            {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+              <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+            ))}
           </Suspense>
 
         {!simulateMode && (
@@ -1636,9 +1637,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         )}
 
         <CameraController />
-        <EffectComposer autoClear={false}>
-          <Outline blur visibleEdgeColor={0xf97316} hiddenEdgeColor={0xf97316} edgeStrength={10} width={1000} />
-        </EffectComposer>
+
       </Canvas>
     </div>
   );
