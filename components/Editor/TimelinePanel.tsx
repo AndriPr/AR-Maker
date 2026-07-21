@@ -148,19 +148,31 @@ export default function TimelinePanel() {
   }, [isResizing]);
 
   useEffect(() => {
-    let interval: any;
+    let animationFrameId: number;
+    let lastTime = performance.now();
+
+    const loop = (currentTime: number) => {
+      if (!useEditorStore.getState().timelinePlaying) return;
+
+      const delta = (currentTime - lastTime) / 1000; // convert to seconds
+      lastTime = currentTime;
+
+      const prev = useEditorStore.getState().timelineTime;
+      if (prev >= duration) {
+        setTimelinePlaying(false);
+        setTimelineTime(0);
+      } else {
+        setTimelineTime(prev + delta);
+        animationFrameId = requestAnimationFrame(loop);
+      }
+    };
+
     if (timelinePlaying) {
-      interval = setInterval(() => {
-        const prev = useEditorStore.getState().timelineTime;
-        if (prev >= duration) {
-          setTimelinePlaying(false);
-          setTimelineTime(0);
-        } else {
-          setTimelineTime(prev + 0.1);
-        }
-      }, 100);
+      lastTime = performance.now();
+      animationFrameId = requestAnimationFrame(loop);
     }
-    return () => clearInterval(interval);
+
+    return () => cancelAnimationFrame(animationFrameId);
   }, [timelinePlaying, duration, setTimelineTime, setTimelinePlaying]);
 
   const addKeyframe = (specificId?: string) => {

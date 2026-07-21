@@ -483,14 +483,16 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         }
       });
 
-      // Phase 7: Exploded Mesh separation
+      // Phase 7: Exploded Mesh separation - optimized to REMOVE unused meshes from graph
       if (element.targetMeshName) {
+        const toRemove: any[] = [];
         clone.traverse((node: any) => {
-           if (node.isMesh) {
-             if (node.name !== element.targetMeshName) {
-               node.visible = false;
-             }
+           if (node.isMesh && node.name !== element.targetMeshName) {
+             toRemove.push(node);
            }
+        });
+        toRemove.forEach(node => {
+           node.parent?.remove(node);
         });
       }
 
