@@ -76,7 +76,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setIsSnapping = useEditorStore(state => state.setIsSnapping);
   const isOrthographic = useEditorStore(state => state.isOrthographic);
   const setIsOrthographic = useEditorStore(state => state.setIsOrthographic);
-  
+  const setCameraFocusTarget = useEditorStore(state => state.setCameraFocusTarget);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const setAmbientLightIntensity = useEditorStore(state => state.setAmbientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
@@ -113,6 +113,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           setSelectedId(null); 
           setMultiSelectedIds([]);
           break;
+        case 'x':
         case 'delete':
         case 'backspace':
           if (selectedId) removeElement(selectedId);
@@ -138,12 +139,47 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
             redo();
           }
           break;
+        case 'a':
+          if (e.altKey) {
+            setSelectedId(null);
+            setMultiSelectedIds([]);
+          } else {
+             const allIds = elements.map(el => el.id);
+             setMultiSelectedIds(allIds);
+          }
+          break;
+        case 'd':
+          if (e.shiftKey && selectedId) {
+            e.preventDefault();
+            duplicateElement(selectedId);
+          }
+          break;
+        case '5':
+          setIsOrthographic(!isOrthographic);
+          break;
+        case 'h':
+          if (e.altKey) {
+             elements.forEach(el => updateElement(el.id, { isHidden: false }));
+          } else if (selectedId) {
+             const el = elements.find(el => el.id === selectedId);
+             if (el) updateElement(selectedId, { isHidden: !el.isHidden });
+          }
+          break;
+        case 'f':
+        case '.':
+          if (selectedId) {
+            const el = elements.find(el => el.id === selectedId);
+            if (el && el.position) {
+              setCameraFocusTarget(el.position as [number, number, number]);
+            }
+          }
+          break;
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements]);
+  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements, elements, duplicateElement, isOrthographic, setIsOrthographic, updateElement, setCameraFocusTarget]);
 
   // Auto-open right panel when an element is selected
   useEffect(() => {
