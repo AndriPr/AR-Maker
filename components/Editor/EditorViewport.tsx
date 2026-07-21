@@ -6,6 +6,7 @@ import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
+import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
 
 // Logic Engine Hook
 function useLogicEngine() {
@@ -358,7 +359,21 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
     }
   });
 
-  return <group ref={groupRef}>{children}</group>;
+  const isSelected = useEditorStore(state => state.selectedId === element.id || state.multiSelectedIds.includes(element.id));
+  const isHovered = useEditorStore(state => state.hoveredId === element.id);
+  const setHoveredId = useEditorStore(state => state.setHoveredId);
+
+  return (
+    <Select enabled={isSelected || isHovered}>
+      <group 
+        ref={groupRef}
+        onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
+        onPointerOut={(e: any) => { setHoveredId(null); }}
+      >
+        {children}
+      </group>
+    </Select>
+  );
 }
 
 function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
@@ -394,7 +409,7 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
+          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
           onPointerMissed={(e) => {
             if (e.type === 'click') setSelectedId(null);
           }}
@@ -460,6 +475,20 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     if (!scene) return null;
     const clone = scene.clone();
     try {
+      // Phase 7: Exploded Mesh separation - optimized to REMOVE unused meshes from graph
+      if (element.targetMeshName) {
+        const toRemove: any[] = [];
+        clone.traverse((node: any) => {
+           if (node.isMesh && node.name !== element.targetMeshName) {
+             toRemove.push(node);
+           }
+        });
+        toRemove.forEach(node => {
+           node.parent?.remove(node);
+        });
+      }
+
+      // Center geometry to origin (Origin to Geometry)
       const box = new THREE.Box3().setFromObject(clone);
       const center = box.getCenter(new THREE.Vector3());
       clone.position.x += (clone.position.x - center.x);
@@ -482,19 +511,6 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
           }
         }
       });
-
-      // Phase 7: Exploded Mesh separation - optimized to REMOVE unused meshes from graph
-      if (element.targetMeshName) {
-        const toRemove: any[] = [];
-        clone.traverse((node: any) => {
-           if (node.isMesh && node.name !== element.targetMeshName) {
-             toRemove.push(node);
-           }
-        });
-        toRemove.forEach(node => {
-           node.parent?.remove(node);
-        });
-      }
 
     } catch (e) {
       console.error("Failed to process GLTF", e);
@@ -598,7 +614,7 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
             object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
-              handleElementClick(element.id, e.shiftKey);
+              handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey);
             }}
             onPointerMissed={(e: any) => {
               if (e.type === 'click') setSelectedId(null);
@@ -725,7 +741,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
       <group
         onClick={(e: any) => {
           e.stopPropagation();
-          handleElementClick(element.id, e.shiftKey);
+          handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey);
         }}
         onPointerMissed={(e: any) => {
           if (e.type === 'click') setSelectedId(null);
@@ -835,7 +851,7 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            handleElementClick(element.id, e.shiftKey); 
+            handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); 
           }
         }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
@@ -909,7 +925,7 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const audioObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
@@ -990,7 +1006,7 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const imageObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <mesh>
@@ -1056,7 +1072,7 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const videoObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <mesh>
@@ -1132,7 +1148,7 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   const sparklesObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
       >
         <Sparkles 
@@ -1219,7 +1235,7 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            handleElementClick(element.id, e.shiftKey); 
+            handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); 
           }
         }}
         onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
@@ -1390,7 +1406,7 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.shiftKey); }}
+          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
           onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
         >
           {/* Visible bounding box helper for the group when selected, otherwise invisible */}
@@ -1500,25 +1516,30 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         )}
         
         <ProximitySensorEngine />
-        <Suspense fallback={null}>
-          {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
-          {trackingMode === 'face' && (
-            <group position={[0, 1, 0]}>
-              <mesh>
-                <sphereGeometry args={[1, 32, 32]} />
-                <meshBasicMaterial color="#1e293b" wireframe />
-              </mesh>
-              <Html center position={[0, 0, 1.2]}>
-                <div className="bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap">Face Mesh Dummy</div>
-              </Html>
-            </group>
-          )}
-          
-          {/* Render Root Elements Only (those without a parent) */}
-          {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-            <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-          ))}
-        </Suspense>
+        <Selection>
+          <EffectComposer autoClear={false}>
+            <Outline blur visibleEdgeColor={0xffffff} edgeStrength={5} width={1000} />
+          </EffectComposer>
+          <Suspense fallback={null}>
+            {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
+            {trackingMode === 'face' && (
+              <group position={[0, 1, 0]}>
+                <mesh>
+                  <sphereGeometry args={[1, 32, 32]} />
+                  <meshBasicMaterial color="#1e293b" wireframe />
+                </mesh>
+                <Html center position={[0, 0, 1.2]}>
+                  <div className="bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap">Face Mesh Dummy</div>
+                </Html>
+              </group>
+            )}
+            
+            {/* Render Root Elements Only (those without a parent) */}
+            {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+              <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+            ))}
+          </Suspense>
+        </Selection>
 
         {!simulateMode && (
           <GizmoHelper

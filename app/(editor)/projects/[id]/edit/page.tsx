@@ -62,6 +62,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const explodeModel = useEditorStore(state => state.explodeModel);
   const multiSelectedIds = useEditorStore(state => state.multiSelectedIds);
   const setMultiSelectedIds = useEditorStore(state => state.setMultiSelectedIds);
+  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const groupSelectedElements = useEditorStore(state => state.groupSelectedElements);
   const reparentElement = useEditorStore(state => state.reparentElement);
   const updateElement = useEditorStore(state => state.updateElement);
@@ -955,17 +956,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               }
                             }}
                             onClick={(e) => {
-                              if (e.shiftKey) {
-                                if (isMultiSelected || isPrimarySelected) {
-                                  setMultiSelectedIds(multiSelectedIds.filter(id => id !== el.id));
-                                  if (isPrimarySelected) setSelectedId(null);
-                                } else {
-                                  setMultiSelectedIds([...multiSelectedIds, el.id]);
-                                }
-                              } else {
-                                setSelectedId(el.id);
-                                setMultiSelectedIds([]);
-                              }
+                              handleElementClick(el.id, e.ctrlKey || e.metaKey, e.shiftKey);
                             }}
                             className={`flex items-center justify-between px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${
                               isSelected ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'

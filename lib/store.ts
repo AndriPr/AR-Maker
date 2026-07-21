@@ -174,9 +174,11 @@ interface EditorState {
   // Phase 9: Multi-select & Grouping
   multiSelectedIds: string[];
   setMultiSelectedIds: (ids: string[]) => void;
+  hoveredId: string | null;
+  setHoveredId: (id: string | null) => void;
   groupSelectedElements: () => void;
   reparentElement: (childId: string, newParentId: string | undefined) => void;
-  handleElementClick: (id: string, shiftKey: boolean) => void;
+  handleElementClick: (id: string, ctrlKey: boolean, shiftKey: boolean) => void;
   
   // Undo/Redo
   setIsSnapping: (val: boolean) => void;
@@ -215,6 +217,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
   selectedId: null,
   multiSelectedIds: [],
+  hoveredId: null,
   targetImageUrl: null,
   previewAnimationData: null,
   isSnapping: true,
@@ -385,8 +388,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setSelectedId: (id) => set({ selectedId: id, multiSelectedIds: [] }),
   setMultiSelectedIds: (ids) => set({ multiSelectedIds: ids }),
-  handleElementClick: (id, shiftKey) => set((state) => {
-    if (shiftKey) {
+  setHoveredId: (id) => set({ hoveredId: id }),
+  handleElementClick: (id, ctrlKey, shiftKey) => set((state) => {
+    if (ctrlKey) {
+      // Toggle single item selection
       const isMulti = state.multiSelectedIds.includes(id);
       const isPrimary = state.selectedId === id;
       if (isMulti || isPrimary) {
@@ -397,6 +402,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       } else {
         return { multiSelectedIds: [...state.multiSelectedIds, id] };
       }
+    } else if (shiftKey) {
+      // Range select based on visual store order
+      if (!state.selectedId) {
+         return { selectedId: id, multiSelectedIds: [] };
+      }
+      const startIndex = state.elements.findIndex(e => e.id === state.selectedId);
+      const endIndex = state.elements.findIndex(e => e.id === id);
+      if (startIndex === -1 || endIndex === -1) {
+         return { selectedId: id, multiSelectedIds: [] };
+      }
+      const min = Math.min(startIndex, endIndex);
+      const max = Math.max(startIndex, endIndex);
+      const rangeIds = state.elements.slice(min, max + 1).map(e => e.id);
+      
+      return { multiSelectedIds: Array.from(new Set([...state.multiSelectedIds, ...rangeIds])) };
     } else {
       return { selectedId: id, multiSelectedIds: [] };
     }
