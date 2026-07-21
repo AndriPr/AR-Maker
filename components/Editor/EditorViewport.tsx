@@ -362,7 +362,13 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
 
-  useHelper(isSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, isSelected ? '#3b82f6' : 'white');
+  const helper = useHelper(isSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, isSelected ? '#3b82f6' : 'white');
+
+  useEffect(() => {
+    if (helper && helper.current) {
+      helper.current.raycast = () => null;
+    }
+  }, [helper, isSelected, isHovered]);
 
   return (
     <group 
@@ -392,6 +398,12 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         if (e.value) return; // dragging started
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -522,6 +534,12 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         if (e.value) return; // dragging started
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -705,6 +723,12 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
         if (e.value) return; // dragging started
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -824,6 +848,12 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
         if (e.value) return; 
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -903,6 +933,12 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         if (e.value) return; 
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -984,6 +1020,12 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         if (e.value) return; 
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -1050,6 +1092,12 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
         if (e.value) return; 
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -1126,6 +1174,12 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
         if (e.value) return; 
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -1208,6 +1262,12 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
         if (e.value) return; 
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
@@ -1383,6 +1443,12 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
         if (e.value) return;
         const obj = controls.object;
         if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
           updateElement(element.id, {
             position: [obj.position.x, obj.position.y, obj.position.z],
             rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],

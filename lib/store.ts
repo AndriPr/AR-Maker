@@ -166,6 +166,7 @@ interface EditorState {
   setPreviewAnimationData: (data: { targetId: string, animationName: string } | null) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
   updateElement: (id: string, element: Partial<SceneElement>) => void;
+  applyTransformDelta: (primaryId: string, positionDelta: [number, number, number]) => void;
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   explodeModel: (id: string) => void;
@@ -322,6 +323,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       elements: state.elements.map((el) => 
         el.id === id ? { ...el, ...data } : el
       )
+    };
+  }),
+
+  applyTransformDelta: (primaryId, positionDelta) => set((state) => {
+    // If the primary item isn't even selected, don't move multi-selected
+    if (state.selectedId !== primaryId) return state;
+    if (state.multiSelectedIds.length === 0) return state;
+
+    return {
+      elements: state.elements.map(e => {
+        if (state.multiSelectedIds.includes(e.id)) {
+          return {
+            ...e,
+            position: [
+              e.position[0] + positionDelta[0],
+              e.position[1] + positionDelta[1],
+              e.position[2] + positionDelta[2]
+            ] as [number, number, number]
+          };
+        }
+        return e;
+      })
     };
   }),
 
