@@ -114,18 +114,61 @@ export default function TimelinePanel() {
       // Ignore if typing in an input
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
       
+      const state = useEditorStore.getState();
+      
       if (e.code === 'Space') {
         e.preventDefault();
-        setTimelinePlaying(!useEditorStore.getState().timelinePlaying);
+        setTimelinePlaying(!state.timelinePlaying);
       } else if (e.key.toLowerCase() === 'k') {
         e.preventDefault();
         addKeyframe();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (e.shiftKey) {
+           // Jump to start
+           setTimelineTime(0);
+        } else {
+           // Step back 0.1s
+           setTimelineTime(Math.max(0, state.timelineTime - 0.1));
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (e.shiftKey) {
+           // Jump to end
+           setTimelineTime(duration);
+        } else {
+           // Step forward 0.1s
+           setTimelineTime(Math.min(duration, state.timelineTime + 0.1));
+        }
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        // Jump to next/prev keyframe
+        if (!selectedId) return;
+        const targetElement = elements.find(el => el.id === selectedId);
+        if (!targetElement || !targetElement.keyframes) return;
+        
+        const times = targetElement.keyframes.map((k: any) => k.time).sort((a: any, b: any) => a - b);
+        if (times.length === 0) return;
+        
+        if (e.key === 'ArrowUp') {
+           // Previous keyframe
+           const prevTimes = times.filter((t: any) => t < state.timelineTime - 0.05);
+           if (prevTimes.length > 0) {
+              setTimelineTime(prevTimes[prevTimes.length - 1]);
+           }
+        } else {
+           // Next keyframe
+           const nextTimes = times.filter((t: any) => t > state.timelineTime + 0.05);
+           if (nextTimes.length > 0) {
+              setTimelineTime(nextTimes[0]);
+           }
+        }
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, elements]); // Need dependencies for addKeyframe to work correctly or use refs
+  }, [selectedId, elements, duration, setTimelinePlaying, setTimelineTime]); // Need dependencies for addKeyframe and navigation to work correctly
 
   // Panel Resize Logic
   const [isResizing, setIsResizing] = useState(false);

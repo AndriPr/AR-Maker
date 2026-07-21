@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 
 import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines } from '@react-three/drei';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line} from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -391,6 +391,16 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
 }
 
 
+
+function MotionPathVisualizer({ element }: { element: any }) {
+  if (!element.keyframes || element.keyframes.length < 2) return null;
+  const posKfs = element.keyframes.filter((k: any) => k.position !== undefined).sort((a: any, b: any) => a.time - b.time);
+  if (posKfs.length < 2) return null;
+
+  const points = posKfs.map((kf: any) => new THREE.Vector3(...kf.position));
+  return <Line points={points} color="#f97316" lineWidth={1.5} dashed={true} dashSize={0.2} gapSize={0.1} />;
+}
+
 function useTransformLogic(element: any, isSelected: boolean, transformRef: React.MutableRefObject<any>) {
   const updateElement = useEditorStore(state => state.updateElement);
   
@@ -438,15 +448,32 @@ function useTransformLogic(element: any, isSelected: boolean, transformRef: Reac
           const dx = obj.position.x - element.position[0];
           const dy = obj.position.y - element.position[1];
           const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+          
+          const rx = obj.rotation.x - element.rotation[0];
+          const ry = obj.rotation.y - element.rotation[1];
+          const rz = obj.rotation.z - element.rotation[2];
+          
+          const sx = obj.scale.x - element.scale[0];
+          const sy = obj.scale.y - element.scale[1];
+          const sz = obj.scale.z - element.scale[2];
+          
+          const posChanged = Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001;
+          const rotChanged = Math.abs(rx) > 0.0001 || Math.abs(ry) > 0.0001 || Math.abs(rz) > 0.0001;
+          const scaleChanged = Math.abs(sx) > 0.0001 || Math.abs(sy) > 0.0001 || Math.abs(sz) > 0.0001;
+
+          if (posChanged) {
             useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
           }
           
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
+          const updates: any = {};
+          if (posChanged) updates.position = [obj.position.x, obj.position.y, obj.position.z];
+          if (rotChanged) updates.rotation = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
+          if (scaleChanged) updates.scale = [obj.scale.x, obj.scale.y, obj.scale.z];
+          
+          // Fallback if somehow nothing changed but event fired (unlikely)
+          if (!posChanged && !rotChanged && !scaleChanged) return;
+
+          updateElement(element.id, updates);
         }
       };
 
@@ -474,7 +501,8 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
   const isSnapping = useEditorStore(state => state.isSnapping);
 
   useTransformLogic(element, isSelected, transformRef);
@@ -545,7 +573,8 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const isSnapping = useEditorStore(state => state.isSnapping);
 
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
   
   const clonedScene = useMemo(() => {
     if (!scene) return null;
@@ -715,7 +744,8 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
 
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   const [liveText, setLiveText] = useState(element.content || '');
 
@@ -860,7 +890,8 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -922,7 +953,8 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -977,7 +1009,8 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
   
   // Optional: load the texture (if it fails, it just won't show)
   const texture = useTexture(element.url || 'https://via.placeholder.com/150');
@@ -1042,7 +1075,8 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -1101,7 +1135,8 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -1166,7 +1201,8 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -1347,7 +1383,8 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
-  const isSelected = selectedId === element.id;
+  const timelinePlaying = useEditorStore(state => state.timelinePlaying);
+  const isSelected = selectedId === element.id && !timelinePlaying;
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -1407,6 +1444,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const elements = useEditorStore(state => state.elements);
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
+  const selectedElement = elements.find(el => el.id === selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
