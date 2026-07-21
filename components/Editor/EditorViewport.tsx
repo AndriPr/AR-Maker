@@ -408,10 +408,8 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
-          onPointerMissed={(e) => {
-            if (e.type === 'click') setSelectedId(null);
-          }}
+          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+          onPointerMissed={() => {}}
         >
           {element.shapeType === 'cube' && <DreiBox args={[1, 1, 1]}><meshStandardMaterial color={element.color || '#ffffff'} /></DreiBox>}
           {element.shapeType === 'sphere' && <Sphere args={[0.5, 32, 32]}><meshStandardMaterial color={element.color || '#ffffff'} /></Sphere>}
@@ -613,11 +611,9 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
             object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
-              handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey);
+              handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false);
             }}
-            onPointerMissed={(e: any) => {
-              if (e.type === 'click') setSelectedId(null);
-            }}
+            onPointerMissed={() => {}}
           />
         </group>
       </AnimatedElementWrapper>
@@ -740,11 +736,9 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
       <group
         onClick={(e: any) => {
           e.stopPropagation();
-          handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey);
+          handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false);
         }}
-        onPointerMissed={(e: any) => {
-          if (e.type === 'click') setSelectedId(null);
-        }}
+        onPointerMissed={() => {}}
       >
         {element.is3D ? (
           <Center>
@@ -850,10 +844,10 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); 
+            handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); 
           }
         }}
-        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        onPointerMissed={() => {}}
       >
         <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
           <div className={`px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-2xl whitespace-nowrap cursor-pointer select-none border border-white/20 ${isSelected ? 'ring-4 ring-pln-yellow scale-105 transition-transform' : ''}`}>
@@ -924,8 +918,8 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const audioObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
-        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+        onPointerMissed={() => {}}
       >
         <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
           <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-pink-400 border border-gray-700 shadow-xl cursor-pointer ${isSelected ? 'ring-4 ring-pink-500 scale-110 transition-transform bg-gray-700' : ''}`}>
@@ -1005,8 +999,8 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const imageObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
-        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+        onPointerMissed={() => {}}
       >
         <mesh>
           <planeGeometry args={[width, height]} />
@@ -1071,8 +1065,8 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const videoObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
-        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+        onPointerMissed={() => {}}
       >
         <mesh>
           <planeGeometry args={[3, 1.68]} />
@@ -1147,8 +1141,8 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   const sparklesObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
-        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+        onPointerMissed={() => {}}
       >
         <Sparkles 
           count={element.sparkleCount || 100} 
@@ -1234,10 +1228,10 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); 
+            handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); 
           }
         }}
-        onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+        onPointerMissed={() => {}}
       >
         {/* Glowing Dot */}
         <mesh>
@@ -1405,8 +1399,8 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey, e.shiftKey); }}
-          onPointerMissed={(e: any) => { if (e.type === 'click') setSelectedId(null); }}
+          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+          onPointerMissed={() => {}}
         >
           {/* Visible bounding box helper for the group when selected, otherwise invisible */}
           <DreiBox args={[1, 1, 1]} visible={isSelected}>
