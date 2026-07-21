@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 
+import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
 import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
@@ -362,22 +363,27 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
 
-  const helper = useHelper(isSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, isSelected ? '#3b82f6' : 'white');
 
-  useEffect(() => {
-    if (helper && helper.current) {
-      helper.current.raycast = () => null;
-    }
-  }, [helper, isSelected, isHovered]);
 
   return (
-    <group 
-      ref={groupRef}
-      onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
-      onPointerOut={(e: any) => { setHoveredId(null); }}
-    >
-      {children}
-    </group>
+    <Select enabled={isSelected || isHovered}>
+      <group 
+        ref={groupRef}
+        onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
+        onPointerOut={(e: any) => { setHoveredId(null); }}
+        onDoubleClick={(e: any) => {
+          e.stopPropagation();
+          const setCameraFocusTarget = useEditorStore.getState().setCameraFocusTarget;
+          const targetPos = new THREE.Vector3();
+          if (groupRef.current) {
+            (groupRef.current as any).getWorldPosition(targetPos);
+            setCameraFocusTarget([targetPos.x, targetPos.y, targetPos.z]);
+          }
+        }}
+      >
+        {children}
+      </group>
+    </Select>
   );
 }
 
@@ -438,7 +444,7 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   if (isSelected) {
     return (
-      <TransformControls
+      <TransformControls size={1.2}
         ref={transformRef}
         mode={mode}
         position={element.position as [number, number, number]}
@@ -640,7 +646,7 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -810,7 +816,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -895,7 +901,7 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -973,7 +979,7 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -1054,7 +1060,7 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position as [number, number, number]} 
@@ -1136,7 +1142,7 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -1224,7 +1230,7 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -1318,7 +1324,7 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
 
   if (isSelected) {
     return (
-      <TransformControls 
+      <TransformControls size={1.2} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -1386,6 +1392,8 @@ function CameraController() {
   const controlsRef = useRef<any>(null);
   const cameraResetTrigger = useEditorStore(state => state.cameraResetTrigger);
   const isOrthographic = useEditorStore(state => state.isOrthographic);
+  const cameraFocusTarget = useEditorStore(state => state.cameraFocusTarget);
+  const setCameraFocusTarget = useEditorStore(state => state.setCameraFocusTarget);
 
   useEffect(() => {
     if (controlsRef.current) {
@@ -1393,7 +1401,28 @@ function CameraController() {
     }
   }, [cameraResetTrigger, isOrthographic]);
 
-  return <OrbitControls makeDefault ref={controlsRef} />;
+  useFrame((state, delta) => {
+    if (cameraFocusTarget && controlsRef.current) {
+      const targetVec = new THREE.Vector3(...cameraFocusTarget);
+      controlsRef.current.target.lerp(targetVec, delta * 5);
+      
+      if (controlsRef.current.target.distanceTo(targetVec) < 0.01) {
+        setCameraFocusTarget(null);
+      }
+    }
+  });
+
+  return (
+    <OrbitControls 
+      makeDefault 
+      ref={controlsRef} 
+      enableDamping={true} 
+      dampingFactor={0.05}
+      onStart={() => {
+        if (cameraFocusTarget) setCameraFocusTarget(null);
+      }}
+    />
+  );
 }
 
 // Recursive Node Renderer
@@ -1480,7 +1509,7 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
 
   if (isSelected) {
     return (
-      <TransformControls
+      <TransformControls size={1.2}
         ref={transformRef}
         mode={mode}
         position={element.position as [number, number, number]}
@@ -1589,10 +1618,12 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
               </group>
             )}
             
-            {/* Render Root Elements Only (those without a parent) */}
-            {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-              <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-            ))}
+            <Selection>
+              {/* Render Root Elements Only (those without a parent) */}
+              {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+                <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+              ))}
+            </Selection>
           </Suspense>
 
         {!simulateMode && (
@@ -1605,6 +1636,9 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         )}
 
         <CameraController />
+        <EffectComposer autoClear={false}>
+          <Outline blur visibleEdgeColor={0xf97316} hiddenEdgeColor={0xf97316} edgeStrength={10} width={1000} />
+        </EffectComposer>
       </Canvas>
     </div>
   );

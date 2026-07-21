@@ -204,6 +204,8 @@ interface EditorState {
   // Camera
   cameraResetTrigger: number;
   triggerCameraReset: () => void;
+  cameraFocusTarget: [number, number, number] | null;
+  setCameraFocusTarget: (target: [number, number, number] | null) => void;
 
   // Timeline
   timelineTime: number;
@@ -237,6 +239,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   past: [],
   future: [],
   cameraResetTrigger: 0,
+  cameraFocusTarget: null,
   timelineTime: 0,
   timelinePlaying: false,
   isAutoKeying: false,
@@ -594,7 +597,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 })),
+  triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1, cameraFocusTarget: null })),
+  setCameraFocusTarget: (target) => set({ cameraFocusTarget: target }),
   
   setTimelineTime: (time) => set({ timelineTime: time }),
   setTimelinePlaying: (playing) => set({ timelinePlaying: playing }),

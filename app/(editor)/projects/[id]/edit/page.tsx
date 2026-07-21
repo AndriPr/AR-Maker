@@ -107,7 +107,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       switch (e.key.toLowerCase()) {
         case 'w': setTransformMode('translate'); break;
         case 'e': setTransformMode('rotate'); break;
-        case 'r': setTransformMode('scale'); break;
+        case 'r': setTransformMode('rotate'); break; // R for rotate in Blender
+        case 's': setTransformMode('scale'); break; // S for scale in Blender
         case 'escape': 
           setSelectedId(null); 
           setMultiSelectedIds([]);
@@ -120,6 +121,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             groupSelectedElements();
+          } else {
+            setTransformMode('translate'); // G for grab in Blender
           }
           break;
         case 'z':
