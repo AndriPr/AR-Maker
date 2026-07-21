@@ -6,7 +6,6 @@ import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
-import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
 
 // Logic Engine Hook
 function useLogicEngine() {
@@ -363,16 +362,16 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
 
+  useHelper(isSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, isSelected ? '#3b82f6' : 'white');
+
   return (
-    <Select enabled={isSelected || isHovered}>
-      <group 
-        ref={groupRef}
-        onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
-        onPointerOut={(e: any) => { setHoveredId(null); }}
-      >
-        {children}
-      </group>
-    </Select>
+    <group 
+      ref={groupRef}
+      onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
+      onPointerOut={(e: any) => { setHoveredId(null); }}
+    >
+      {children}
+    </group>
   );
 }
 
@@ -1516,11 +1515,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         )}
         
         <ProximitySensorEngine />
-        <Selection>
-          <EffectComposer autoClear={false}>
-            <Outline blur visibleEdgeColor={0xffffff} edgeStrength={5} width={1000} />
-          </EffectComposer>
-          <Suspense fallback={null}>
+        <Suspense fallback={null}>
             {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
             {trackingMode === 'face' && (
               <group position={[0, 1, 0]}>
@@ -1539,7 +1534,6 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
               <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
             ))}
           </Suspense>
-        </Selection>
 
         {!simulateMode && (
           <GizmoHelper
