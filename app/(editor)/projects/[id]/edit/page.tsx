@@ -63,6 +63,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const multiSelectedIds = useEditorStore(state => state.multiSelectedIds);
   const setMultiSelectedIds = useEditorStore(state => state.setMultiSelectedIds);
   const groupSelectedElements = useEditorStore(state => state.groupSelectedElements);
+  const reparentElement = useEditorStore(state => state.reparentElement);
   const updateElement = useEditorStore(state => state.updateElement);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
@@ -946,10 +947,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                               const draggedId = e.dataTransfer.getData('text/plain');
                               if (draggedId && draggedId !== el.id) {
                                 if (el.type === 'group_folder') {
-                                  updateElement(draggedId, { parentId: el.id });
+                                  reparentElement(draggedId, el.id);
                                 } else {
                                   // Drop on a non-folder makes it a sibling
-                                  updateElement(draggedId, { parentId: el.parentId });
+                                  reparentElement(draggedId, el.parentId);
                                 }
                               }
                             }}
@@ -2515,7 +2516,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
                     <label className="text-[10px] text-gray-400 font-medium">Grup Induk (Hierarchy)</label>
                     <select 
                       value={selectedElement.parentId || ''}
-                      onChange={(e) => updateElement(selectedElement.id, { parentId: e.target.value || undefined })}
+                      onChange={(e) => reparentElement(selectedElement.id, e.target.value || undefined)}
                       className="w-full bg-[#1a1b1e] text-white text-xs p-2 rounded border border-[#2b2d31] focus:border-pln-blue focus:outline-none"
                     >
                       <option value="">-- Tidak Ada (Root) --</option>

@@ -175,6 +175,7 @@ interface EditorState {
   multiSelectedIds: string[];
   setMultiSelectedIds: (ids: string[]) => void;
   groupSelectedElements: () => void;
+  reparentElement: (childId: string, newParentId: string | undefined) => void;
   handleElementClick: (id: string, shiftKey: boolean) => void;
   
   // Undo/Redo
@@ -410,12 +411,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const firstEl = state.elements.find(e => e.id === allSelected[0]);
     if (!firstEl) return state;
     
+    const selectedElements = state.elements.filter(e => allSelected.includes(e.id));
+    
+    // Calculate the center of all selected elements
+    let sumX = 0, sumY = 0, sumZ = 0;
+    selectedElements.forEach(e => {
+       sumX += e.position[0];
+       sumY += e.position[1];
+       sumZ += e.position[2];
+    });
+    const centerX = sumX / selectedElements.length;
+    const centerY = sumY / selectedElements.length;
+    const centerZ = sumZ / selectedElements.length;
+
     const newGroupId = Math.random().toString(36).substring(2, 9);
     const newGroup: SceneElement = {
       id: newGroupId,
       type: 'group_folder',
       name: 'Group ' + Math.floor(Math.random() * 100),
-      position: [0, 0, 0],
+      position: [centerX, centerY, centerZ],
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
       sceneId: firstEl.sceneId || state.currentSceneId,
@@ -424,7 +438,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     
     const newElements = state.elements.map(el => {
       if (allSelected.includes(el.id)) {
-        return { ...el, parentId: newGroupId };
+        // Offset the child's position relative to the new group's center
+        return { 
+          ...el, 
+          parentId: newGroupId,
+          position: [
+            el.position[0] - centerX,
+            el.position[1] - centerY,
+            el.position[2] - centerZ
+          ] as [number, number, number]
+        };
       }
       return el;
     });
@@ -433,6 +456,42 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       elements: [...newElements, newGroup],
       selectedId: newGroupId,
       multiSelectedIds: [],
+      past: [...state.past, state.elements],
+      future: []
+    };
+  }),
+  reparentElement: (childId, newParentId) => set((state) => {
+    const child = state.elements.find(e => e.id === childId);
+    if (!child || child.parentId === newParentId) return state;
+
+    // Helper to get simple world position
+    const getWorldPos = (elId: string | undefined): [number, number, number] => {
+      let x = 0, y = 0, z = 0;
+      let curr = state.elements.find(e => e.id === elId);
+      while (curr) {
+        x += curr.position[0];
+        y += curr.position[1];
+        z += curr.position[2];
+        curr = state.elements.find(e => e.id === curr!.parentId);
+      }
+      return [x, y, z];
+    };
+
+    const oldWorld = getWorldPos(childId);
+    const newParentWorld = getWorldPos(newParentId);
+
+    const newLocal: [number, number, number] = [
+      oldWorld[0] - newParentWorld[0],
+      oldWorld[1] - newParentWorld[1],
+      oldWorld[2] - newParentWorld[2]
+    ];
+
+    const newElements = state.elements.map(el => 
+      el.id === childId ? { ...el, parentId: newParentId, position: newLocal } : el
+    );
+
+    return {
+      elements: newElements,
       past: [...state.past, state.elements],
       future: []
     };
