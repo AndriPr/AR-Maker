@@ -390,6 +390,83 @@ function AnimatedElementWrapper({ element, children }: { element: any, children:
   );
 }
 
+
+function useTransformLogic(element: any, isSelected: boolean, transformRef: React.MutableRefObject<any>) {
+  const updateElement = useEditorStore(state => state.updateElement);
+  
+  useEffect(() => {
+    if (transformRef.current && isSelected) {
+      const controls = transformRef.current;
+      let startPos = [0,0,0];
+      
+      const callbackStart = (e: any) => {
+         const obj = controls.object;
+         if (obj) {
+            startPos = [obj.position.x, obj.position.y, obj.position.z];
+         }
+      };
+
+      const callbackChange = (e: any) => {
+         if (!controls.dragging) return;
+         const obj = controls.object;
+         if (!obj) return;
+         
+         const dx = obj.position.x - startPos[0];
+         const dy = obj.position.y - startPos[1];
+         const dz = obj.position.z - startPos[2];
+         
+         const state = useEditorStore.getState();
+         if (state.multiSelectedIds.length > 0) {
+            state.multiSelectedIds.forEach(id => {
+               if (id === element.id) return; 
+               const ref = viewportElementRefs[id];
+               const el = state.elements.find(el => el.id === id);
+               if (ref && el) {
+                  ref.position.set(
+                    el.position[0] + dx,
+                    el.position[1] + dy,
+                    el.position[2] + dz
+                  );
+               }
+            });
+         }
+      };
+
+      const callbackEnd = (e: any) => {
+        const obj = controls.object;
+        if (obj) {
+          const dx = obj.position.x - element.position[0];
+          const dy = obj.position.y - element.position[1];
+          const dz = obj.position.z - element.position[2];
+          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
+          }
+          
+          updateElement(element.id, {
+            position: [obj.position.x, obj.position.y, obj.position.z],
+            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
+          });
+        }
+      };
+
+      const onChangeEnd = (e: any) => {
+         if (e.value) callbackStart(e);
+         else callbackEnd(e);
+      };
+
+      controls.addEventListener('dragging-changed', onChangeEnd);
+      controls.addEventListener('change', callbackChange);
+      
+      return () => {
+         controls.removeEventListener('dragging-changed', onChangeEnd);
+         controls.removeEventListener('change', callbackChange);
+      };
+    }
+  }, [isSelected, element.id, updateElement]);
+}
+
+
 function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
   const transformRef = useRef<any>(null);
   const groupRef = useRef<THREE.Group>(null);
@@ -400,30 +477,7 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const isSelected = selectedId === element.id;
   const isSnapping = useEditorStore(state => state.isSnapping);
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; // dragging started
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const shapeObj = (
     <group ref={groupRef}>
@@ -464,6 +518,10 @@ function ShapeElement({ element, mode }: { element: any, mode: 'translate' | 'ro
 
   return (
     <group
+      ref={(r) => {
+        if (r) viewportElementRefs[element.id] = r;
+        else delete viewportElementRefs[element.id];
+      }}
       position={element.position as [number, number, number]}
       rotation={element.rotation as [number, number, number]}
       scale={element.scale as [number, number, number]}
@@ -536,30 +594,7 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     return clone;
   }, [scene, element.customMaterials]);
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; // dragging started
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   useEffect(() => {
     if (clonedScene && !element.targetMeshName) {
@@ -725,30 +760,7 @@ function TextElement({ element, mode }: { element: any, mode: 'translate' | 'rot
     };
   }, [element.apiEndpoint, element.apiJsonPath]);
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; // dragging started
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const fontUrl2D = element.fontFamily && element.fontFamily.startsWith('http') 
     ? element.fontFamily 
@@ -850,30 +862,7 @@ function UIButtonElement({ element, mode }: { element: any, mode: 'translate' | 
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; 
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const handleAction = useActionHandler();
 
@@ -935,30 +924,7 @@ function AudioElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; 
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const audioObj = (
     <AnimatedElementWrapper element={element}>
@@ -1022,30 +988,7 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const width = aspect > 1 ? 3 : 3 * aspect;
   const height = aspect > 1 ? 3 / aspect : 3;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; 
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const imageObj = (
     <AnimatedElementWrapper element={element}>
@@ -1079,7 +1022,14 @@ function ImageElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   }
 
   return (
-    <group position={element.position as [number, number, number]} rotation={element.rotation as [number, number, number]} scale={element.scale as [number, number, number]}>
+    <group
+      ref={(r) => {
+        if (r) viewportElementRefs[element.id] = r;
+        else delete viewportElementRefs[element.id];
+      }}
+      position={element.position as [number, number, number]}
+      rotation={element.rotation as [number, number, number]}
+      scale={element.scale as [number, number, number]}>
       {imageObj}
     </group>
   );
@@ -1094,30 +1044,7 @@ function VideoElement({ element, mode }: { element: any, mode: 'translate' | 'ro
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; 
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const videoObj = (
     <AnimatedElementWrapper element={element}>
@@ -1176,30 +1103,7 @@ function SparklesElement({ element, mode }: { element: any, mode: 'translate' | 
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; 
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const sparklesObj = (
     <AnimatedElementWrapper element={element}>
@@ -1264,30 +1168,7 @@ function HotspotElement({ element, mode }: { element: any, mode: 'translate' | '
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return; 
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const handleAction = useActionHandler();
 
@@ -1468,30 +1349,7 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
   const isSnapping = useEditorStore(state => state.isSnapping);
   const isSelected = selectedId === element.id;
 
-  useEffect(() => {
-    if (transformRef.current && isSelected) {
-      const controls = transformRef.current;
-      const callback = (e: any) => {
-        if (e.value) return;
-        const obj = controls.object;
-        if (obj) {
-          const dx = obj.position.x - element.position[0];
-          const dy = obj.position.y - element.position[1];
-          const dz = obj.position.z - element.position[2];
-          if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          updateElement(element.id, {
-            position: [obj.position.x, obj.position.y, obj.position.z],
-            rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
-            scale: [obj.scale.x, obj.scale.y, obj.scale.z]
-          });
-        }
-      };
-      controls.addEventListener('dragging-changed', callback);
-      return () => controls.removeEventListener('dragging-changed', callback);
-    }
-  }, [isSelected, element.id, updateElement]);
+  useTransformLogic(element, isSelected, transformRef);
 
   const groupObj = (
     <group ref={groupRef}>
@@ -1529,6 +1387,10 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
 
   return (
     <group
+      ref={(r) => {
+        if (r) viewportElementRefs[element.id] = r;
+        else delete viewportElementRefs[element.id];
+      }}
       position={element.position as [number, number, number]}
       rotation={element.rotation as [number, number, number]}
       scale={element.scale as [number, number, number]}
@@ -1537,6 +1399,8 @@ function GroupFolderElement({ element, mode, children }: { element: any, mode: '
     </group>
   );
 }
+
+export const viewportElementRefs: Record<string, THREE.Group> = {};
 
 export default function EditorViewport({ transformMode = 'translate', simulateMode = false }: { transformMode?: 'translate' | 'rotate' | 'scale', simulateMode?: boolean }) {
   const isSimulating = simulateMode || useEditorStore(state => state.isSimulating);
