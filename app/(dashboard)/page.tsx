@@ -3,6 +3,7 @@
 import { Image, Box, Play, Edit3, Trash2, Plus, QrCode, X, Download, ExternalLink, MoreVertical, Link as LinkIcon, Filter, Copy, LayoutGrid, List, Folder, FolderPlus, Tag, Check, FolderInput, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
@@ -485,9 +486,20 @@ export default function Dashboard() {
         </div>
 
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard 
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ staggerChildren: 0.1 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {filteredProjects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, ease: "easeOut" }}
+              >
+                <ProjectCard 
                 key={project.id}
                 id={project.id}
                 title={project.title}
@@ -507,8 +519,9 @@ export default function Dashboard() {
                 onMove={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }}
                 activeRole={activeRole}
               />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             <DataTable columns={columns} data={filteredProjects} />
@@ -753,7 +766,11 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
   );
 
   return (
-    <div className="relative">
+    <motion.div 
+      className="relative group"
+      whileHover={{ y: -5 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    >
       {activeRole === 'viewer' ? (
         <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] relative">
           {CardInner}
@@ -826,6 +843,6 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); }}
         ></div>
       )}
-    </div>
+    </motion.div>
   );
 }
