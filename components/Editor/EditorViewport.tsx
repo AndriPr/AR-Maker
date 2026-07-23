@@ -677,20 +677,62 @@ function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'ro
     }
   }, [scene, element.id, element.availableMaterials, updateElement]);
 
-  const { actions } = useAnimations(animations, groupRef);
+  const { actions, mixer } = useAnimations(animations, groupRef);
 
   useEffect(() => {
-    if (previewAnim && previewAnim.targetId === element.id) {
-      if (previewAnim.animationName === '*') {
-        Object.values(actions).forEach(action => action?.reset().play());
-      } else {
-        const action = actions[previewAnim.animationName];
-        if (action) action.reset().play();
+    if (!actions) return;
+
+    // Reset all actions first
+    Object.values(actions).forEach(action => {
+      if (action) {
+        action.stop();
+        action.reset();
       }
-    } else {
-      Object.values(actions).forEach(action => action?.stop());
+    });
+
+    // Determine which animation to play
+    let animToPlay = null;
+    
+    // Priority 1: previewAnim (from clicking Play in panel or Logic Node)
+    if (previewAnim && previewAnim.targetId === element.id) {
+      animToPlay = previewAnim.animationName;
+    } 
+    // Priority 2: Autoplay animation set by user
+    else if (element.autoplayAnimation) {
+      animToPlay = element.autoplayAnimation;
     }
-  }, [previewAnim, actions, element.id]);
+
+    if (animToPlay) {
+      const applySettings = (action: THREE.AnimationAction) => {
+        // Set Speed
+        const speed = element.animationSpeed !== undefined ? element.animationSpeed : 1;
+        action.setEffectiveTimeScale(speed);
+
+        // Set Loop Mode
+        if (element.animationLoopMode === 'once') {
+          action.setLoop(THREE.LoopOnce, 1);
+          action.clampWhenFinished = true;
+        } else if (element.animationLoopMode === 'pingpong') {
+          action.setLoop(THREE.LoopPingPong, Infinity);
+        } else {
+          // Default loop
+          action.setLoop(THREE.LoopRepeat, Infinity);
+        }
+        
+        action.play();
+      };
+
+      if (animToPlay === '*') {
+        Object.values(actions).forEach(action => {
+          if (action) applySettings(action);
+        });
+      } else {
+        const action = actions[animToPlay];
+        if (action) applySettings(action);
+      }
+    }
+  }, [previewAnim, actions, element.id, element.autoplayAnimation, element.animationLoopMode, element.animationSpeed, mixer]);
+
 
   if (!clonedScene) return null;
 

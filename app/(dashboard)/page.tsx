@@ -7,17 +7,29 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import { toast } from 'sonner';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function Dashboard() {
   const router = useRouter();
-  const [projects, setProjects] = useState<any[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, title: string, description: string, onConfirm: () => void}>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeFolderId, setActiveFolderId] = useState<string | null>('ALL');
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  
+  
   const [user, setUser] = useState<any>(null);
   const { activeWorkspace, activeRole, isLoading: workspaceLoading } = useWorkspace();
   const [qrModalData, setQrModalData] = useState<{ id: string, title: string } | null>(null);
@@ -29,7 +41,7 @@ export default function Dashboard() {
 
   // Folders & Multi-Select State
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [folders, setFolders] = useState<any[]>([]);
+  
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
   const [isFolderSidebarOpen, setIsFolderSidebarOpen] = useState(true);
@@ -37,57 +49,47 @@ export default function Dashboard() {
   const [targetFolder, setTargetFolder] = useState("Personal");
   const [projectToMove, setProjectToMove] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!workspaceLoading) {
-      fetchData();
-    }
-  }, [router, activeWorkspace, workspaceLoading]);
+  const { data: { projects = [], folders = [] } = {}, isLoading: loading } = useQuery({
+    queryKey: ['dashboard', activeWorkspace?.id, user?.id],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+        return { projects: [], folders: [] };
+      }
+      setUser(session.user);
 
-  const fetchData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push('/login');
-      return;
-    }
-    setUser(session.user);
+      let projectsQuery = supabase
+        .from('ar_projects')
+        .select('*')
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
 
-    let projectsQuery = supabase
-      .from('ar_projects')
-      .select('*')
-      .eq('is_deleted', false)
-      .order('created_at', { ascending: false });
+      let foldersQuery = supabase
+        .from('folders')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-    let foldersQuery = supabase
-      .from('folders')
-      .select('*')
-      .order('created_at', { ascending: true });
+      if (activeWorkspace) {
+        projectsQuery = projectsQuery.eq('workspace_id', activeWorkspace.id);
+        foldersQuery = foldersQuery.eq('workspace_id', activeWorkspace.id);
+      } else {
+        projectsQuery = projectsQuery.is('workspace_id', null).eq('user_id', session.user.id);
+        foldersQuery = foldersQuery.is('workspace_id', null).eq('user_id', session.user.id);
+      }
 
-    if (activeWorkspace) {
-      projectsQuery = projectsQuery.eq('workspace_id', activeWorkspace.id);
-      foldersQuery = foldersQuery.eq('workspace_id', activeWorkspace.id);
-    } else {
-      projectsQuery = projectsQuery.is('workspace_id', null).eq('user_id', session.user.id);
-      foldersQuery = foldersQuery.is('workspace_id', null).eq('user_id', session.user.id);
-    }
+      const [ { data: projectsData }, { data: folderData } ] = await Promise.all([
+        projectsQuery,
+        foldersQuery
+      ]);
 
-    const [ { data: projectsData, error: projectsError }, { data: folderData } ] = await Promise.all([
-      projectsQuery,
-      foldersQuery
-    ]);
+      return { projects: projectsData || [], folders: folderData || [] };
+    },
+    enabled: !workspaceLoading
+  });
 
-    if (projectsError) {
-      setFetchError(projectsError.message);
-      console.error("Fetch error:", projectsError);
-    }
-
-    if (folderData) {
-      setFolders(folderData);
-    }
-
-    if (projectsData) {
-      setProjects(projectsData);
-    }
-    setLoading(false);
+  const fetchData = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   };
 
   const handleDelete = async (id: string, title: string) => {
@@ -114,7 +116,7 @@ export default function Dashboard() {
   };
 
   const handleDuplicate = async (project: any) => {
-    setLoading(true);
+    
     const newProject = {
       ...project,
       id: undefined,
@@ -162,7 +164,7 @@ export default function Dashboard() {
     }).select().single();
 
     if (data) {
-      setFolders([...folders, data]);
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
     setNewFolderName("");
     setIsCreateFolderModalOpen(false);
@@ -209,8 +211,124 @@ export default function Dashboard() {
   };
   const folderTree = buildFolderTree(null);
 
-  if (loading) {
-    return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat proyek...</div>;
+  
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: "title",
+      header: "Proyek",
+      cell: ({ row }) => {
+        const project = row.original;
+        return (
+          <div className="flex items-center gap-3 pl-2">
+            <div className="absolute left-2 top-1/2 -translate-y-1/2">
+              <input 
+                type="checkbox"
+                checked={selectedProjects.includes(project.id)}
+                onChange={() => handleToggleSelect(project.id)}
+                className="w-4 h-4 text-pln-blue border-gray-300 rounded focus:ring-pln-blue cursor-pointer"
+              />
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center ml-6">
+              {project.target_image_url ? (
+                <img src={project.target_image_url} className="w-full h-full object-cover" />
+              ) : (
+                <Box size={16} className="text-gray-400" />
+              )}
+            </div>
+            <div>
+              <Link href={`/projects/${project.id}/edit`} className="font-bold text-gray-900 hover:text-pln-blue transition-colors line-clamp-1">{project.title}</Link>
+              <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><Image size={10}/> Image Tracking</span>
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "folder_id",
+      header: "Folder",
+      cell: ({ row }) => {
+        const project = row.original;
+        const folder = folders.find(f => f.id === project.folder_id);
+        return folder && folder.name !== 'Personal' ? (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
+            <Folder size={12} /> {folder.name}
+          </span>
+        ) : (
+          <span className="text-gray-400 text-xs">-</span>
+        );
+      },
+    },
+    {
+      accessorKey: "is_published",
+      header: "Status",
+      cell: ({ row }) => {
+        const project = row.original;
+        return (
+          <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${project.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            {project.is_published ? 'Published' : 'Draft'}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "views",
+      header: "Views",
+      cell: ({ row }) => {
+        return <div className="text-center font-mono text-sm text-gray-600">{row.original.views || 0}</div>;
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: "Tgl Dibuat",
+      cell: ({ row }) => {
+        return <div className="text-sm text-gray-500">{new Date(row.original.created_at).toLocaleDateString('id-ID')}</div>;
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Aksi</div>,
+      cell: ({ row }) => {
+        const project = row.original;
+        return (
+          <div className="flex items-center justify-end gap-2 pr-2">
+            <button onClick={() => setQrModalData({ id: project.id, title: project.title })} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="QR Code">
+              <QrCode size={16} />
+            </button>
+            {activeRole !== 'viewer' && (
+              <Link href={`/projects/${project.id}/edit`} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Edit">
+                <Edit3 size={16} />
+              </Link>
+            )}
+            <button onClick={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Pindahkan">
+              <FolderInput size={16} />
+            </button>
+            {activeRole === 'admin' && (
+              <button onClick={() => handleDelete(project.id, project.title)} className="p-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors" title="Hapus">
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
+  if (loading || workspaceLoading) {
+    return (
+      <div className="space-y-8 flex flex-col md:flex-row gap-8">
+        <div className="w-full md:w-56 shrink-0 space-y-4">
+          <div className="h-10 bg-gray-100 rounded-xl animate-pulse"></div>
+          <div className="h-10 bg-gray-100 rounded-xl animate-pulse"></div>
+          <div className="h-40 bg-gray-100 rounded-xl animate-pulse mt-8"></div>
+        </div>
+        <div className="flex-1 space-y-6">
+          <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1,2,3,4,5,6].map(i => <div key={i} className="h-64 bg-gray-100 rounded-3xl animate-pulse"></div>)}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -271,11 +389,7 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 space-y-6 min-w-0">
-        {fetchError && (
-          <div className="bg-red-50 text-red-500 p-4 rounded-xl border border-red-200">
-            <strong>Error Fetching Projects:</strong> {fetchError}
-          </div>
-        )}
+        
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 text-2xl font-bold text-gray-900 mb-1">
@@ -397,90 +511,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-bold tracking-wider">
-                    <th className="p-4 pl-6">Proyek</th>
-                    <th className="p-4">Folder</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-center">Views</th>
-                    <th className="p-4">Tgl Dibuat</th>
-                    <th className="p-4 pr-6 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {filteredProjects.map(project => (
-                    <tr key={project.id} className={`transition-colors ${selectedProjects.includes(project.id) ? 'bg-blue-50/50' : 'hover:bg-blue-50/30'}`}>
-                      <td className="p-4 pl-6 relative">
-                        <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                          <input 
-                            type="checkbox"
-                            checked={selectedProjects.includes(project.id)}
-                            onChange={() => handleToggleSelect(project.id)}
-                            className="w-4 h-4 text-pln-blue border-gray-300 rounded focus:ring-pln-blue cursor-pointer"
-                          />
-                        </div>
-                        <div className="flex items-center gap-3 pl-4">
-                          <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
-                            {project.target_image_url ? (
-                              <img src={project.target_image_url} className="w-full h-full object-cover" />
-                            ) : (
-                              <Box size={16} className="text-gray-400" />
-                            )}
-                          </div>
-                          <div>
-                            <Link href={`/projects/${project.id}/edit`} className="font-bold text-gray-900 hover:text-pln-blue transition-colors line-clamp-1">{project.title}</Link>
-                            <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><Image size={10}/> Image Tracking</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        {(folders.find(f => f.id === project.folder_id)?.name && folders.find(f => f.id === project.folder_id)?.name !== 'Personal') ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
-                            <Folder size={12} /> {folders.find(f => f.id === project.folder_id)?.name}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${project.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {project.is_published ? 'Published' : 'Draft'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center font-mono text-sm text-gray-600">{project.views || 0}</td>
-                      <td className="p-4 text-sm text-gray-500">{new Date(project.created_at).toLocaleDateString('id-ID')}</td>
-                      <td className="p-4 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => setQrModalData({ id: project.id, title: project.title })} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="QR Code">
-                            <QrCode size={16} />
-                          </button>
-                          {activeRole !== 'viewer' && (
-                            <Link href={`/projects/${project.id}/edit`} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Edit">
-                              <Edit3 size={16} />
-                            </Link>
-                          )}
-                          <button onClick={() => { setProjectToMove(project.id); setIsMoveModalOpen(true); }} className="p-2 text-gray-400 hover:text-pln-blue bg-white hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors" title="Pindahkan">
-                            <FolderInput size={16} />
-                          </button>
-                          {activeRole === 'admin' && (
-                            <button onClick={() => handleDelete(project.id, project.title)} className="p-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors" title="Hapus">
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredProjects.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500 text-sm">Tidak ada proyek yang ditemukan.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable columns={columns} data={filteredProjects} />
           </div>
         )}
 
@@ -650,7 +681,7 @@ function ProjectCard({ id, title, type, date, status, views, icon, targetImageUr
     e.preventDefault();
     e.stopPropagation();
     navigator.clipboard.writeText(`${window.location.origin}/ar-viewer/${id}`);
-    alert('Link berhasil disalin!');
+    toast.success('Link berhasil disalin!');
     setIsMenuOpen(false);
   };
 

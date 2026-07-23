@@ -2273,52 +2273,91 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
                       {/* 3D Model Animations Display */}
                       {selectedElement.type === '3d_model' && selectedElement.availableAnimations && selectedElement.availableAnimations.length > 0 && (
-                        <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
+                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
                           <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Play size={12} className="text-pln-yellow"/> Animasi Bawaan Terdeteksi
+                            <Play size={12} className="text-pln-yellow"/> Animasi Bawaan (Blender/GLTF)
                           </h4>
                           
-                          <div className="flex flex-col gap-2">
-                            <button 
-                              onClick={() => {
-                                if (previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === '*') {
-                                  setPreviewAnimationData(null);
-                                } else {
-                                  setPreviewAnimationData({ targetId: selectedElement.id, animationName: '*' });
-                                }
-                              }}
-                              className={`flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-colors border ${
-                                previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === '*' 
-                                ? 'bg-pln-yellow/20 border-pln-yellow text-pln-yellow' 
-                                : 'bg-[#1a1b1e] hover:bg-gray-700 border-gray-700 text-gray-300'
-                              }`}
+                          {/* Autoplay Selection */}
+                          <div className="space-y-2">
+                            <label className="text-[10px] text-gray-400">Autoplay Animasi (Default)</label>
+                            <select 
+                              value={selectedElement.autoplayAnimation || ""}
+                              onChange={(e) => updateElement(selectedElement.id, { autoplayAnimation: e.target.value })}
+                              className="w-full bg-[#1a1b1e] text-xs text-gray-300 border border-gray-700 rounded p-1.5 focus:border-pln-blue outline-none"
                             >
-                              <span>✨ Mainkan Semua Bersamaan</span>
-                              {previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === '*' ? <span className="text-[10px]">🛑 Stop</span> : <Play size={10} />}
-                            </button>
-
-                            {selectedElement.availableAnimations.map(anim => (
-                              <button 
-                                key={anim}
-                                onClick={() => {
-                                  if (previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim) {
-                                    setPreviewAnimationData(null);
-                                  } else {
-                                    setPreviewAnimationData({ targetId: selectedElement.id, animationName: anim });
-                                  }
-                                }}
-                                className={`flex items-center justify-between px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
-                                  previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim 
-                                  ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
-                                  : 'bg-[#1a1b1e]/50 hover:bg-gray-700 border-gray-700/50 text-gray-400'
-                                }`}
-                              >
-                                <span className="truncate pr-2">{anim}</span>
-                                {previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim ? <span className="text-[10px]">🛑 Stop</span> : <Play size={10} />}
-                              </button>
-                            ))}
+                              <option value="">-- Tidak ada (Idle) --</option>
+                              <option value="*">Mainkan Semua Bersamaan</option>
+                              {selectedElement.availableAnimations.map(anim => (
+                                <option key={anim} value={anim}>{anim}</option>
+                              ))}
+                            </select>
+                            <p className="text-[9px] text-gray-500">Animasi ini akan langsung diputar saat objek dirender di AR.</p>
                           </div>
-                          <p className="text-[10px] text-gray-500">Klik tombol di atas untuk melihat *preview* animasi di kanvas. Buat "UI Button" untuk memicunya di AR.</p>
+
+                          {/* Loop Mode */}
+                          <div className="space-y-2">
+                            <label className="text-[10px] text-gray-400">Mode Pengulangan (Loop)</label>
+                            <div className="flex gap-2">
+                              {['loop', 'once', 'pingpong'].map(mode => (
+                                <button
+                                  key={mode}
+                                  onClick={() => updateElement(selectedElement.id, { animationLoopMode: mode as any })}
+                                  className={`flex-1 py-1.5 text-[10px] font-medium rounded border transition-colors ${
+                                    (selectedElement.animationLoopMode || 'loop') === mode
+                                      ? 'bg-pln-yellow/20 border-pln-yellow text-pln-yellow'
+                                      : 'bg-[#1a1b1e] border-gray-700 text-gray-400 hover:bg-gray-700'
+                                  }`}
+                                >
+                                  {mode === 'loop' ? 'Ulang Terus' : mode === 'once' ? '1x Saja' : 'Maju Mundur'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Animation Speed */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <label className="text-[10px] text-gray-400">Kecepatan (Time Scale)</label>
+                              <span className="text-[10px] text-gray-300">{selectedElement.animationSpeed || 1}x</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0.1"
+                              max="3"
+                              step="0.1"
+                              value={selectedElement.animationSpeed || 1}
+                              onChange={(e) => updateElement(selectedElement.id, { animationSpeed: parseFloat(e.target.value) })}
+                              className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-pln-yellow"
+                            />
+                          </div>
+
+                          {/* Preview Manual */}
+                          <div className="pt-2">
+                            <label className="text-[10px] text-gray-400 block mb-2">Uji Coba Manual</label>
+                            <div className="flex flex-col gap-2">
+                              {selectedElement.availableAnimations.map(anim => (
+                                <button 
+                                  key={anim}
+                                  onClick={() => {
+                                    if (previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim) {
+                                      setPreviewAnimationData(null);
+                                    } else {
+                                      setPreviewAnimationData({ targetId: selectedElement.id, animationName: anim });
+                                    }
+                                  }}
+                                  className={`flex items-center justify-between px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
+                                    previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim 
+                                    ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                                    : 'bg-[#1a1b1e]/50 hover:bg-gray-700 border-gray-700/50 text-gray-400'
+                                  }`}
+                                >
+                                  <span className="truncate pr-2">{anim}</span>
+                                  {previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim ? <span className="text-[10px]">🛑 Stop</span> : <Play size={10} />}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       )}
 

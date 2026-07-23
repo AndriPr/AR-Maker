@@ -50,6 +50,11 @@ export interface SceneElement {
   
   // Interactivity Properties
   availableAnimations?: string[]; // Extracted from 3D model GLTF
+  // Phase 4: Advanced Animations
+  autoplayAnimation?: string;
+  animationLoopMode?: 'loop' | 'once' | 'pingpong';
+  animationSpeed?: number;
+
   availableMaterials?: string[];  // Extracted material names from 3D model
   customMaterials?: Record<string, string>; // Material name -> hex color
   buttonText?: string;            // For UI button
