@@ -418,6 +418,55 @@ export function LeftPanelExpanded({
         </>
       )}
 
+
+      {leftPanelTab === 'prefabs' && (
+        <>
+          <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
+            <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">TEMPLATES</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar min-h-0 bg-[#202227]">
+            <button 
+              onClick={() => {
+                const sceneId = currentSceneId || undefined;
+                addElement({ type: '3d_shape', shapeType: 'plane', name: 'Latar Kartu', position: [0, 0, 0], rotation: [0, 0, 0], scale: [3.5, 2, 1], sceneId, color: '#2c3e50' });
+                addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Profil', position: [-1, 0, 0.05], rotation: [0, 0, 0], scale: [1.2, 1.2, 1], sceneId, color: '#ecf0f1' });
+                addElement({ type: '3d_text', name: 'Nama Anda', content: 'Nama Anda', position: [0, 0.3, 0.05], rotation: [0, 0, 0], scale: [0.6, 0.6, 0.6], sceneId, color: '#ffffff' });
+                addElement({ type: '3d_text', name: 'Jabatan', content: 'Jabatan / Pekerjaan', position: [0, -0.1, 0.05], rotation: [0, 0, 0], scale: [0.3, 0.3, 0.3], sceneId, color: '#3498db' });
+                addElement({ type: 'ui_button', name: 'Tombol Website', buttonText: 'Kunjungi Website', actionTargetId: '', actionAnimation: '', position: [0.3, -0.6, 0.05], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8], sceneId });
+              }}
+              className="w-full bg-[#1a1b1e] border border-[#2b2d31] p-3 rounded-lg flex flex-col items-center gap-2 hover:border-pln-blue transition-colors group text-left"
+            >
+              <div className="w-full aspect-video bg-[#2b2d31] rounded flex items-center justify-center text-gray-500 group-hover:bg-pln-blue/10 group-hover:text-pln-blue transition-colors">
+                <Box size={32} />
+              </div>
+              <div className="w-full">
+                <div className="text-white text-xs font-bold">Kartu Nama AR</div>
+                <div className="text-gray-400 text-[10px]">Teks Nama, Jabatan, dan Tombol Website</div>
+              </div>
+            </button>
+            <button 
+              onClick={() => {
+                const sceneId = currentSceneId || undefined;
+                addElement({ type: '3d_shape', shapeType: 'plane', name: 'Latar Undangan', position: [0, 0, -0.1], rotation: [0, 0, 0], scale: [4, 3, 1], sceneId, color: '#fff0f5' });
+                addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 1', position: [-1.2, 0.2, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#ffcccc' });
+                addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Utama', position: [0, 0.2, 0.1], rotation: [0, 0, 0], scale: [1.2, 1.8, 1], sceneId, color: '#ffffff' });
+                addElement({ type: '3d_shape', shapeType: 'plane', name: 'Foto Mempelai 2', position: [1.2, 0.2, 0], rotation: [0, 0, 0], scale: [1, 1.5, 1], sceneId, color: '#ccffcc' });
+                addElement({ type: '3d_text', name: 'Nama Mempelai', content: 'Romeo & Juliet', position: [0, -1, 0.05], rotation: [0, 0, 0], scale: [0.7, 0.7, 0.7], sceneId, color: '#d35400' });
+                addElement({ type: '3d_text', name: 'Tanggal', content: 'Minggu, 12 Desember 2026', position: [0, -1.4, 0.05], rotation: [0, 0, 0], scale: [0.3, 0.3, 0.3], sceneId, color: '#7f8c8d' });
+              }}
+              className="w-full bg-[#1a1b1e] border border-[#2b2d31] p-3 rounded-lg flex flex-col items-center gap-2 hover:border-pln-blue transition-colors group text-left"
+            >
+              <div className="w-full aspect-video bg-[#2b2d31] rounded flex items-center justify-center text-gray-500 group-hover:bg-pln-blue/10 group-hover:text-pln-blue transition-colors">
+                <ImageIcon size={32} />
+              </div>
+              <div className="w-full">
+                <div className="text-white text-xs font-bold">Galeri Foto</div>
+                <div className="text-gray-400 text-[10px]">3 Frame Foto Melayang berdampingan</div>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
     </aside>
   );
 }
