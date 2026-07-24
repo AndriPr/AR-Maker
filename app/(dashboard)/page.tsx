@@ -294,16 +294,14 @@ export default function Dashboard() {
       cell: ({ row }) => {
         const project = row.original;
         return (
-          <div className="flex items-center gap-3 pl-2">
-            <div className="absolute left-2 top-1/2 -translate-y-1/2">
-              <input 
-                type="checkbox"
-                checked={selectedProjects.includes(project.id)}
-                onChange={() => handleToggleSelect(project.id)}
-                className="w-4 h-4 text-pln-blue border-gray-300 rounded focus:ring-pln-blue cursor-pointer"
-              />
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center ml-6">
+          <div className="flex items-center gap-3 pl-2 relative">
+            <input 
+              type="checkbox"
+              checked={selectedProjects.includes(project.id)}
+              onChange={() => handleToggleSelect(project.id)}
+              className="w-4 h-4 text-pln-blue border-gray-300 rounded focus:ring-pln-blue cursor-pointer shrink-0"
+            />
+            <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
               {project.target_image_url ? (
                 <img src={project.target_image_url} className="w-full h-full object-cover" />
               ) : (
