@@ -496,13 +496,24 @@ export default function Dashboard() {
             
             {/* Bulk Actions */}
             {selectedProjects.length > 0 && (
-              <button 
-                onClick={() => { setProjectToMove(null); setIsMoveModalOpen(true); }}
-                className="bg-pln-blue text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-500/20 hover:bg-pln-blue-dark transition-colors flex items-center gap-2 animate-in fade-in zoom-in duration-200"
-              >
-                <FolderInput size={16} />
-                Pindahkan ({selectedProjects.length})
-              </button>
+              <>
+                <button 
+                  onClick={() => { setProjectToMove(null); setIsMoveModalOpen(true); }}
+                  className="bg-pln-blue text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-500/20 hover:bg-pln-blue-dark transition-colors flex items-center gap-2 animate-in fade-in zoom-in duration-200"
+                >
+                  <FolderInput size={16} />
+                  Pindahkan ({selectedProjects.length})
+                </button>
+                {activeRole === 'admin' && (
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="bg-red-50 text-red-600 border border-red-100 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-red-100 transition-colors flex items-center gap-2 animate-in fade-in zoom-in duration-200"
+                  >
+                    <Trash2 size={16} />
+                    Hapus ({selectedProjects.length})
+                  </button>
+                )}
+              </>
             )}
             <select
               value={filterStatus}
