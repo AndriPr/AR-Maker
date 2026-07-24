@@ -22,6 +22,7 @@ import { RightPanel } from '@/components/Editor/Panels/RightPanel';
 import { LeftToolbar } from '@/components/Editor/Panels/LeftToolbar';
 import { LeftPanelExpanded } from '@/components/Editor/Panels/LeftPanelExpanded';
 import { EditorHeader } from '@/components/Editor/EditorHeader';
+import { useEditorShortcuts } from '@/hooks/useEditorShortcuts';
 const EditorViewport = dynamic(() => import('@/components/Editor/EditorViewport'), { ssr: false });
 
 export default function AREditor({ params }: { params: Promise<{ id: string }> }) {
@@ -106,89 +107,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
   // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
-        return;
-      }
-      
-      switch (e.key.toLowerCase()) {
-        case 'w': setTransformMode('translate'); break;
-        case 'e': setTransformMode('rotate'); break;
-        case 'r': setTransformMode('rotate'); break; // R for rotate in Blender
-        case 's': setTransformMode('scale'); break; // S for scale in Blender
-        case 'escape': 
-          setSelectedId(null); 
-          setMultiSelectedIds([]);
-          break;
-        case 'x':
-        case 'delete':
-        case 'backspace':
-          if (selectedId) removeElement(selectedId);
-          break;
-        case 'g':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            groupSelectedElements();
-          } else {
-            setTransformMode('translate'); // G for grab in Blender
-          }
-          break;
-        case 'z':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            if (e.shiftKey) redo();
-            else undo();
-          }
-          break;
-        case 'y':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            redo();
-          }
-          break;
-        case 'a':
-          if (e.altKey) {
-            setSelectedId(null);
-            setMultiSelectedIds([]);
-          } else {
-             const allIds = elements.map(el => el.id);
-             setMultiSelectedIds(allIds);
-          }
-          break;
-        case 'd':
-          if (e.shiftKey && selectedId) {
-            e.preventDefault();
-            duplicateElement(selectedId);
-          }
-          break;
-        case '5':
-          setIsOrthographic(!isOrthographic);
-          break;
-        case 'h':
-          if (e.altKey) {
-             elements.forEach(el => updateElement(el.id, { isHidden: false }));
-          } else if (selectedId) {
-             const el = elements.find(el => el.id === selectedId);
-             if (el) updateElement(selectedId, { isHidden: !el.isHidden });
-          }
-          break;
-        case 'f':
-        case '.':
-          if (selectedId) {
-            const el = elements.find(el => el.id === selectedId);
-            if (el && el.position) {
-              setCameraFocusTarget(el.position as [number, number, number]);
-            }
-          }
-          break;
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements, elements, duplicateElement, isOrthographic, setIsOrthographic, updateElement, setCameraFocusTarget]);
+  useEditorShortcuts(setTransformMode);
 
   // Auto-open right panel when an element is selected
   useEffect(() => {

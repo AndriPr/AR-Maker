@@ -3,6 +3,8 @@
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Canvas, useThree } from '@react-three/fiber';
+import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
+import { useEditorStore } from '@/lib/store';
 import { useGLTF, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -165,6 +167,22 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
 
   if (!project) return <div className="text-white flex items-center justify-center h-full bg-gray-900">Memuat 3D Canvas...</div>;
 
+  
+  const setElements = useEditorStore(state => state.setElements);
+
+  const setIsSimulating = useEditorStore(state => state.setIsSimulating);
+  useEffect(() => {
+    setIsSimulating(true);
+  }, [setIsSimulating]);
+
+  const elements = useEditorStore(state => state.elements);
+  
+  useEffect(() => {
+    if (project && project.scene_data && project.scene_data.elements) {
+      setElements(project.scene_data.elements);
+    }
+  }, [project, setElements]);
+
   const allElements = project.scene_data?.elements || [];
   const currentElements = allElements.filter((el: any) => !el.sceneId || el.sceneId === activeSceneId);
 
@@ -242,37 +260,15 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         
         {/* Konten 3D - ThreeAdapter dari MultiSet akan otomatis menyesuaikan ruang origin (0,0,0) agar pas dengan objek di dunia nyata */}
         <group position={[0, 0, 0]}> 
-          {currentElements.map((el: any) => {
-            if (el.type === '3d_model' && el.url) {
-              return (
-                <Model 
-                  key={el.id}
-                  url={el.url}
-                  position={el.position}
-                  rotation={el.rotation}
-                  scale={el.scale}
-                  onClick={(e: any) => handleElementClick(e, el)}
-                />
-              );
-            }
-            if (el.type === '3d_text') {
-              return (
-                <Text
-                  key={el.id}
-                  position={el.position}
-                  rotation={el.rotation}
-                  scale={el.scale}
-                  color={el.color || 'white'}
-                  anchorX="center"
-                  anchorY="middle"
-                  onClick={(e: any) => handleElementClick(e, el)}
-                >
-                  {el.content}
-                </Text>
-              );
-            }
-            return null;
-          })}
+          
+          {currentElements.filter((el: any) => el.parentId === 'root' || !el.parentId).map((el: any) => (
+            <RecursiveNode 
+              key={el.id} 
+              element={el} 
+              elements={allElements} 
+              transformMode="translate" 
+            />
+          ))}
         </group>
       </Canvas>
     </div>
