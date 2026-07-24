@@ -3,7 +3,7 @@ import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Tra
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {
   const pathname = usePathname();
@@ -47,7 +47,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
                 <ChevronsUpDown size={14} className="text-gray-400 shrink-0" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-xl" align="start">
-              <DropdownMenuLabel className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Switch Workspace</DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Switch Workspace</DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               {workspaces.map(ws => (
                 <DropdownMenuItem 
