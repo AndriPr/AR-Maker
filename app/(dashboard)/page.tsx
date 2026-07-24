@@ -194,6 +194,20 @@ export default function Dashboard() {
     setSelectedProjects(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   };
 
+  const handleBulkDelete = async () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Proyek Masal',
+      description: `Apakah Anda yakin ingin menghapus ${selectedProjects.length} proyek terpilih?`,
+      onConfirm: async () => {
+        await supabase.from('ar_projects').update({ is_deleted: true }).in('id', selectedProjects);
+        toast.success(`${selectedProjects.length} proyek berhasil dihapus.`);
+        setSelectedProjects([]);
+        fetchData();
+      }
+    });
+  };
+
   const handleBulkMove = async () => {
     if (!targetFolder.trim()) return; // Here targetFolder is a folder ID or 'PERSONAL'
     const finalTargetId = targetFolder === 'PERSONAL' ? null : targetFolder;
