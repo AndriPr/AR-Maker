@@ -23,6 +23,7 @@ import { LeftToolbar } from '@/components/Editor/Panels/LeftToolbar';
 import { LeftPanelExpanded } from '@/components/Editor/Panels/LeftPanelExpanded';
 import { EditorHeader } from '@/components/Editor/EditorHeader';
 import { useEditorShortcuts } from '@/hooks/useEditorShortcuts';
+import { toast } from 'sonner';
 const EditorViewport = dynamic(() => import('@/components/Editor/EditorViewport'), { ssr: false });
 
 export default function AREditor({ params }: { params: Promise<{ id: string }> }) {
@@ -262,9 +263,9 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         
       if (error) throw error;
       setLastSaved(new Date());
-      if (!silent) alert('Draft berhasil disimpan!');
+      if (!silent) toast.success('Draft berhasil disimpan!');
     } catch (err: any) {
-      if (!silent) alert('Gagal menyimpan: ' + err.message);
+      if (!silent) toast.error('Gagal menyimpan: ' + err.message);
     } finally {
       if (!silent) setSaving(false);
     }
@@ -284,7 +285,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const handlePreview = async () => {
     if (!project) return;
     if (!targetImageUrl) {
-      alert("Harap pilih atau unggah Target Image (Marker) terlebih dahulu untuk preview AR!");
+      toast.error("Harap pilih atau unggah Target Image (Marker) terlebih dahulu untuk preview AR!");
       return;
     }
     
@@ -433,6 +434,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
     try {
       setIsUploadingAsset(true);
+      toast.loading('Mengunggah aset...', { id: 'upload' });
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
@@ -444,7 +446,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         .from('assets')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        toast.error('Gagal mengunggah file', { id: 'upload' });
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('assets')
@@ -466,7 +471,11 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        toast.error('Gagal menyimpan data ke database', { id: 'upload' });
+        throw dbError;
+      }
+      toast.success('Aset berhasil diunggah!', { id: 'upload' });
 
       // refresh assets
       fetchEditorData();

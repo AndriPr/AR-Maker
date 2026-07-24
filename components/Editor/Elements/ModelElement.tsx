@@ -208,8 +208,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group position={element.meshPositionOffset || [0, 0, 0]}>
-          <primitive 
-            object={clonedScene} 
+          <primitive dispose={null} object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
               handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false);

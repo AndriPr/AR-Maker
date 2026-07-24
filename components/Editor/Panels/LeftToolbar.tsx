@@ -45,7 +45,7 @@ export function LeftToolbar({
   };
 
   return (
-    <aside className="pointer-events-auto absolute top-14 bottom-0 left-0 z-30 w-12 bg-[#1a1b1e] border-r border-[#2b2d31] flex flex-col items-center py-4 gap-4 shadow-xl overflow-y-auto custom-scrollbar">
+    <aside className="hidden md:flex pointer-events-auto absolute top-14 bottom-0 left-0 z-30 w-12 bg-[#1a1b1e] border-r border-[#2b2d31] flex-col items-center py-4 gap-4 shadow-xl overflow-y-auto custom-scrollbar">
       <button 
         onClick={() => {
           if (isLeftPanelOpen && leftPanelTab === 'hierarchy') setLeftPanelOpen(false);
