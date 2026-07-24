@@ -14,6 +14,7 @@ import { DataTable } from '@/components/ui/data-table';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useDebounce } from '@/hooks/use-debounce';
 import { RenameDialog } from '@/components/dashboard/RenameDialog';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 
