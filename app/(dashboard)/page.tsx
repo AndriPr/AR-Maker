@@ -14,6 +14,8 @@ import { DataTable } from '@/components/ui/data-table';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { RenameDialog } from '@/components/dashboard/RenameDialog';
+import { ProjectCard } from '@/components/dashboard/ProjectCard';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -23,12 +25,22 @@ export default function Dashboard() {
     description: '',
     onConfirm: () => {}
   });
+  const [renameDialog, setRenameDialog] = useState<{isOpen: boolean, id: string, title: string}>({
+    isOpen: false,
+    id: '',
+    title: ''
+  });
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeFolderId, setActiveFolderId] = useState<string | null>('ALL');
+  const [limit, setLimit] = useState(24);
+
+  useEffect(() => {
+    setLimit(24);
+  }, [searchQuery, filterStatus, sortOrder, activeFolderId]);
   
   
   const [user, setUser] = useState<any>(null);
@@ -50,21 +62,52 @@ export default function Dashboard() {
   const [targetFolder, setTargetFolder] = useState("Personal");
   const [projectToMove, setProjectToMove] = useState<string | null>(null);
 
-  const { data: { projects = [], folders = [] } = {}, isLoading: loading } = useQuery({
-    queryKey: ['dashboard', activeWorkspace?.id, user?.id],
+  const { data: { projects = [], folders = [], totalProjects = 0 } = {}, isLoading: loading } = useQuery({
+    queryKey: ['dashboard', activeWorkspace?.id, user?.id, limit, searchQuery, filterStatus, sortOrder, activeFolderId],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');
-        return { projects: [], folders: [] };
+        return { projects: [], folders: [], totalProjects: 0 };
       }
       setUser(session.user);
 
       let projectsQuery = supabase
         .from('ar_projects')
-        .select('*')
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .eq('is_deleted', false);
+
+      if (activeWorkspace) {
+        projectsQuery = projectsQuery.eq('workspace_id', activeWorkspace.id);
+      } else {
+        projectsQuery = projectsQuery.is('workspace_id', null).eq('user_id', session.user.id);
+      }
+
+      if (activeFolderId !== 'ALL') {
+        if (activeFolderId === null) {
+          projectsQuery = projectsQuery.is('folder_id', null);
+        } else {
+          projectsQuery = projectsQuery.eq('folder_id', activeFolderId);
+        }
+      }
+      
+      if (searchQuery) {
+        projectsQuery = projectsQuery.ilike('title', `%${searchQuery}%`);
+      }
+      
+      if (filterStatus === 'published') {
+        projectsQuery = projectsQuery.eq('is_published', true);
+      } else if (filterStatus === 'draft') {
+        projectsQuery = projectsQuery.eq('is_published', false);
+      }
+
+      if (sortOrder === 'newest') {
+        projectsQuery = projectsQuery.order('created_at', { ascending: false });
+      } else {
+        projectsQuery = projectsQuery.order('views', { ascending: false });
+      }
+
+      projectsQuery = projectsQuery.limit(limit);
 
       let foldersQuery = supabase
         .from('folders')
@@ -72,19 +115,17 @@ export default function Dashboard() {
         .order('created_at', { ascending: true });
 
       if (activeWorkspace) {
-        projectsQuery = projectsQuery.eq('workspace_id', activeWorkspace.id);
         foldersQuery = foldersQuery.eq('workspace_id', activeWorkspace.id);
       } else {
-        projectsQuery = projectsQuery.is('workspace_id', null).eq('user_id', session.user.id);
         foldersQuery = foldersQuery.is('workspace_id', null).eq('user_id', session.user.id);
       }
 
-      const [ { data: projectsData }, { data: folderData } ] = await Promise.all([
+      const [ { data: projectsData, count }, { data: folderData } ] = await Promise.all([
         projectsQuery,
         foldersQuery
       ]);
 
-      return { projects: projectsData || [], folders: folderData || [] };
+      return { projects: projectsData || [], folders: folderData || [], totalProjects: count || 0 };
     },
     enabled: !workspaceLoading
   });
@@ -94,24 +135,34 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (confirm(`Apakah Anda yakin ingin memindahkan proyek "${title}" ke Tong Sampah?`)) {
-      await supabase.from('ar_projects').update({ is_deleted: true }).eq('id', id);
-      
-      // Kirim Notifikasi
-      supabase.from('notifications').insert({
-        user_id: user?.id,
-        title: 'Proyek Dihapus',
-        message: `Proyek '${title}' telah dipindahkan ke Tong Sampah.`
-      }).then();
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Proyek',
+      description: `Apakah Anda yakin ingin memindahkan proyek "${title}" ke Tong Sampah?`,
+      onConfirm: async () => {
+        await supabase.from('ar_projects').update({ is_deleted: true }).eq('id', id);
+        
+        // Kirim Notifikasi
+        supabase.from('notifications').insert({
+          user_id: user?.id,
+          title: 'Proyek Dihapus',
+          message: `Proyek '${title}' telah dipindahkan ke Tong Sampah.`
+        }).then();
 
-      fetchData();
-    }
+        toast.success(`Proyek "${title}" dipindahkan ke Tong Sampah.`);
+        fetchData();
+      }
+    });
   };
 
   const handleRename = async (id: string, oldTitle: string) => {
-    const newTitle = prompt("Masukkan judul baru:", oldTitle);
-    if (newTitle && newTitle.trim() !== "" && newTitle !== oldTitle) {
-      await supabase.from('ar_projects').update({ title: newTitle }).eq('id', id);
+    setRenameDialog({ isOpen: true, id, title: oldTitle });
+  };
+
+  const executeRename = async (newTitle: string) => {
+    if (newTitle && newTitle.trim() !== "" && newTitle !== renameDialog.title) {
+      await supabase.from('ar_projects').update({ title: newTitle }).eq('id', renameDialog.id);
+      toast.success('Nama proyek berhasil diubah.');
       fetchData();
     }
   };
@@ -134,6 +185,7 @@ export default function Dashboard() {
       message: `Berhasil menduplikasi proyek '${project.title}'.`
     }).then();
 
+    toast.success(`Proyek "${project.title}" berhasil digandakan.`);
     fetchData();
   };
 
@@ -172,20 +224,27 @@ export default function Dashboard() {
   };
 
   const handleDeleteFolder = async (folderId: string, folderName: string) => {
-    if (confirm(`Hapus folder "${folderName}"? Proyek di dalamnya akan dipindahkan ke "Personal".`)) {
-      // Supabase ON DELETE CASCADE is NOT on ar_projects, it's ON DELETE SET NULL which moves them to Personal (null)!
-      await supabase.from('folders').delete().eq('id', folderId);
-      
-      if (activeFolderId === folderId) setActiveFolderId(null);
-      fetchData();
-    }
+    const subfolders = folders.filter(f => f.parent_id === folderId);
+    const folderProjects = projects.filter(p => p.folder_id === folderId);
+    
+    let desc = `Apakah Anda yakin ingin menghapus folder "${folderName}"? `;
+    if (folderProjects.length > 0) desc += `\n${folderProjects.length} proyek di dalamnya akan dipindahkan ke folder "Personal". `;
+    if (subfolders.length > 0) desc += `\n${subfolders.length} sub-folder akan dihapus secara permanen.`;
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Folder',
+      description: desc,
+      onConfirm: async () => {
+        await supabase.from('folders').delete().eq('id', folderId);
+        toast.success(`Folder "${folderName}" berhasil dihapus.`);
+        if (activeFolderId === folderId) setActiveFolderId(null);
+        fetchData();
+      }
+    });
   };
 
-  const filteredProjects = projects
-    .filter(p => activeFolderId === 'ALL' ? true : p.folder_id === activeFolderId)
-    .filter(p => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter(p => filterStatus === 'all' ? true : filterStatus === 'published' ? p.is_published : !p.is_published)
-    .sort((a, b) => sortOrder === 'newest' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : (b.views || 0) - (a.views || 0));
+
 
   const getBreadcrumbs = (folderId: string | null) => {
     if (folderId === 'ALL' || !folderId) return [];
@@ -492,7 +551,7 @@ export default function Dashboard() {
             transition={{ staggerChildren: 0.1 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
-            {filteredProjects.map((project, index) => (
+            {projects.map((project, index) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -524,8 +583,20 @@ export default function Dashboard() {
           </motion.div>
         ) : (
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <DataTable columns={columns} data={filteredProjects} />
+
+            <DataTable columns={columns} data={projects} />
+            {projects.length < totalProjects && (
+              <div className="flex justify-center mt-4">
+                <button 
+                  onClick={() => setLimit(prev => prev + 24)}
+                  className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-full shadow-sm hover:bg-gray-50 hover:text-pln-blue transition-colors"
+                >
+                  Muat Lebih Banyak
+                </button>
+              </div>
+            )}
           </div>
+
         )}
 
         {projects.length === 0 && viewMode === 'grid' && (
@@ -683,166 +754,25 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      {/* Global Modals */}
+      <ConfirmDialog 
+        isOpen={confirmDialog.isOpen} 
+        onOpenChange={(open) => setConfirmDialog(prev => ({...prev, isOpen: open}))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={confirmDialog.onConfirm}
+        confirmText="Ya, Lanjutkan"
+        cancelText="Batal"
+      />
+
+      <RenameDialog
+        isOpen={renameDialog.isOpen}
+        onOpenChange={(open) => setRenameDialog(prev => ({...prev, isOpen: open}))}
+        title="Ganti Nama Proyek"
+        initialValue={renameDialog.title}
+        onConfirm={executeRename}
+      />
     </div>
   );
 }
 
-function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, folderName, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove, activeRole }: any) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const handleCopyLink = (e: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/ar-viewer/${id}`);
-    toast.success('Link berhasil disalin!');
-    setIsMenuOpen(false);
-  };
-
-  const CardInner = (
-    <>
-      <div 
-        className="h-32 bg-gray-100 relative group-hover:bg-gray-200 transition-colors flex items-center justify-center bg-cover bg-center"
-        style={targetImageUrl ? { backgroundImage: `url(${targetImageUrl})` } : {}}
-      >
-        {targetImageUrl && <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>}
-        
-        <div className="absolute top-3 left-3 z-20">
-          <div 
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(); }}
-            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-pln-blue border-pln-blue text-white shadow-md scale-110' : 'bg-white/90 border-gray-300 text-transparent hover:border-pln-blue opacity-0 group-hover:opacity-100 shadow-sm'}`}
-          >
-            <Check size={14} />
-          </div>
-        </div>
-
-        <div className="absolute top-3 right-3 z-20">
-          <button 
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} 
-            className={`p-1.5 rounded-lg shadow-sm transition-colors ${isMenuOpen || targetImageUrl ? 'bg-white/90 text-gray-700 hover:text-pln-blue' : 'bg-white/90 text-gray-400 hover:text-pln-blue opacity-0 group-hover:opacity-100'}`}
-            title="Menu Opsi"
-          >
-            <MoreVertical size={18} />
-          </button>
-        </div>
-        
-        {!targetImageUrl && icon}
-      </div>
-    
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-gray-900 line-clamp-1 pr-2">{title}</h3>
-        </div>
-        
-        <div className="flex items-center gap-2 text-xs font-medium text-gray-500 mb-4 flex-wrap">
-          <span className="flex items-center gap-1">
-            {icon} {type}
-          </span>
-          {folderName && folderName !== 'Personal' && (
-            <>
-              <span className="text-gray-300">•</span>
-              <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100">
-                <Folder size={10} /> {folderName}
-              </span>
-            </>
-          )}
-        </div>
-        
-        <div className="mt-auto flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className={`text-xs font-bold ${status === 'Published' ? 'text-green-500' : 'text-gray-400'}`}>
-              {status}
-            </span>
-            <span className="text-xs text-gray-400 mt-0.5">Dibuat: {date}</span>
-          </div>
-          {status === 'Published' && (
-            <div className="flex items-center gap-1 text-xs font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
-              <Play size={12} className="text-pln-blue" />
-              {views || 0}
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-
-  return (
-    <motion.div 
-      className="relative group"
-      whileHover={{ y: -5 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    >
-      {activeRole === 'viewer' ? (
-        <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] relative">
-          {CardInner}
-        </div>
-      ) : (
-        <Link href={`/projects/${id}/edit`} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
-          {CardInner}
-        </Link>
-      )}
-
-      {/* Dropdown Menu */}
-      {isMenuOpen && (
-        <div className="absolute top-12 right-3 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-30 transform origin-top-right transition-all">
-          {activeRole !== 'viewer' && (
-            <>
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onRename(); }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-              >
-                <Edit3 size={14} /> Ganti Nama
-              </button>
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDuplicate(); }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-              >
-                <Copy size={14} /> Gandakan Proyek
-              </button>
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onMove(); }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-              >
-                <FolderInput size={14} /> Pindahkan
-              </button>
-            </>
-          )}
-          {status === 'Published' && (
-            <>
-              <button
-                onClick={handleCopyLink}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pln-blue flex items-center gap-2"
-              >
-                <LinkIcon size={14} /> Copy Share Link
-              </button>
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onShowQR(); }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 flex items-center gap-2"
-              >
-                <QrCode size={14} /> Tampilkan QR Code
-              </button>
-            </>
-          )}
-          {activeRole === 'admin' && (
-            <>
-              <div className="h-px bg-gray-100 my-1"></div>
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); onDelete(); }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-              >
-                <Trash2 size={14} /> Hapus Proyek
-              </button>
-            </>
-          )}
-        </div>
-      )}
-      
-      {/* Invisible overlay to close menu when clicking outside */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 z-20"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); }}
-        ></div>
-      )}
-    </motion.div>
-  );
-}
