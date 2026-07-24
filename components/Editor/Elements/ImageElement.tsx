@@ -1,5 +1,5 @@
-import { viewportElementRefs } from '@/lib/viewportRefs';
 "use client";
+import { viewportElementRefs } from '@/lib/viewportRefs';
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
