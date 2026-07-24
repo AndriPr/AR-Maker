@@ -13,6 +13,11 @@ import { useEditorStore } from '@/lib/store';
 import LogicEditor from '@/components/Editor/LogicEditor';
 import TimelinePanel from '@/components/Editor/TimelinePanel';
 
+import { PublishModal } from '@/components/Editor/Modals/PublishModal';
+import { PreviewModal } from '@/components/Editor/Modals/PreviewModal';
+import { WebcamTestModal } from '@/components/Editor/Modals/WebcamTestModal';
+import { SimulatorModal } from '@/components/Editor/Modals/SimulatorModal';
+
 const EditorViewport = dynamic(() => import('@/components/Editor/EditorViewport'), { ssr: false });
 
 export default function AREditor({ params }: { params: Promise<{ id: string }> }) {
@@ -2834,202 +2839,34 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
       </div>
 
-      {/* Publish Success & QR Code Modal */}
-      {showPublishModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <QrCode className="text-pln-blue" size={20} />
-                Proyek Berhasil Di-publish!
-              </h2>
-              <button onClick={() => setShowPublishModal(false)} className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-gray-800">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 flex flex-col items-center">
-              <p className="text-sm text-gray-400 text-center mb-6">
-                Scan QR Code ini menggunakan kamera HP audiens Anda untuk langsung membuka pengalaman AR tanpa harus menginstal aplikasi.
-              </p>
-              
-              <div className="bg-white p-4 rounded-xl shadow-lg mb-6 border-4" style={{ borderColor: brandColor }} id="qr-code-container">
-                <QRCodeSVG 
-                  value={`${window.location.origin}/ar-viewer/${project?.id}`} 
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                  fgColor={brandColor}
-                  imageSettings={brandLogoUrl ? {
-                    src: brandLogoUrl,
-                    x: undefined,
-                    y: undefined,
-                    height: 48,
-                    width: 48,
-                    excavate: true,
-                  } : undefined}
-                />
-              </div>
-
-              <div className="flex flex-col w-full gap-3">
-                <button 
-                  onClick={() => {
-                    const svg = document.querySelector('#qr-code-container svg');
-                    if (!svg) return;
-                    const svgData = new XMLSerializer().serializeToString(svg);
-                    const canvas = document.createElement("canvas");
-                    const ctx = canvas.getContext("2d");
-                    const img = new Image();
-                    img.onload = () => {
-                      canvas.width = img.width;
-                      canvas.height = img.height;
-                      ctx?.drawImage(img, 0, 0);
-                      const pngFile = canvas.toDataURL("image/png");
-                      const downloadLink = document.createElement("a");
-                      downloadLink.download = `QR-${project?.title.replace(/\s+/g, '-')}.png`;
-                      downloadLink.href = `${pngFile}`;
-                      downloadLink.click();
-                    };
-                    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-                  }}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors border border-gray-700"
-                >
-                  <Download size={16} />
-                  Download QR Code (PNG)
-                </button>
-                
-                <Link 
-                  href={`/ar-viewer/${project?.id}`}
-                  target="_blank"
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-pln-blue hover:bg-pln-blue-dark text-white rounded-lg font-bold transition-colors"
-                >
-                  <ExternalLink size={16} />
-                  Buka AR Viewer Sekarang
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+            {showPublishModal && (
+        <PublishModal 
+          onClose={() => setShowPublishModal(false)}
+          project={project}
+          brandColor={brandColor}
+          brandLogoUrl={brandLogoUrl}
+        />
       )}
 
-      {/* Preview AR Modal */}
       {showPreviewModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <QrCode className="text-indigo-400" size={20} />
-                Preview WebXR
-              </h2>
-              <button onClick={() => setShowPreviewModal(false)} className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-gray-800">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 flex flex-col items-center">
-              <p className="text-sm text-gray-400 text-center mb-6">
-                Scan QR Code ini dengan HP kamu untuk mencoba langsung proyek AR ini.
-              </p>
-              
-              <div className="bg-white p-4 rounded-xl shadow-lg mb-6 border-4 border-indigo-500" id="preview-qr-code">
-                <QRCodeSVG 
-                  value={`${window.location.origin}/ar-viewer/${project?.id}`} 
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                  fgColor="#000000"
-                />
-              </div>
-              
-              <div className="flex gap-3 w-full">
-                <button 
-                  onClick={() => setShowWebcamTestModal(true)}
-                  className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-sm shadow-md"
-                >
-                  <Eye size={16} className="mr-2" /> Tes dengan Kamera PC
-                </button>
-              </div>
-              
-              <div className="flex gap-3 w-full mt-3">
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/ar-viewer/${project?.id}`);
-                    alert('Link berhasil disalin!');
-                  }}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-xs"
-                >
-                  <Copy size={14} className="mr-2" /> Salin Link
-                </button>
-                <Link 
-                  href={`/ar-viewer/${project?.id}`} 
-                  target="_blank"
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition-colors text-xs"
-                >
-                  Buka di Browser <ExternalLink size={14} className="ml-2" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PreviewModal 
+          onClose={() => setShowPreviewModal(false)}
+          onOpenWebcamTest={() => setShowWebcamTestModal(true)}
+          project={project}
+        />
       )}
 
-      {/* Webcam Test Modal */}
       {showWebcamTestModal && (
-        <div className="fixed inset-0 bg-black z-[100] flex flex-col">
-          <div className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
-            <h2 className="text-white font-bold flex items-center gap-2">
-              <Eye className="text-indigo-400" size={20} />
-              Webcam Test Mode
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="text-xs text-gray-400 flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-md">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                Gunakan marker fisik di depan webcam
-              </div>
-              <button 
-                onClick={() => setShowWebcamTestModal(false)} 
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm font-bold transition-colors flex items-center"
-              >
-                <X size={16} className="mr-1" /> Tutup
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 w-full bg-black relative">
-            <iframe 
-              src={`/ar-viewer/${project?.id}`}
-              className="w-full h-full border-0"
-              allow="camera; microphone; xr-spatial-tracking"
-            ></iframe>
-          </div>
-        </div>
+        <WebcamTestModal 
+          onClose={() => setShowWebcamTestModal(false)}
+          projectId={project?.id}
+        />
       )}
-      {/* Simulator Modal */}
+
       {isSimulating && (
-        <div className="fixed inset-0 bg-black z-[100] flex flex-col">
-          <div className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
-            <h2 className="text-white font-bold flex items-center gap-2">
-              <Play className="text-green-400" size={20} />
-              AR Simulator (End-User Preview)
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="text-xs text-gray-400 flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-md">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                Klik objek untuk menguji event (animasi/audio/URL)
-              </div>
-              <button 
-                onClick={() => setIsSimulating(false)} 
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm font-bold transition-colors flex items-center"
-              >
-                <X size={16} className="mr-1" /> Tutup Simulator
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 w-full bg-gradient-to-b from-[#111] to-[#222] relative">
-            <div className="absolute inset-0">
-               <EditorViewport simulateMode={true} />
-            </div>
-          </div>
-        </div>
+        <SimulatorModal 
+          onClose={() => setIsSimulating(false)}
+        />
       )}
 
       {showLogicEditor && (
