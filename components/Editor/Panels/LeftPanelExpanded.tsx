@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   ImageIcon, FolderOpen, Box, Type, MousePointerClick, 
   LayoutDashboard, Volume2, Video, Sparkles, MapPin, 
-  Trash2, Search, Loader2, Plus, Music 
+  Trash2, Search, Loader2, Plus, Music, Eye, EyeOff, Lock, Unlock
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import ShapePreview from '@/components/Editor/ShapePreview';
@@ -43,7 +43,8 @@ export function LeftPanelExpanded({
     setMultiSelectedIds, 
     addElement, 
     removeElement, 
-    reparentElement, 
+    reparentElement,
+    updateElement,
     currentSceneId 
   } = useEditorStore();
 
@@ -164,13 +165,15 @@ export function LeftPanelExpanded({
           <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 bg-[#202227]">
             <div className="p-2 space-y-0.5">
               <div 
-                className={`flex items-center gap-2 px-3 py-2 mt-1 rounded text-xs cursor-pointer transition-colors ${
-                  selectedId === null ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
+                className={`flex items-center justify-between px-2 py-1.5 mt-1 rounded-sm text-xs cursor-pointer transition-colors ${
+                  selectedId === null ? 'bg-[#ff7f00] text-white font-medium' : 'text-gray-300 hover:bg-[#2b2d31]'
                 }`}
                 onClick={() => { setSelectedId(null); setMultiSelectedIds([]); }}
               >
-                <ImageIcon size={12} className="shrink-0" />
-                <span className="truncate">Marker Image</span>
+                <div className="flex items-center gap-2">
+                  <ImageIcon size={12} className="shrink-0" />
+                  <span className="truncate">Marker Image</span>
+                </div>
               </div>
               
               {/* Add Group Button */}
@@ -198,6 +201,11 @@ export function LeftPanelExpanded({
                   const isMultiSelected = multiSelectedIds.includes(el.id);
                   const isPrimarySelected = selectedId === el.id;
                   const isSelected = isPrimarySelected || isMultiSelected;
+                  const bgClass = isPrimarySelected 
+                    ? 'bg-[#ff7f00] text-white font-medium' 
+                    : isMultiSelected 
+                      ? 'bg-[#cc4400] text-white font-medium' 
+                      : 'text-gray-300 hover:bg-[#2b2d31]';
 
                   return (
                     <div key={el.id} className="space-y-0.5 mt-0.5">
@@ -229,10 +237,8 @@ export function LeftPanelExpanded({
                         onClick={(e) => {
                           handleElementClick(el.id, e.ctrlKey || e.metaKey, e.shiftKey);
                         }}
-                        className={`flex items-center justify-between px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-                          isSelected ? 'bg-pln-blue/20 text-pln-blue font-bold border border-pln-blue/30' : 'text-gray-300 hover:bg-[#2b2d31] border border-transparent'
-                        }`}
-                        style={{ paddingLeft: `${0.75 + (depth * 1.5)}rem` }}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors ${bgClass}`}
+                        style={{ paddingLeft: `${0.5 + (depth * 1.0)}rem` }}
                       >
                         <div className="flex items-center gap-2 overflow-hidden pointer-events-none">
                           {el.type === 'group_folder' ? (
@@ -258,13 +264,22 @@ export function LeftPanelExpanded({
                           )}
                           <span className="truncate">{el.name}</span>
                         </div>
-                        {isSelected && (
-                          <div className="flex items-center">
-                            <button onClick={(e) => { e.stopPropagation(); removeElement(el.id); }} className="text-red-400 hover:text-red-300 p-1 bg-[#1a1b1e] rounded border border-[#2b2d31]" title="Hapus">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1 opacity-60 hover:opacity-100">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); updateElement(el.id, { isLocked: !el.isLocked }); }} 
+                            className="p-1 hover:text-white"
+                            title={el.isLocked ? "Unlock Object" : "Lock Object"}
+                          >
+                            {el.isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); updateElement(el.id, { isHidden: !el.isHidden }); }} 
+                            className="p-1 hover:text-white"
+                            title={el.isHidden ? "Show Object" : "Hide Object"}
+                          >
+                            {el.isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                          </button>
+                        </div>
                       </div>
                       {children.map(child => renderHierarchyNode(child, depth + 1))}
                     </div>

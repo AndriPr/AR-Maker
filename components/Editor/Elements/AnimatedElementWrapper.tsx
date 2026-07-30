@@ -177,16 +177,18 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
     }
   });
 
-  const isSelected = useEditorStore(state => state.selectedId === element.id || state.multiSelectedIds.includes(element.id));
+  const isPrimarySelected = useEditorStore(state => state.selectedId === element.id);
+  const isMultiSelected = useEditorStore(state => state.multiSelectedIds.includes(element.id));
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
-  const helper = useHelper(isSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, isSelected ? '#f97316' : 'white');
+  const helperColor = isPrimarySelected ? '#ff7f00' : isMultiSelected ? '#cc4400' : 'white';
+  const helper = useHelper(isPrimarySelected || isMultiSelected || isHovered ? groupRef as any : null, THREE.BoxHelper, helperColor);
 
   useEffect(() => {
     if (helper && helper.current) {
       helper.current.raycast = () => null;
     }
-  }, [helper, isSelected, isHovered]);
+  }, [helper, isPrimarySelected, isMultiSelected, isHovered]);
 
   return (
     <group 

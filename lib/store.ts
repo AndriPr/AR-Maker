@@ -67,6 +67,7 @@ export interface SceneElement {
   
   onClickActions?: ElementAction[]; // Advanced Triggers (New)
   isHidden?: boolean; // Default visibility state
+  isLocked?: boolean; // Selectability state (Blender Outliner)
   
   // Audio Properties
   loop?: boolean;
@@ -158,6 +159,9 @@ interface EditorState {
   ambientLightIntensity: number;
   directionalLightIntensity: number;
   environmentMap: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment';
+  
+  viewportShading: 'solid' | 'wireframe';
+  setViewportShading: (mode: 'solid' | 'wireframe') => void;
   
   // Multi-Scene
   scenes: { id: string; name: string }[];
@@ -253,9 +257,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isSimulating: false,
   trackingMode: 'image',
   multisetMapId: '',
-  ambientLightIntensity: 0.8,
-  directionalLightIntensity: 1.8,
+  ambientLightIntensity: 0.5,
+  directionalLightIntensity: 1,
   environmentMap: 'none',
+  viewportShading: 'solid',
   scenes: [{ id: 'scene-1', name: 'Scene 1' }],
   currentSceneId: 'scene-1',
   past: [],
@@ -578,6 +583,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
   setDirectionalLightIntensity: (val) => set({ directionalLightIntensity: val }),
   setEnvironmentMap: (map) => set({ environmentMap: map }),
+  setViewportShading: (mode) => set({ viewportShading: mode }),
 
   addScene: (name) => set((state) => {
     const newSceneId = `scene-${Math.random().toString(36).substring(2, 9)}`;

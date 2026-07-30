@@ -61,7 +61,7 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={(e) => e.preventDefault()}
-        className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 cursor-grab active:cursor-grabbing hover:scale-150 transition-transform ${kf.easing && kf.easing !== 'linear' ? 'bg-purple-500' : 'bg-orange-500'}`}
+        className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 cursor-grab active:cursor-grabbing hover:scale-150 transition-transform bg-yellow-400`}
         style={{ left: `${(kf.time / duration) * 100}%`, zIndex: isDragging ? 50 : 10 }}
         title={`Keyframe at ${kf.time}s (${kf.easing || 'linear'})`}
       ></div>
@@ -430,8 +430,8 @@ export default function TimelinePanel() {
             </div>
 
             {/* Time Scrubber Background */}
-            <div className="absolute top-0 bottom-0 border-l-2 border-red-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
-              <div className="w-3 h-3 bg-red-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-red-500/50"></div>
+            <div className="absolute top-0 bottom-0 border-l-2 border-blue-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
+              <div className="w-3 h-3 bg-blue-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-blue-500/50"></div>
             </div>
 
             {/* Playback Range Overlay */}

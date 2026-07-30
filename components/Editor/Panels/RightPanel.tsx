@@ -30,25 +30,64 @@ interface RightPanelProps {
   handleSave: (silent: boolean) => void;
 }
 
+function DragInput({ label, value, onChange, status }: { label: string, value: number, onChange: (v: number) => void, status?: 'none'|'keyed'|'interpolated' }) {
+  const handleDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startValue = value;
+    
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      // 0.05 units per pixel moved for smooth control
+      const newValue = startValue + delta * 0.05; 
+      onChange(Number(newValue.toFixed(3)));
+    };
+    
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const bgClass = status === 'keyed' ? 'bg-yellow-500/20 border-yellow-500' : (status === 'interpolated' ? 'bg-green-500/10 border-green-500/50' : 'bg-[#181a1f] border-[#2b2d31]');
+  
+  return (
+    <div 
+      className={`flex-1 flex items-center border rounded px-1.5 overflow-hidden transition-colors cursor-ew-resize ${bgClass}`}
+      onMouseDown={handleDrag}
+    >
+      <span className={`text-[9px] font-bold w-3 text-center ${label==='X'?'text-[#ff3333]':label==='Y'?'text-[#33ff33]':'text-[#3333ff]'}`}>{label}</span>
+      <input 
+        type="number" 
+        step="0.1" 
+        value={Number(value).toString()}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onMouseDown={(e) => e.stopPropagation()} 
+        className={`w-full bg-transparent p-1 text-[10px] outline-none font-mono text-right cursor-text ${status !== 'none' ? 'text-white font-bold' : 'text-gray-300'}`}
+      />
+    </div>
+  );
+}
+
 function TransformRow({ label, values, onChange, status }: { label: string, values: number[], onChange: (index: number, val: number) => void, status?: ('none' | 'keyed' | 'interpolated')[] }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] text-gray-400 font-medium">{label}</label>
-      <div className="flex gap-2">
-        {['X', 'Y', 'Z'].map((axis, i) => {
-          const bgClass = status && status[i] === 'keyed' ? 'bg-yellow-500/20 border-yellow-500' : (status && status[i] === 'interpolated' ? 'bg-green-500/10 border-green-500/50' : 'bg-[#0f1013] border-[#2b2d31]');
-          return (
-          <div key={axis} className={`flex-1 flex items-center border rounded px-1.5 overflow-hidden transition-colors ${bgClass}`}>
-            <span className={`text-[9px] font-bold w-4 text-center ${i===0?'text-red-400':i===1?'text-green-400':'text-blue-400'}`}>{axis}</span>
-            <input 
-              type="number" 
-              step="0.1" 
-              value={Number(values[i]).toString()}
-              onChange={(e) => onChange(i, parseFloat(e.target.value) || 0)}
-              className={`w-full bg-transparent p-1 text-[10px] outline-none font-mono text-right ${status && status[i] !== 'none' ? 'text-white font-bold' : 'text-gray-300'}`}
-            />
-          </div>
-        )})}
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between px-0.5">
+        <label className="text-[10px] text-gray-400 font-medium">{label}</label>
+      </div>
+      <div className="flex gap-1">
+        {['X', 'Y', 'Z'].map((axis, i) => (
+          <DragInput 
+            key={axis} 
+            label={axis} 
+            value={values[i]} 
+            onChange={(v) => onChange(i, v)} 
+            status={status ? status[i] : 'none'} 
+          />
+        ))}
       </div>
     </div>
   );
