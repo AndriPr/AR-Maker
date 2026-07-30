@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
 import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
 import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line} from '@react-three/drei';
@@ -29,6 +30,42 @@ import { OccluderElement } from '@/components/Editor/Elements/OccluderElement';
 import { CameraController } from '@/components/Editor/Elements/CameraController';
 import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
 import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElement';
+
+function ExporterComponent() {
+  const { scene } = useThree();
+
+  useEffect(() => {
+    const handleExport = () => {
+      const exporter = new GLTFExporter();
+      exporter.parse(
+        scene,
+        (gltf) => {
+          if (gltf instanceof ArrayBuffer) {
+            const blob = new Blob([gltf], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            link.href = url;
+            link.download = 'ar-maker-export.glb';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        },
+        (error) => {
+          console.error('An error happened during parsing', error);
+        },
+        { binary: true }
+      );
+    };
+
+    window.addEventListener('export-glb', handleExport);
+    return () => window.removeEventListener('export-glb', handleExport);
+  }, [scene]);
+
+  return null;
+}
 
 export default function EditorViewport({ transformMode = 'translate', simulateMode = false }: { transformMode?: 'translate' | 'rotate' | 'scale', simulateMode?: boolean }) {
   const isSimulating = simulateMode || useEditorStore(state => state.isSimulating);
@@ -94,6 +131,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
       )}
 
       <Canvas onPointerMissed={() => setSelectedId(null)}>
+        <ExporterComponent />
         {isOrthographic ? (
           <OrthographicCamera makeDefault position={[0, 4, 8]} zoom={80} />
         ) : (

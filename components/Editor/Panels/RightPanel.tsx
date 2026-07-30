@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   ChevronLeft, X, ImageIcon, Copy, Trash2, Sparkles, Type, Loader2, 
   MousePointerClick, Magnet, Plus, ExternalLink, LayoutDashboard, ListChecks,
-  Wrench, Eye, Palette, Layers, Box, Play, Volume2, Video, MapPin, FolderOpen, LayoutTemplate
+  Wrench, Eye, Palette, Layers, Box, Play, Volume2, Video, MapPin, FolderOpen, LayoutTemplate, Globe
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 
@@ -231,14 +231,16 @@ export function RightPanel({
                   </div>
                 </div>
 
-                {/* Accordion 3: Lighting */}
-                <div className="p-4">
-                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">Pencahayaan</h3>
+                {/* Accordion 3: Lighting & Environment */}
+                <div className="p-4 bg-[#202227]">
+                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <Globe size={12} className="text-pink-400" /> World Properties
+                  </h3>
                   <div className="space-y-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] text-gray-400 flex justify-between">
-                        Ambient Light
-                        <span className="font-mono">{ambientLightIntensity.toFixed(1)}</span>
+                        Ambient Light (Fill)
+                        <span className="font-mono bg-[#1a1b1e] px-1 rounded">{ambientLightIntensity.toFixed(1)}</span>
                       </label>
                       <input 
                         type="range" 
@@ -250,8 +252,8 @@ export function RightPanel({
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] text-gray-400 flex justify-between">
-                        Directional Light (Shadows)
-                        <span className="font-mono">{directionalLightIntensity.toFixed(1)}</span>
+                        Directional Light (Sun/Shadows)
+                        <span className="font-mono bg-[#1a1b1e] px-1 rounded">{directionalLightIntensity.toFixed(1)}</span>
                       </label>
                       <input 
                         type="range" 
@@ -262,19 +264,20 @@ export function RightPanel({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] text-gray-400">Environment Reflection (HDRI)</label>
+                      <label className="text-[10px] text-gray-400 font-medium">Environment Map (HDRI)</label>
                       <select
                         value={environmentMap}
                         onChange={(e) => setEnvironmentMap(e.target.value as any)}
-                        className="bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
+                        className="w-full bg-[#1a1b1e] text-white text-xs p-2 rounded border border-[#2b2d31] focus:border-pln-blue focus:outline-none"
                       >
-                        <option value="none">Kosong (Tidak Ada Pantulan)</option>
+                        <option value="none">Solid Color (Dark)</option>
                         <option value="studio">Studio Foto</option>
                         <option value="city">Perkotaan (Malam)</option>
                         <option value="sunset">Sunset (Senja)</option>
                         <option value="forest">Hutan</option>
                         <option value="apartment">Apartemen Mewah</option>
                       </select>
+                      <p className="text-[9px] text-gray-500 mt-1">HDRI memengaruhi pantulan (reflection) pada permukaan objek yang mengkilap (metalik).</p>
                     </div>
                   </div>
                 </div>
@@ -1471,6 +1474,131 @@ export function RightPanel({
                                 className="w-full accent-pln-blue"
                               />
                             </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Material Properties Display */}
+                      {(selectedElement.type === '3d_model' || selectedElement.type === '3d_shape') && (
+                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Palette size={12} className="text-pink-400"/> Material Properties
+                          </h4>
+                          
+                          {selectedElement.type === '3d_shape' && (
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] text-gray-400 font-medium flex justify-between">
+                                Warna Dasar (Base Color)
+                                <span className="font-mono text-[10px] bg-[#1a1b1e] px-1 rounded">{selectedElement.color || '#ffffff'}</span>
+                              </label>
+                              <div className="flex gap-2 items-center">
+                                <input 
+                                  type="color" 
+                                  value={selectedElement.color || '#ffffff'}
+                                  onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                                  className="w-8 h-8 bg-[#1a1b1e] border border-[#2b2d31] rounded cursor-pointer p-0 shrink-0"
+                                />
+                                <button 
+                                  onClick={() => updateElement(selectedElement.id, { color: '#ffffff' })}
+                                  className="text-[10px] bg-[#2b2d31] hover:bg-[#36393f] px-2 py-1.5 rounded flex-1 text-left text-gray-300"
+                                >
+                                  Reset Warna
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {selectedElement.type === '3d_model' && (
+                            <div className="flex flex-col gap-2">
+                              {(!selectedElement.availableMaterials || selectedElement.availableMaterials.length === 0) ? (
+                                <p className="text-[10px] text-gray-500 italic">Tidak ada material yang terdeteksi.</p>
+                              ) : (
+                                selectedElement.availableMaterials.map((matName, idx) => (
+                                  <div key={idx} className="flex flex-col gap-1 bg-[#1a1b1e] p-2 rounded border border-[#2b2d31]">
+                                    <label className="text-[10px] text-gray-400 font-medium truncate" title={matName}>{matName}</label>
+                                    <div className="flex gap-2 items-center">
+                                      <input 
+                                        type="color" 
+                                        value={selectedElement.customMaterials?.[matName] || '#ffffff'}
+                                        onChange={(e) => {
+                                          const newMats = { ...(selectedElement.customMaterials || {}) };
+                                          newMats[matName] = e.target.value;
+                                          updateElement(selectedElement.id, { customMaterials: newMats });
+                                        }}
+                                        className="w-8 h-8 bg-[#0f1013] border border-[#2b2d31] rounded cursor-pointer p-0 shrink-0"
+                                      />
+                                      <button 
+                                        onClick={() => {
+                                          const newMats = { ...(selectedElement.customMaterials || {}) };
+                                          delete newMats[matName];
+                                          updateElement(selectedElement.id, { customMaterials: newMats });
+                                        }}
+                                        className="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1.5 rounded flex-1 text-left"
+                                        title="Hapus timpaan warna"
+                                      >
+                                        Hapus Timpaan
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Animation Properties Display (Skeletal Animations) */}
+                      {selectedElement.type === '3d_model' && selectedElement.availableAnimations && selectedElement.availableAnimations.length > 0 && (
+                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
+                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Play size={12} className="text-green-400"/> Skeletal Animation
+                          </h4>
+                          
+                          <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] text-gray-400 font-medium">Animasi Bawaan (Action)</label>
+                              <select 
+                                value={selectedElement.autoplayAnimation || ''}
+                                onChange={(e) => updateElement(selectedElement.id, { autoplayAnimation: e.target.value })}
+                                className="w-full bg-[#1a1b1e] text-white text-xs p-2 rounded border border-[#2b2d31] focus:border-pln-blue focus:outline-none"
+                              >
+                                <option value="">-- Tidak Ada --</option>
+                                {selectedElement.availableAnimations.map((anim, idx) => (
+                                  <option key={idx} value={anim}>{anim}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {selectedElement.autoplayAnimation && (
+                              <>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[10px] text-gray-400 font-medium">Mode Pemutaran (Looping)</label>
+                                  <select 
+                                    value={selectedElement.animationLoopMode || 'loop'}
+                                    onChange={(e) => updateElement(selectedElement.id, { animationLoopMode: e.target.value as any })}
+                                    className="w-full bg-[#1a1b1e] text-white text-xs p-2 rounded border border-[#2b2d31] focus:border-pln-blue focus:outline-none"
+                                  >
+                                    <option value="loop">Loop (Terus Menerus)</option>
+                                    <option value="once">Once (Sekali Saja)</option>
+                                    <option value="pingpong">Pingpong (Maju Mundur)</option>
+                                  </select>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[10px] text-gray-400 font-medium flex justify-between">
+                                    Kecepatan (Speed)
+                                    <span className="font-mono text-[10px]">{selectedElement.animationSpeed ?? 1}x</span>
+                                  </label>
+                                  <input 
+                                    type="range" 
+                                    min="0.1" max="3" step="0.1" 
+                                    value={selectedElement.animationSpeed ?? 1}
+                                    onChange={(e) => updateElement(selectedElement.id, { animationSpeed: parseFloat(e.target.value) })}
+                                    className="w-full accent-pln-blue"
+                                  />
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       )}

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Layers, Loader2, Save, QrCode, Play, Rocket, Settings } from 'lucide-react';
+import { ArrowLeft, Layers, Loader2, Save, QrCode, Play, Rocket, Settings, Download } from 'lucide-react';
 
 interface EditorHeaderProps {
   project: any;
@@ -83,6 +83,15 @@ export function EditorHeader({
         <button onClick={() => setIsSimulating(true)} className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-green-500 hover:bg-green-600 rounded-md shadow-sm transition-all">
           <Play size={14} className="mr-2" />
           <span>Simulate AR</span>
+        </button>
+
+        <button 
+          onClick={() => window.dispatchEvent(new CustomEvent('export-glb'))} 
+          className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 rounded-md shadow-sm transition-all"
+          title="Export as .glb for Native WebXR (AR)"
+        >
+          <Download size={14} className="mr-2" />
+          <span>Export WebXR</span>
         </button>
 
         <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center px-4 py-1.5 text-xs font-bold text-white rounded-md shadow-sm transition-all disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-pln-blue hover:bg-pln-blue-dark'}`}>
