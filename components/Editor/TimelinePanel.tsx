@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Plus, Clock, Circle } from 'lucide-react';
+import { Play, Pause, Plus, Clock, Circle, SkipBack, SkipForward, ScanLine, Activity } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
+import { GraphEditorPanel } from './Panels/GraphEditorPanel';
 
 // --- ENTERPRISE KEYFRAME NODE ---
 function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
@@ -102,10 +103,17 @@ export default function TimelinePanel() {
   const setTimelinePlaying = useEditorStore(state => state.setTimelinePlaying);
   const isAutoKeying = useEditorStore(state => state.isAutoKeying);
   const setIsAutoKeying = useEditorStore(state => state.setIsAutoKeying);
+  const addKeyframe = useEditorStore(state => state.addKeyframe);
 
   const [duration, setDuration] = useState(10); // 10 seconds default
   const [panelHeight, setPanelHeight] = useState(192); // 48rem * 4 = 192px default
-
+  const [selectionBox, setSelectionBox] = useState<{ startX: number, startY: number, currentX: number, currentY: number } | null>(null);
+  const [showGraphEditor, setShowGraphEditor] = useState(false);
+  const playbackRange = useEditorStore(state => state.playbackRange);
+  const setPlaybackRange = useEditorStore(state => state.setPlaybackRange);
+  const selectedKeyframes = useEditorStore(state => state.selectedKeyframes);
+  const setSelectedKeyframes = useEditorStore(state => state.setSelectedKeyframes);
+  
   const selectedElement = elements.find(el => el.id === selectedId);
 
   // Global Keyboard Shortcuts
@@ -202,8 +210,14 @@ export default function TimelinePanel() {
 
       const prev = useEditorStore.getState().timelineTime;
       if (prev >= duration) {
-        setTimelinePlaying(false);
-        setTimelineTime(0);
+        const isLooping = useEditorStore.getState().timelineLooping;
+        if (isLooping) {
+          setTimelineTime(0);
+          animationFrameId = requestAnimationFrame(loop);
+        } else {
+          setTimelinePlaying(false);
+          setTimelineTime(0);
+        }
       } else {
         setTimelineTime(prev + delta);
         animationFrameId = requestAnimationFrame(loop);
@@ -218,35 +232,7 @@ export default function TimelinePanel() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [timelinePlaying, duration, setTimelineTime, setTimelinePlaying]);
 
-  const addKeyframe = (specificId?: string) => {
-    const idToKeyframe = specificId || selectedId;
-    if (!idToKeyframe) return;
-    
-    const targetElement = elements.find(e => e.id === idToKeyframe);
-    if (!targetElement) return;
 
-    const currentKeyframes = targetElement.keyframes || [];
-    
-    // Check if keyframe already exists at this time (allow 0.1s tolerance)
-    const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - timelineTime) < 0.05);
-    
-    const newKeyframe = {
-      time: parseFloat(timelineTime.toFixed(1)),
-      position: [...targetElement.position] as [number, number, number],
-      rotation: [...targetElement.rotation] as [number, number, number],
-      scale: [...targetElement.scale] as [number, number, number],
-    };
-
-    let updatedKeyframes;
-    if (existingIndex >= 0) {
-      updatedKeyframes = [...currentKeyframes];
-      updatedKeyframes[existingIndex] = newKeyframe;
-    } else {
-      updatedKeyframes = [...currentKeyframes, newKeyframe].sort((a, b) => a.time - b.time);
-    }
-
-    updateElement(idToKeyframe, { keyframes: updatedKeyframes });
-  };
 
   const removeKeyframe = (elementId: string, time: number) => {
     const el = elements.find(e => e.id === elementId);
@@ -281,14 +267,28 @@ export default function TimelinePanel() {
       ></div>
       
       {/* Header / Controls */}
-      <div className="h-10 bg-[#202227] border-b border-[#2b2d31] flex items-center px-4 gap-4">
+      <div className="h-10 bg-[#202227] border-b border-[#2b2d31] flex items-center px-4 gap-2">
+        <button 
+          onClick={() => setTimelineTime(playbackRange ? playbackRange[0] : 0)}
+          className="p-1.5 rounded-md text-gray-400 hover:bg-[#36393f] transition-colors"
+          title="Jump to Start"
+        >
+          <SkipBack size={14} />
+        </button>
         <button 
           onClick={() => setTimelinePlaying(!timelinePlaying)}
           className={`p-1.5 rounded-md ${timelinePlaying ? 'bg-red-500 text-white' : 'bg-pln-blue text-white'} hover:opacity-80 transition-opacity`}
         >
           {timelinePlaying ? <Pause size={14} /> : <Play size={14} />}
         </button>
-        <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f]">
+        <button 
+          onClick={() => setTimelineTime(playbackRange ? playbackRange[1] : duration)}
+          className="p-1.5 rounded-md text-gray-400 hover:bg-[#36393f] transition-colors"
+          title="Jump to End"
+        >
+          <SkipForward size={14} />
+        </button>
+        <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f] mx-2">
           {timelineTime.toFixed(1)}s
         </div>
         <button 
@@ -306,6 +306,22 @@ export default function TimelinePanel() {
           <Plus size={12} /> ADD KEYFRAME
         </button>
         
+        <button 
+          onClick={() => setPlaybackRange(playbackRange ? null : [0, duration])}
+          className={`ml-2 flex items-center gap-1 px-2 py-1 text-[10px] font-bold border rounded transition-colors ${playbackRange ? 'bg-pln-blue/20 text-pln-blue border-pln-blue/50' : 'text-gray-400 border-gray-600 hover:bg-[#36393f]'}`}
+          title="Toggle Playback Range"
+        >
+          <ScanLine size={10} /> RANGE
+        </button>
+
+        <button 
+          onClick={() => setShowGraphEditor(!showGraphEditor)}
+          className={`ml-2 flex items-center gap-1 px-2 py-1 text-[10px] font-bold border rounded transition-colors ${showGraphEditor ? 'bg-purple-500/20 text-purple-400 border-purple-500/50' : 'text-gray-400 border-gray-600 hover:bg-[#36393f]'}`}
+          title="Toggle Graph Editor"
+        >
+          <Activity size={10} /> GRAPH EDITOR
+        </button>
+        
         <div className="flex-1"></div>
         <div className="flex items-center gap-2 text-[10px] text-gray-400">
           <Clock size={12} />
@@ -319,6 +335,11 @@ export default function TimelinePanel() {
           <span>s</span>
         </div>
       </div>
+      
+      {/* Graph Editor Overlay */}
+      {showGraphEditor && (
+        <GraphEditorPanel onClose={() => setShowGraphEditor(false)} />
+      )}
       
       {/* Timeline Tracks */}
       <div className="flex-1 flex overflow-hidden">
@@ -354,7 +375,32 @@ export default function TimelinePanel() {
         
         {/* Track Grid */}
         <div className="flex-1 bg-[#1e1e1e] relative overflow-x-auto overflow-y-auto custom-scrollbar">
-          <div className="relative w-full min-w-[800px] h-full">
+          <div 
+            className="relative w-full min-w-[800px] h-full select-none"
+            onPointerDown={(e) => {
+              if ((e.target as HTMLElement).closest('.cursor-grab')) return;
+              if (e.clientY < e.currentTarget.getBoundingClientRect().top + 20) return; // Ignore ruler clicks
+              
+              const rect = e.currentTarget.getBoundingClientRect();
+              const startX = e.clientX - rect.left;
+              const startY = e.clientY - rect.top;
+              setSelectionBox({ startX, startY, currentX: startX, currentY: startY });
+              
+              const onMove = (evt: PointerEvent) => {
+                setSelectionBox(prev => prev ? { ...prev, currentX: evt.clientX - rect.left, currentY: evt.clientY - rect.top } : null);
+              };
+              
+              const onUp = () => {
+                // Here we would ideally calculate intersections, but for now we just clear the box
+                setSelectionBox(null);
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', onUp);
+              };
+              
+              window.addEventListener('pointermove', onMove);
+              window.addEventListener('pointerup', onUp);
+            }}
+          >
             {/* Ruler for Scrubbing */}
             <div 
               className="absolute top-0 left-0 right-0 h-5 bg-[#1a1b1e]/80 border-b border-[#36393f] z-20 cursor-ew-resize select-none"
@@ -384,9 +430,33 @@ export default function TimelinePanel() {
             </div>
 
             {/* Time Scrubber Background */}
-            <div className="absolute top-0 bottom-0 border-l-2 border-red-500 z-10 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
+            <div className="absolute top-0 bottom-0 border-l-2 border-red-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
               <div className="w-3 h-3 bg-red-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-red-500/50"></div>
             </div>
+
+            {/* Playback Range Overlay */}
+            {playbackRange && (
+              <div 
+                className="absolute top-0 bottom-0 bg-pln-blue/10 border-x border-pln-blue z-10 pointer-events-none"
+                style={{ 
+                  left: `${(playbackRange[0] / duration) * 100}%`,
+                  width: `${((playbackRange[1] - playbackRange[0]) / duration) * 100}%`
+                }}
+              ></div>
+            )}
+            
+            {/* Box Selection Overlay */}
+            {selectionBox && (
+              <div 
+                className="absolute bg-pln-blue/30 border border-pln-blue z-40 pointer-events-none"
+                style={{
+                  left: Math.min(selectionBox.startX, selectionBox.currentX),
+                  top: Math.min(selectionBox.startY, selectionBox.currentY),
+                  width: Math.abs(selectionBox.currentX - selectionBox.startX),
+                  height: Math.abs(selectionBox.currentY - selectionBox.startY)
+                }}
+              ></div>
+            )}
 
             {/* Grid lines */}
             {Array.from({ length: duration + 1 }).map((_, i) => (

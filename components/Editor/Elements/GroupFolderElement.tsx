@@ -91,5 +91,5 @@ export function GroupFolderElement({ element, mode, children }: { element: any, 
   );
 }
 
-export const viewportElementRefs: Record<string, THREE.Group> = {};
+const viewportElementRefs: Record<string, THREE.Group> = {};
 

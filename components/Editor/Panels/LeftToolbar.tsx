@@ -3,16 +3,14 @@ import {
   Wrench, Clock, MousePointerClick, Video, Music, 
   Sparkles, LayoutDashboard, MapPin, Square 
 } from 'lucide-react';
-import { SceneElement } from '@/lib/store';
+import { SceneElement, useEditorStore } from '@/lib/store';
 
 interface LeftToolbarProps {
   isLeftPanelOpen: boolean;
   setLeftPanelOpen: (open: boolean) => void;
   leftPanelTab: 'hierarchy' | 'library' | 'shapes' | 'prefabs';
   setLeftPanelTab: (tab: 'hierarchy' | 'library' | 'shapes' | 'prefabs') => void;
-  showTimeline: boolean;
-  setShowTimeline: (show: boolean) => void;
-  setShowLogicEditor: (show: boolean) => void;
+    setShowLogicEditor: (show: boolean) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
   elements: SceneElement[];
 }
@@ -22,12 +20,12 @@ export function LeftToolbar({
   setLeftPanelOpen,
   leftPanelTab,
   setLeftPanelTab,
-  showTimeline,
-  setShowTimeline,
-  setShowLogicEditor,
+    setShowLogicEditor,
   addElement,
   elements
 }: LeftToolbarProps) {
+  const showTimeline = useEditorStore(state => state.showTimeline);
+  const setShowTimeline = useEditorStore(state => state.setShowTimeline);
 
   const handleAddText = () => {
     addElement({

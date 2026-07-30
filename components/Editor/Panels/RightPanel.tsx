@@ -30,23 +30,25 @@ interface RightPanelProps {
   handleSave: (silent: boolean) => void;
 }
 
-function TransformRow({ label, values, onChange }: { label: string, values: number[], onChange: (index: number, val: number) => void }) {
+function TransformRow({ label, values, onChange, status }: { label: string, values: number[], onChange: (index: number, val: number) => void, status?: ('none' | 'keyed' | 'interpolated')[] }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[10px] text-gray-400 font-medium">{label}</label>
       <div className="flex gap-2">
-        {['X', 'Y', 'Z'].map((axis, i) => (
-          <div key={axis} className="flex-1 flex items-center bg-[#0f1013] border border-[#2b2d31] rounded px-1.5 overflow-hidden">
+        {['X', 'Y', 'Z'].map((axis, i) => {
+          const bgClass = status && status[i] === 'keyed' ? 'bg-yellow-500/20 border-yellow-500' : (status && status[i] === 'interpolated' ? 'bg-green-500/10 border-green-500/50' : 'bg-[#0f1013] border-[#2b2d31]');
+          return (
+          <div key={axis} className={`flex-1 flex items-center border rounded px-1.5 overflow-hidden transition-colors ${bgClass}`}>
             <span className={`text-[9px] font-bold w-4 text-center ${i===0?'text-red-400':i===1?'text-green-400':'text-blue-400'}`}>{axis}</span>
             <input 
               type="number" 
               step="0.1" 
               value={Number(values[i]).toString()}
               onChange={(e) => onChange(i, parseFloat(e.target.value) || 0)}
-              className="w-full bg-transparent p-1 text-[10px] text-white outline-none font-mono text-right"
+              className={`w-full bg-transparent p-1 text-[10px] outline-none font-mono text-right ${status && status[i] !== 'none' ? 'text-white font-bold' : 'text-gray-300'}`}
             />
           </div>
-        ))}
+        )})}
       </div>
     </div>
   );
@@ -88,10 +90,19 @@ export function RightPanel({
     explodeModel, 
     reparentElement, 
     currentSceneId, 
-    addElement 
+    addElement,
+    timelineTime
   } = useEditorStore();
 
   const selectedElement = elements.find(el => el.id === selectedId);
+
+  const getKfStatus = (propName: 'position' | 'rotation' | 'scale'): ('none' | 'keyed' | 'interpolated')[] => {
+    if (!selectedElement || !selectedElement.keyframes) return ['none', 'none', 'none'];
+    const hasKfs = selectedElement.keyframes.filter((k: any) => k[propName]);
+    if (hasKfs.length === 0) return ['none', 'none', 'none'];
+    const isKeyed = hasKfs.some((k: any) => Math.abs(k.time - timelineTime) < 0.05);
+    return isKeyed ? ['keyed', 'keyed', 'keyed'] : ['interpolated', 'interpolated', 'interpolated'];
+  };
 
   return (
     <>
@@ -1451,6 +1462,7 @@ export function RightPanel({
                     <TransformRow 
                       label="Posisi" 
                       values={selectedElement.position} 
+                      status={getKfStatus('position')}
                       onChange={(i, val) => {
                         const newPos = [...selectedElement.position];
                         newPos[i] = val;
@@ -1460,6 +1472,7 @@ export function RightPanel({
                     <TransformRow 
                       label="Rotasi" 
                       values={selectedElement.rotation} 
+                      status={getKfStatus('rotation')}
                       onChange={(i, val) => {
                         const newRot = [...selectedElement.rotation];
                         newRot[i] = val;
@@ -1469,6 +1482,7 @@ export function RightPanel({
                     <TransformRow 
                       label="Skala" 
                       values={selectedElement.scale} 
+                      status={getKfStatus('scale')}
                       onChange={(i, val) => {
                         const newScale = [...selectedElement.scale];
                         newScale[i] = val;

@@ -24,6 +24,7 @@ import { LeftPanelExpanded } from '@/components/Editor/Panels/LeftPanelExpanded'
 import { EditorHeader } from '@/components/Editor/EditorHeader';
 import { useEditorShortcuts } from '@/hooks/useEditorShortcuts';
 import { toast } from 'sonner';
+import { optimizeGLB } from '@/lib/optimizeAsset';
 const EditorViewport = dynamic(() => import('@/components/Editor/EditorViewport'), { ssr: false });
 
 export default function AREditor({ params }: { params: Promise<{ id: string }> }) {
@@ -56,7 +57,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showWebcamTestModal, setShowWebcamTestModal] = useState(false);
   const [showLogicEditor, setShowLogicEditor] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(false);
+  const showTimeline = useEditorStore(state => state.showTimeline);
+  const isAutoKeying = useEditorStore(state => state.isAutoKeying);
   
   const { activeWorkspace, activeRole, user } = useWorkspace();
   
@@ -438,13 +440,20 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const fileExt = file.name.split('.').pop();
+      let finalFile = file;
+      if (file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf')) {
+        toast.loading('Menerapkan kompresi 3D (Meshopt)...', { id: 'upload' });
+        finalFile = await optimizeGLB(file);
+        toast.loading('Mengunggah aset yang sudah dioptimasi...', { id: 'upload' });
+      }
+
+      const fileExt = finalFile.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${session.user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('assets')
-        .upload(filePath, file);
+        .upload(filePath, finalFile);
 
       if (uploadError) {
         toast.error('Gagal mengunggah file', { id: 'upload' });
@@ -456,19 +465,19 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         .getPublicUrl(filePath);
 
       let assetType = 'image';
-      if (file.type.startsWith('video/')) assetType = 'video';
-      else if (file.type.startsWith('audio/')) assetType = 'audio';
-      else if (file.name.endsWith('.glb') || file.name.endsWith('.gltf')) assetType = '3d_model';
+      if (finalFile.type.startsWith('video/')) assetType = 'video';
+      else if (finalFile.type.startsWith('audio/')) assetType = 'audio';
+      else if (finalFile.name.endsWith('.glb') || finalFile.name.endsWith('.gltf')) assetType = '3d_model';
 
       const { error: dbError } = await supabase
         .from('assets')
         .insert({
           user_id: session.user.id,
           workspace_id: activeWorkspace?.id || null,
-          name: file.name,
+          name: finalFile.name,
           type: assetType,
           file_url: publicUrl,
-          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+          size: `${(finalFile.size / (1024 * 1024)).toFixed(2)} MB`
         });
 
       if (dbError) {
@@ -541,8 +550,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           setLeftPanelOpen={setLeftPanelOpen}
           leftPanelTab={leftPanelTab}
           setLeftPanelTab={setLeftPanelTab}
-          showTimeline={showTimeline}
-          setShowTimeline={setShowTimeline}
           setShowLogicEditor={setShowLogicEditor}
           addElement={addElement}
           elements={elements}

@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
 
-export type ElementType = 'group_folder' | '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
+type ElementType = 'group_folder' | '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
 
-export interface EduComponent {
+interface EduComponent {
   id: string;
   name: string;
   actionTargetId?: string;
@@ -12,7 +12,7 @@ export interface EduComponent {
   hideTargetId?: string;
 }
 
-export interface EduMaintenanceStep {
+interface EduMaintenanceStep {
   id: string;
   instruction: string;
   actionTargetId?: string;
@@ -21,15 +21,15 @@ export interface EduMaintenanceStep {
   hideTargetId?: string;
 }
 
-export interface EduMaintenanceTask {
+interface EduMaintenanceTask {
   id: string;
   title: string;
   steps: EduMaintenanceStep[];
 }
 
-export type ActionType = 'play_animation' | 'play_audio' | 'toggle_visibility' | 'open_url' | 'change_scene';
+type ActionType = 'play_animation' | 'play_audio' | 'toggle_visibility' | 'open_url' | 'change_scene';
 
-export interface ElementAction {
+interface ElementAction {
   id: string;
   type: ActionType;
   targetId?: string; // ID of the target element (for animation, audio, visibility)
@@ -122,11 +122,13 @@ export interface SceneElement {
 
   // Keyframe Animations (Phase 3)
   keyframes?: {
+    id?: string;
     time: number; // in seconds
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
     easing?: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'bounce';
+    bezierHandles?: [number, number, number, number]; // x1, y1, x2, y2 for custom curve
   }[];
 }
 
@@ -216,9 +218,24 @@ interface EditorState {
   timelineTime: number;
   setTimelineTime: (time: number) => void;
   timelinePlaying: boolean;
+  timelineLooping: boolean;
+  setTimelineLooping: (loop: boolean) => void;
   setTimelinePlaying: (playing: boolean) => void;
+  showTimeline: boolean;
+  setShowTimeline: (show: boolean) => void;
   isAutoKeying: boolean;
+  currentEasing: string;
+  setCurrentEasing: (easing: string) => void;
+  addKeyframe: (id?: string) => void;
   setIsAutoKeying: (autoKeying: boolean) => void;
+  
+  // Advanced Animation Features (Phase 10)
+  playbackRange: [number, number] | null;
+  setPlaybackRange: (range: [number, number] | null) => void;
+  selectedKeyframes: { elementId: string, time: number }[];
+  setSelectedKeyframes: (kfs: { elementId: string, time: number }[]) => void;
+  fps: number;
+  setFps: (fps: number) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -247,7 +264,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   cameraFocusTarget: null,
   timelineTime: 0,
   timelinePlaying: false,
+  timelineLooping: false,
+  showTimeline: false,
   isAutoKeying: false,
+  currentEasing: 'linear',
+  playbackRange: null,
+  selectedKeyframes: [],
+  fps: 30,
 
   setElements: (elements) => set({ elements }),
   
@@ -607,5 +630,47 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   
   setTimelineTime: (time) => set({ timelineTime: time }),
   setTimelinePlaying: (playing) => set({ timelinePlaying: playing }),
+  setTimelineLooping: (loop) => set({ timelineLooping: loop }),
+  setShowTimeline: (show) => set({ showTimeline: show }),
   setIsAutoKeying: (autoKeying) => set({ isAutoKeying: autoKeying }),
+  setCurrentEasing: (easing) => set({ currentEasing: easing }),
+  setPlaybackRange: (range) => set({ playbackRange: range }),
+  setSelectedKeyframes: (kfs) => set({ selectedKeyframes: kfs }),
+  setFps: (fps) => set({ fps }),
+  
+  addKeyframe: (specificId?: string) => set((state) => {
+    const idToKeyframe = specificId || state.selectedId;
+    if (!idToKeyframe) return state;
+    
+    const targetElement = state.elements.find(e => e.id === idToKeyframe);
+    if (!targetElement) return state;
+
+    const currentKeyframes = targetElement.keyframes || [];
+    const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - state.timelineTime) < 0.05);
+    
+    const newKeyframe = {
+      id: Math.random().toString(36).substring(2, 9),
+      time: parseFloat(state.timelineTime.toFixed(1)),
+      position: [...targetElement.position],
+      rotation: [...targetElement.rotation],
+      scale: [...targetElement.scale],
+      easing: state.currentEasing
+    };
+
+    let updatedKeyframes;
+    if (existingIndex >= 0) {
+      updatedKeyframes = [...currentKeyframes];
+      updatedKeyframes[existingIndex] = newKeyframe as any;
+    } else {
+      updatedKeyframes = [...currentKeyframes, newKeyframe as any].sort((a, b) => a.time - b.time);
+    }
+
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: state.elements.map((el) => 
+        el.id === idToKeyframe ? { ...el, keyframes: updatedKeyframes } : el
+      )
+    };
+  }),
 }));
