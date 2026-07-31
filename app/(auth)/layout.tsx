@@ -15,7 +15,7 @@ export default function AuthLayout({
       <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
         <div className="mb-4">
           <Image
-            src="/logo-pln.png"
+            src="/Logo_PLN.png"
             alt="Logo PLN"
             width={62}
             height={85}
