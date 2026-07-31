@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ArrowLeft, Layers, Loader2, Save, QrCode, Play, Rocket, Settings, Download } from 'lucide-react';
+import { ArrowLeft, Layers, Loader2, Save, QrCode, Play, Rocket, Settings, Download, Globe, Box, Magnet } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useEditorStore } from '@/lib/store';
 
 interface EditorHeaderProps {
   project: any;
@@ -37,6 +38,13 @@ export function EditorHeader({
   redo,
   setIsSimulating
 }: EditorHeaderProps) {
+  const transformSpace = useEditorStore(state => state.transformSpace);
+  const setTransformSpace = useEditorStore(state => state.setTransformSpace);
+  const isSnapping = useEditorStore(state => state.isSnapping);
+  const setIsSnapping = useEditorStore(state => state.setIsSnapping);
+  const snapGrid = useEditorStore(state => state.snapGrid);
+  const setSnapGrid = useEditorStore(state => state.setSnapGrid);
+
   return (
     <motion.header 
       initial={{ y: -50, opacity: 0 }}
@@ -74,7 +82,43 @@ export function EditorHeader({
           <button onClick={() => redo()} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Redo"><ArrowLeft size={16} className="rotate-180" /></button>
         </div>
         
-        <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-2"></div>
+        <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-1"></div>
+
+        {/* Global/Local Space Toggle */}
+        <div className="hidden sm:flex items-center bg-[#2b2d31] rounded-md overflow-hidden border border-[#36393f] mr-1">
+          <button 
+            onClick={() => setTransformSpace(transformSpace === 'world' ? 'local' : 'world')}
+            className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-gray-300 hover:text-white hover:bg-[#36393f] transition-colors"
+            title={`Transform Space: ${transformSpace.toUpperCase()} (Shortcut: ,)`}
+          >
+            {transformSpace === 'world' ? <Globe size={14} className="text-blue-400" /> : <Box size={14} className="text-orange-400" />}
+            {transformSpace === 'world' ? 'Global' : 'Local'}
+          </button>
+        </div>
+
+        {/* Snapping Control */}
+        <div className="hidden sm:flex items-center bg-[#2b2d31] rounded-md overflow-hidden border border-[#36393f]">
+          <button 
+            onClick={() => setIsSnapping(!isSnapping)}
+            className={`p-1.5 transition-colors ${isSnapping ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:text-white hover:bg-[#36393f]'}`}
+            title="Toggle Snapping"
+          >
+            <Magnet size={14} />
+          </button>
+          {isSnapping && (
+            <input 
+              type="number"
+              min="0.01"
+              step="0.1"
+              value={snapGrid}
+              onChange={(e) => setSnapGrid(parseFloat(e.target.value) || 0.5)}
+              className="w-12 bg-transparent text-[10px] font-mono text-white px-1 outline-none border-l border-[#36393f]"
+              title="Snap Grid (meters)"
+            />
+          )}
+        </div>
+
+        <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-1"></div>
 
         <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white hover:bg-[#2b2d31] border border-transparent hover:border-[#36393f] rounded-md transition-all disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin sm:mr-2" /> : <Save size={14} className="sm:mr-2" />}

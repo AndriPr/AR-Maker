@@ -41,6 +41,8 @@ export function ShapeElement({ element, mode }: { element: any, mode: 'translate
   const isSelected = selectedId === element.id && !timelinePlaying;
   const isSnapping = useEditorStore(state => state.isSnapping);
   const axisLock = useEditorStore(state => state.axisLock);
+  const transformSpace = useEditorStore(state => state.transformSpace);
+  const snapGrid = useEditorStore(state => state.snapGrid);
 
   useTransformLogic(element, isSelected, transformRef);
 
@@ -66,13 +68,13 @@ export function ShapeElement({ element, mode }: { element: any, mode: 'translate
 
   if (isSelected) {
     return (
-      <TransformControls size={1.2} showX={axisLock === null || axisLock === "x"} showY={axisLock === null || axisLock === "y"} showZ={axisLock === null || axisLock === "z"}
+      <TransformControls size={1.2} space={transformSpace} showX={axisLock === null || axisLock === "x"} showY={axisLock === null || axisLock === "y"} showZ={axisLock === null || axisLock === "z"}
         ref={transformRef}
         mode={mode}
         position={element.position as [number, number, number]}
         rotation={element.rotation as [number, number, number]}
         scale={element.scale as [number, number, number]}
-        translationSnap={isSnapping ? 0.5 : null}
+        translationSnap={isSnapping ? snapGrid : null}
         rotationSnap={isSnapping ? Math.PI / 4 : null}
         scaleSnap={isSnapping ? 0.25 : null}
       >

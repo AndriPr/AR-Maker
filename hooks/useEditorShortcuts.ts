@@ -69,6 +69,11 @@ export function useEditorShortcuts({ setTransformMode, toggleLeftPanel, toggleRi
         case 't':
           toggleLeftPanel();
           break;
+        case ',':
+        case '`':
+          const state = useEditorStore.getState();
+          state.setTransformSpace(state.transformSpace === 'world' ? 'local' : 'world');
+          break;
           
         case 'a':
           if (e.shiftKey) {
