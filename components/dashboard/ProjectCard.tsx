@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Image, Box, Play, Edit3, Trash2, QrCode, Link as LinkIcon, Copy, Folder, Check, FolderInput, MoreVertical } from 'lucide-react';
+import { Image, Box, Eye, Edit3, Trash2, QrCode, Link as LinkIcon, Copy, Folder, Check, FolderInput, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, folderName, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove, activeRole }: any) {
@@ -23,7 +23,10 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
       >
         {targetImageUrl && <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>}
         
-        <div className="absolute top-3 left-3 z-20">
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm ${status === 'Published' ? 'bg-pln-blue text-white' : 'bg-black/50 text-white backdrop-blur-sm'}`}>
+            {status}
+          </span>
           <div 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(); }}
             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-pln-blue border-pln-blue text-white shadow-md scale-110' : 'bg-white/90 border-gray-300 text-transparent hover:border-pln-blue opacity-0 group-hover:opacity-100 shadow-sm'}`}
@@ -46,37 +49,20 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
       </div>
     
       <div className="p-5 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-gray-900 line-clamp-1 pr-2">{title}</h3>
-        </div>
-        
-        <div className="flex items-center gap-2 text-xs font-medium text-gray-500 mb-4 flex-wrap">
-          <span className="flex items-center gap-1">
-            {icon} {type}
+        <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{title}</h3>
+
+        {folderName && folderName !== 'Personal' && (
+          <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100 w-fit mb-2">
+            <Folder size={10} /> {folderName}
           </span>
-          {folderName && folderName !== 'Personal' && (
-            <>
-              <span className="text-gray-300">•</span>
-              <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100">
-                <Folder size={10} /> {folderName}
-              </span>
-            </>
-          )}
-        </div>
-        
-        <div className="mt-auto flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className={`text-xs font-bold ${status === 'Published' ? 'text-green-500' : 'text-gray-400'}`}>
-              {status}
-            </span>
-            <span className="text-xs text-gray-400 mt-0.5">Dibuat: {date}</span>
+        )}
+
+        <div className="mt-auto flex items-center justify-between pt-2">
+          <span className="text-xs text-gray-400">Dibuat: {date}</span>
+          <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
+            <Eye size={14} />
+            {views || 0} views
           </div>
-          {status === 'Published' && (
-            <div className="flex items-center gap-1 text-xs font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-md">
-              <Play size={12} className="text-pln-blue" />
-              {views || 0}
-            </div>
-          )}
         </div>
       </div>
     </>

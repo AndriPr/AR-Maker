@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { LayoutDashboard, FolderOpen, BarChart3, LogOut, Zap, PlusSquare, X, Trash2, Store, Building2, ChevronsUpDown, Settings } from 'lucide-react';
+import Image from 'next/image';
+import { LayoutDashboard, FolderOpen, BarChart3, LogOut, PlusSquare, X, Trash2, Store, Building2, ChevronsUpDown, Settings } from 'lucide-react';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -19,10 +20,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
     <aside className={`w-64 h-screen bg-white border-r border-gray-100 flex flex-col fixed left-0 top-0 z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="bg-pln-yellow p-1 rounded-md">
-            <Zap size={24} className="text-white fill-current" />
-          </div>
-          <span className="text-xl font-bold text-pln-blue-dark">AR<span className="text-pln-blue font-light">Maker</span></span>
+          <Image src="/logo-pln.png" alt="Logo PLN" width={28} height={38} />
+          <span className="text-xl font-bold text-pln-blue-dark">AR Maker</span>
         </div>
         {/* Close button for mobile */}
         <button onClick={onClose} className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">

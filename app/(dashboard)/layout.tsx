@@ -13,7 +13,11 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-foreground flex relative">
+    <div className="min-h-screen bg-gray-50 text-foreground flex relative overflow-hidden">
+      {/* Subtle background accent */}
+      <div className="pointer-events-none absolute -top-24 right-0 w-[32rem] h-[32rem] bg-pln-blue/5 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-32 w-96 h-96 bg-pln-blue/5 rounded-full blur-3xl" />
+
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       {/* Mobile Overlay */}
@@ -24,10 +28,10 @@ export default function DashboardLayout({
         />
       )}
 
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0 min-h-screen transition-all duration-300">
+      <div className="relative z-10 flex-1 md:ml-64 flex flex-col min-w-0 min-h-screen transition-all duration-300">
         <WorkspaceBanner />
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="p-4 sm:p-6 md:p-8 flex-1 w-full max-w-7xl mx-auto">
+        <main className="p-4 sm:p-6 md:p-8 flex-1 w-full max-w-7xl">
           {children}
         </main>
       </div>
