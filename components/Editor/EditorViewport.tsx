@@ -196,7 +196,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         {!simulateMode && (
           <GizmoHelper
             alignment="top-right"
-            margin={[50, 50]}
+            margin={[320, 80]}
           >
             <GizmoViewport axisColors={['#ff3333', '#33ff33', '#3333ff']} labelColor="white" />
           </GizmoHelper>
