@@ -140,6 +140,16 @@ interface EditorState {
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
   
+  // Transform Locks (Blender Parity)
+  axisLock: 'x' | 'y' | 'z' | null;
+  setAxisLock: (axis: 'x' | 'y' | 'z' | null) => void;
+  
+  // Professional Modeling
+  transformSpace: 'world' | 'local';
+  setTransformSpace: (space: 'world' | 'local') => void;
+  snapGrid: number;
+  setSnapGrid: (value: number) => void;
+  
   // Logic Nodes
   nodes: any[];
   edges: any[];
@@ -249,7 +259,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   hoveredId: null,
   targetImageUrl: null,
   previewAnimationData: null,
-  isSnapping: true,
+  isSnapping: false,
+  axisLock: null,
+  setAxisLock: (axis) => set({ axisLock: axis }),
+  transformSpace: 'world',
+  setTransformSpace: (space) => set({ transformSpace: space }),
+  snapGrid: 0.5,
+  setSnapGrid: (value) => set({ snapGrid: value }),
   nodes: [],
   edges: [],
   logicVariables: {},
@@ -577,6 +593,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   setIsSnapping: (val) => set({ isSnapping: val }),
   setIsOrthographic: (val) => set({ isOrthographic: val }),
+  
   setIsSimulating: (val) => set({ isSimulating: val, selectedId: val ? null : get().selectedId }),
   setTrackingMode: (mode) => set({ trackingMode: mode }),
   setMultisetMapId: (id) => set({ multisetMapId: id }),

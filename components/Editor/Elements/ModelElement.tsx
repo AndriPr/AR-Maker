@@ -40,6 +40,9 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const isSnapping = useEditorStore(state => state.isSnapping);
+  const axisLock = useEditorStore(state => state.axisLock);
+  const transformSpace = useEditorStore(state => state.transformSpace);
+  const snapGrid = useEditorStore(state => state.snapGrid);
 
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
   const isSelected = selectedId === element.id && !timelinePlaying;
@@ -222,13 +225,13 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
 
   if (isSelected) {
     return (
-      <TransformControls size={1.2} 
+      <TransformControls size={1.2} space={transformSpace} showX={axisLock === null || axisLock === "x"} showY={axisLock === null || axisLock === "y"} showZ={axisLock === null || axisLock === "z"} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
         rotation={element.rotation} 
         scale={element.scale}
-        translationSnap={isSnapping ? 0.5 : null}
+        translationSnap={isSnapping ? snapGrid : null}
         rotationSnap={isSnapping ? Math.PI / 12 : null}
         scaleSnap={isSnapping ? 0.5 : null}
       >
@@ -243,4 +246,4 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
-
+

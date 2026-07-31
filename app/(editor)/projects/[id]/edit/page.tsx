@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
 import ShapePreview from '@/components/Editor/ShapePreview';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEditorStore } from '@/lib/store';
@@ -110,7 +111,12 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
   // Keyboard Shortcuts
-  useEditorShortcuts(setTransformMode);
+  useEditorShortcuts({
+    setTransformMode,
+    toggleLeftPanel: () => setLeftPanelOpen(prev => !prev),
+    toggleRightPanel: () => setRightPanelOpen(prev => !prev),
+    openLibrary: () => { setLeftPanelOpen(true); setLeftPanelTab('shapes'); }
+  });
 
   // Auto-open right panel when an element is selected
   useEffect(() => {
@@ -654,7 +660,12 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         />
 
         {/* Bottom Scene Manager */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1 items-center max-w-[90vw] overflow-x-auto custom-scrollbar">
+        <motion.div 
+          initial={{ y: 50, opacity: 0, x: '-50%' }}
+          animate={{ y: 0, opacity: 1, x: '-50%' }}
+          transition={{ type: 'spring', damping: 20, stiffness: 200, delay: 0.1 }}
+          className="absolute bottom-4 left-1/2 pointer-events-auto bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1 items-center max-w-[90vw] overflow-x-auto custom-scrollbar"
+        >
           {scenes.map(sc => (
             <div key={sc.id} className="relative group flex items-center">
               <button
@@ -681,7 +692,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           >
             <Plus size={16} />
           </button>
-        </div>
+        </motion.div>
 
 
 

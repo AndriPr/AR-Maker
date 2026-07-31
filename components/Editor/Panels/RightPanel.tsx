@@ -5,6 +5,7 @@ import {
   Wrench, Eye, Palette, Layers, Box, Play, Volume2, Video, MapPin, FolderOpen, LayoutTemplate, Globe
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface RightPanelProps {
   isRightPanelOpen: boolean;
@@ -145,19 +146,33 @@ export function RightPanel({
 
   return (
     <>
-      {!isRightPanelOpen && (
-          <button 
+      <AnimatePresence>
+        {!isRightPanelOpen && (
+          <motion.button 
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 50, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 200 }}
             onClick={() => setRightPanelOpen(true)}
             className="pointer-events-auto absolute top-1/2 right-0 -translate-y-1/2 bg-[#1a1b1e] border border-[#2b2d31] border-r-0 text-gray-400 hover:text-white p-2 py-6 rounded-l-md shadow-xl z-20 flex flex-col items-center justify-center transition-colors group"
             title="Buka Properties"
           >
             <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
             <span className="text-[10px] uppercase font-bold [writing-mode:vertical-rl] rotate-180 mt-2 tracking-widest group-hover:text-pln-blue transition-colors">Properties</span>
-          </button>
+          </motion.button>
         )}
+      </AnimatePresence>
 
-        <aside className={`pointer-events-auto absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#1a1b1e] border-l border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} overflow-hidden`}>
-          <div className="bg-[#202227] p-3 border-b border-[#2b2d31] text-[10px] font-bold text-gray-400 uppercase flex items-center justify-between tracking-wider">
+      <AnimatePresence>
+        {isRightPanelOpen && (
+          <motion.aside 
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="pointer-events-auto absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#1a1b1e] border-l border-[#2b2d31] flex flex-col shrink-0 shadow-2xl overflow-hidden"
+          >
+            <div className="bg-[#202227] p-3 border-b border-[#2b2d31] text-[10px] font-bold text-gray-400 uppercase flex items-center justify-between tracking-wider">
             PROPERTIES
             {/* Properties Toggle */}
             <button className="p-2 text-gray-400 hover:text-white" onClick={() => setRightPanelOpen(false)}>
@@ -1769,7 +1784,9 @@ export function RightPanel({
           )}
 
                   </div>
-        </aside>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </>
   );
 }

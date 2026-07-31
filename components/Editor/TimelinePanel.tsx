@@ -127,7 +127,7 @@ export default function TimelinePanel() {
       if (e.code === 'Space') {
         e.preventDefault();
         setTimelinePlaying(!state.timelinePlaying);
-      } else if (e.key.toLowerCase() === 'k') {
+      } else if (e.key.toLowerCase() === 'i') {
         e.preventDefault();
         addKeyframe();
       } else if (e.key === 'ArrowLeft') {
@@ -291,19 +291,27 @@ export default function TimelinePanel() {
         <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f] mx-2">
           {timelineTime.toFixed(1)}s
         </div>
+        
+        {/* Auto-keying Button (Blender style) */}
+        <div className="w-px h-4 bg-gray-700 mx-1"></div>
         <button 
           onClick={() => setIsAutoKeying(!isAutoKeying)}
-          className={`flex items-center gap-1 px-2 py-1 text-[10px] font-bold border rounded transition-colors ${isAutoKeying ? 'bg-red-500/20 text-red-500 border-red-500/50 animate-pulse' : 'text-gray-400 border-gray-600 hover:bg-[#36393f]'}`}
-          title="Auto-Key (Record Mode)"
+          className={`p-1.5 rounded-full transition-colors ml-1 ${isAutoKeying ? 'bg-red-500/20 text-red-500 ring-1 ring-red-500' : 'text-gray-400 hover:bg-[#36393f]'}`}
+          title="Auto Keying: Record transforms automatically"
         >
-          <Circle size={10} fill={isAutoKeying ? 'currentColor' : 'none'} /> REC
+          <Circle size={14} fill={isAutoKeying ? "currentColor" : "none"} />
         </button>
+
+        <div className="flex-1"></div>
+
         <button 
           onClick={() => addKeyframe()}
-          disabled={!selectedElement}
-          className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-orange-400 border border-orange-400/30 rounded hover:bg-orange-400/10 disabled:opacity-50 transition-colors"
+          disabled={!selectedId}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 ${!selectedId ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors border border-gray-600'}`}
+          title="Insert Keyframe (I)"
         >
-          <Plus size={12} /> ADD KEYFRAME
+          <Plus size={12} />
+          Keyframe (I)
         </button>
         
         <button 
