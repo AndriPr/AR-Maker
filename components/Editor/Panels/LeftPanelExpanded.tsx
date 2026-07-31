@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import ShapePreview from '@/components/Editor/ShapePreview';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LeftPanelExpandedProps {
   isLeftPanelOpen: boolean;
@@ -154,7 +155,15 @@ export function LeftPanelExpanded({
   );
 
   return (
-    <aside className={`pointer-events-auto absolute top-14 bottom-0 left-12 z-20 w-64 bg-[#202227] border-r border-[#2b2d31] flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out shadow-2xl ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-[150%]'} overflow-hidden`}>
+    <AnimatePresence>
+      {isLeftPanelOpen && (
+        <motion.aside 
+          initial={{ x: '-100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '-100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="pointer-events-auto absolute top-14 bottom-0 left-12 z-20 w-64 bg-[#202227] border-r border-[#2b2d31] flex flex-col shrink-0 shadow-2xl overflow-hidden"
+        >
       
       {leftPanelTab === 'hierarchy' && (
         <>
@@ -482,6 +491,8 @@ export function LeftPanelExpanded({
           </div>
         </>
       )}
-    </aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }
