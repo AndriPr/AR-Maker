@@ -36,6 +36,7 @@ export function VideoElement({ element, mode }: { element: any, mode: 'translate
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const isSnapping = useEditorStore(state => state.isSnapping);
+  const axisLock = useEditorStore(state => state.axisLock);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
   const isSelected = selectedId === element.id && !timelinePlaying;
 
@@ -67,7 +68,7 @@ export function VideoElement({ element, mode }: { element: any, mode: 'translate
 
   if (isSelected) {
     return (
-      <TransformControls size={1.2} 
+      <TransformControls size={1.2} showX={axisLock === null || axisLock === "x"} showY={axisLock === null || axisLock === "y"} showZ={axisLock === null || axisLock === "z"} 
         ref={transformRef} 
         mode={mode} 
         position={element.position} 
@@ -88,4 +89,4 @@ export function VideoElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
-
+

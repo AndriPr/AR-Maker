@@ -111,7 +111,12 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
   // Keyboard Shortcuts
-  useEditorShortcuts(setTransformMode);
+  useEditorShortcuts({
+    setTransformMode,
+    toggleLeftPanel: () => setLeftPanelOpen(prev => !prev),
+    toggleRightPanel: () => setRightPanelOpen(prev => !prev),
+    openLibrary: () => { setLeftPanelOpen(true); setLeftPanelTab('shapes'); }
+  });
 
   // Auto-open right panel when an element is selected
   useEffect(() => {

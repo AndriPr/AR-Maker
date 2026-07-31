@@ -140,6 +140,11 @@ interface EditorState {
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
   
+  // Transform Locks (Blender Parity)
+  axisLock: 'x' | 'y' | 'z' | null;
+  setAxisLock: (axis: 'x' | 'y' | 'z' | null) => void;
+  
+  
   // Logic Nodes
   nodes: any[];
   edges: any[];
@@ -577,6 +582,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   setIsSnapping: (val) => set({ isSnapping: val }),
   setIsOrthographic: (val) => set({ isOrthographic: val }),
+  
+  axisLock: null,
+  setAxisLock: (axis) => set({ axisLock: axis }),
   setIsSimulating: (val) => set({ isSimulating: val, selectedId: val ? null : get().selectedId }),
   setTrackingMode: (mode) => set({ trackingMode: mode }),
   setMultisetMapId: (id) => set({ multisetMapId: id }),

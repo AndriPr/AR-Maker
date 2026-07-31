@@ -1,7 +1,14 @@
 import { useEffect } from 'react';
 import { useEditorStore } from '@/lib/store';
 
-export function useEditorShortcuts(setTransformMode: (mode: 'translate' | 'rotate' | 'scale') => void) {
+export interface ShortcutOptions {
+  setTransformMode: (mode: 'translate' | 'rotate' | 'scale') => void;
+  toggleLeftPanel: () => void;
+  toggleRightPanel: () => void;
+  openLibrary: () => void;
+}
+
+export function useEditorShortcuts({ setTransformMode, toggleLeftPanel, toggleRightPanel, openLibrary }: ShortcutOptions) {
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const multiSelectedIds = useEditorStore(state => state.multiSelectedIds);
@@ -16,6 +23,7 @@ export function useEditorShortcuts(setTransformMode: (mode: 'translate' | 'rotat
   const isOrthographic = useEditorStore(state => state.isOrthographic);
   const setIsOrthographic = useEditorStore(state => state.setIsOrthographic);
   const setCameraFocusTarget = useEditorStore(state => state.setCameraFocusTarget);
+  const setAxisLock = useEditorStore(state => state.setAxisLock);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -29,15 +37,57 @@ export function useEditorShortcuts(setTransformMode: (mode: 'translate' | 'rotat
         case 'e': setTransformMode('rotate'); break;
         case 'r': setTransformMode('rotate'); break; // R for rotate in Blender
         case 's': setTransformMode('scale'); break; // S for scale in Blender
-        case 'escape': 
-          setSelectedId(null); 
-          setMultiSelectedIds([]);
-          break;
+        
+        // Axis Locks (Blender style: press X, Y, Z to lock axis during transform)
         case 'x':
+          if (e.shiftKey) { /* Inverse lock not supported natively by TransformControls easily yet */ }
+          else if (!['Delete', 'Backspace'].includes(e.key)) {
+            setAxisLock('x');
+          }
+          break;
+        case 'y':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            redo();
+          } else {
+            setAxisLock('y');
+          }
+          break;
+        case 'z':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.shiftKey) redo();
+            else undo();
+          } else {
+            setAxisLock('z');
+          }
+          break;
+
+        case 'n':
+          toggleRightPanel();
+          break;
+        case 't':
+          toggleLeftPanel();
+          break;
+          
+        case 'a':
+          if (e.shiftKey) {
+            e.preventDefault();
+            openLibrary(); // Shift+A to Add object (Blender style)
+          } else if (e.altKey) {
+            setSelectedId(null);
+            setMultiSelectedIds([]);
+          } else {
+             const allIds = elements.map(el => el.id);
+             setMultiSelectedIds(allIds);
+          }
+          break;
+
         case 'delete':
         case 'backspace':
           if (selectedId) removeElement(selectedId);
           break;
+
         case 'g':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
@@ -46,37 +96,35 @@ export function useEditorShortcuts(setTransformMode: (mode: 'translate' | 'rotat
             setTransformMode('translate'); // G for grab in Blender
           }
           break;
-        case 'z':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            if (e.shiftKey) redo();
-            else undo();
-          }
-          break;
-        case 'y':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            redo();
-          }
-          break;
-        case 'a':
-          if (e.altKey) {
-            setSelectedId(null);
-            setMultiSelectedIds([]);
-          } else {
-             const allIds = elements.map(el => el.id);
-             setMultiSelectedIds(allIds);
-          }
-          break;
+
         case 'd':
           if (e.shiftKey && selectedId) {
             e.preventDefault();
             duplicateElement(selectedId);
           }
           break;
+
         case '5':
           setIsOrthographic(!isOrthographic);
           break;
+
+        case '1':
+          // Front View
+          setCameraFocusTarget([0, 0, 0]); // Temporary logic for numpad view change
+          break;
+        case '3':
+          // Right View
+          break;
+        case '7':
+          // Top View
+          break;
+
+        case 'escape': 
+          setSelectedId(null); 
+          setMultiSelectedIds([]);
+          setAxisLock(null); // Clear axis lock
+          break;
+
         case 'h':
           if (e.altKey) {
              elements.forEach(el => updateElement(el.id, { isHidden: false }));
@@ -97,7 +145,10 @@ export function useEditorShortcuts(setTransformMode: (mode: 'translate' | 'rotat
       }
     };
     
+    // Clear axis lock on key up (Optional: depending on how Blender handles it. Usually Blender locks it until click. 
+    // We'll let it be toggle or cleared by escape)
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements, elements, duplicateElement, isOrthographic, setIsOrthographic, updateElement, setCameraFocusTarget, setTransformMode]);
+  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements, elements, duplicateElement, isOrthographic, setIsOrthographic, updateElement, setCameraFocusTarget, setTransformMode, setAxisLock, toggleLeftPanel, toggleRightPanel, openLibrary]);
 }

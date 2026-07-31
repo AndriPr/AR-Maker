@@ -103,6 +103,11 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
           if (!posChanged && !rotChanged && !scaleChanged) return;
 
           updateElement(element.id, updates);
+          
+          const state = useEditorStore.getState();
+          if (state.isAutoKeying) {
+            state.addKeyframe();
+          }
         }
       };
 
@@ -122,4 +127,4 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
   }, [isSelected, element.id, updateElement]);
 }
 
-
+
