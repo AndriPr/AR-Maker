@@ -1,7 +1,6 @@
 "use client";
 
-import { UploadCloud, Box, Image as ImageIcon, Trash2, Link as LinkIcon, Search, Filter, Loader2, X } from 'lucide-react';
-import Link from 'next/link';
+import { UploadCloud, Box, Image as ImageIcon, Trash2, Link as LinkIcon, Search, Loader2, X } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -15,6 +14,9 @@ export default function AssetLibraryPage() {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewModal, setPreviewModal] = useState<{ url: string, name: string, type: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<'all' | '3d_model' | 'image'>('all');
+  const [sortOrder, setSortOrder] = useState<'recent' | 'name' | 'size'>('recent');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAssets = async () => {
@@ -153,6 +155,21 @@ export default function AssetLibraryPage() {
     }
   };
 
+  const categories: { value: 'all' | '3d_model' | 'image', label: string }[] = [
+    { value: 'all', label: 'All Assets' },
+    { value: '3d_model', label: '3D Models' },
+    { value: 'image', label: 'Images' },
+  ];
+
+  const filteredAssets = assets
+    .filter(asset => activeCategory === 'all' || asset.type === activeCategory)
+    .filter(asset => asset.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      if (sortOrder === 'name') return a.name.localeCompare(b.name);
+      if (sortOrder === 'size') return parseFloat(b.size || '0') - parseFloat(a.size || '0');
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
   return (
     <div 
       className={`space-y-6 ${isDragging ? 'border-2 border-pln-blue border-dashed rounded-3xl p-4 bg-blue-50/50' : 'p-4'}`}
@@ -160,12 +177,33 @@ export default function AssetLibraryPage() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Asset Library</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola model 3D (.glb) dan gambar target untuk proyek AR Anda.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          {categories.map(cat => (
+            <button
+              key={cat.value}
+              onClick={() => setActiveCategory(cat.value)}
+              className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors whitespace-nowrap ${activeCategory === cat.value ? 'bg-pln-blue text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="font-medium">Sort by:</span>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as any)}
+              className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-pln-blue outline-none"
+            >
+              <option value="recent">Recent</option>
+              <option value="name">Name</option>
+              <option value="size">Size</option>
+            </select>
+          </div>
+
           {activeRole !== 'viewer' && (
             <>
               <input 
@@ -178,12 +216,12 @@ export default function AssetLibraryPage() {
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-sm"
+                className="bg-pln-blue hover:bg-pln-blue-dark text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {uploading ? (
                   <><Loader2 size={18} className="animate-spin" /> Mengunggah...</>
                 ) : (
-                  <><UploadCloud size={18} /> Unggah Baru</>
+                  <><UploadCloud size={18} /> Upload New</>
                 )}
               </button>
             </>
@@ -191,11 +229,13 @@ export default function AssetLibraryPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm mb-6">
+      <div className="bg-white rounded-3xl p-4 border border-blue-100/60 shadow-[0_0_25px_2px_rgba(0,92,154,0.12)]">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari nama aset..." 
             className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
           />
@@ -206,8 +246,8 @@ export default function AssetLibraryPage() {
         <div className="flex justify-center p-10 text-gray-500 font-bold">Memuat aset...</div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {assets.map((asset) => (
-            <div key={asset.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col group relative">
+          {filteredAssets.map((asset) => (
+            <div key={asset.id} className="bg-white border border-blue-100/60 rounded-2xl p-4 shadow-[0_0_20px_1px_rgba(0,92,154,0.10)] hover:shadow-[0_0_25px_2px_rgba(0,92,154,0.18)] transition-shadow flex flex-col group relative">
               <div 
                 className="h-24 bg-gray-50 rounded-xl mb-3 flex items-center justify-center relative overflow-hidden cursor-pointer"
                 onClick={() => setPreviewModal({ url: asset.file_url, name: asset.name, type: asset.type })}
@@ -267,11 +307,11 @@ export default function AssetLibraryPage() {
             </div>
           ))}
 
-          {assets.length === 0 && (
+          {filteredAssets.length === 0 && (
              <div className="col-span-2 md:col-span-4 lg:col-span-5 xl:col-span-6 p-10 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-dashed border-gray-300 text-gray-500">
                <UploadCloud size={48} className="mb-4 text-gray-300" />
-               <p className="font-bold">Belum ada aset</p>
-               <p className="text-sm">Silakan upload model 3D atau gambar Anda.</p>
+               <p className="font-bold">{assets.length === 0 ? 'Belum ada aset' : 'Tidak ada aset yang cocok'}</p>
+               <p className="text-sm">{assets.length === 0 ? 'Silakan upload model 3D atau gambar Anda.' : 'Coba ubah kata kunci atau kategori pencarian.'}</p>
              </div>
           )}
         </div>

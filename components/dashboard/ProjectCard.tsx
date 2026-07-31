@@ -75,11 +75,11 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {activeRole === 'viewer' ? (
-        <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] relative">
+        <div className="bg-white border border-blue-100/60 rounded-3xl overflow-hidden shadow-[0_0_20px_1px_rgba(0,92,154,0.10)] hover:shadow-[0_0_25px_2px_rgba(0,92,154,0.18)] transition-shadow group flex flex-col min-h-[250px] relative">
           {CardInner}
         </div>
       ) : (
-        <Link href={`/projects/${id}/edit`} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
+        <Link href={`/projects/${id}/edit`} className="bg-white border border-blue-100/60 rounded-3xl overflow-hidden shadow-[0_0_20px_1px_rgba(0,92,154,0.10)] hover:shadow-[0_0_25px_2px_rgba(0,92,154,0.18)] transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
           {CardInner}
         </Link>
       )}
