@@ -173,14 +173,23 @@ export default function MarketPage() {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Store className="text-purple-600" />
-          3D Asset Marketplace
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">Jelajahi dan impor model 3D berkualitas tinggi ke Asset Library Anda secara gratis.</p>
+    <div className="relative pb-10">
+      {/* Ambient blur biru & kuning - nempel di background halaman, bukan di dalam kotak */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        {/* biru: mulai di bawah judul, biar teks judul tetap putih bersih */}
+        <div className="absolute top-[160px] left-0 w-[450px] h-[450px] bg-blue-200 rounded-full blur-[140px] opacity-40" />
+        {/* kuning: ditaruh jauh di bawah supaya baru kelihatan pas discroll, dan dibikin lebih soft/tipis */}
+        <div className="absolute top-[950px] left-0 w-[450px] h-[450px] bg-yellow-200 rounded-full blur-[160px] opacity-25" />
       </div>
+
+      <div className="relative space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Store className="text-purple-600" />
+            3D Asset Marketplace
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">Jelajahi dan impor model 3D berkualitas tinggi ke Asset Library Anda secara gratis.</p>
+        </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {MOCK_MARKET_ASSETS.map((asset) => {
@@ -250,6 +259,7 @@ export default function MarketPage() {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

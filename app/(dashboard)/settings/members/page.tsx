@@ -152,7 +152,7 @@ export default function MembersPage() {
               <button
                 type="submit"
                 disabled={inviting}
-                className="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
               >
                 {inviting ? "Mengundang..." : <><UserPlus size={18} /> Undang</>}
               </button>

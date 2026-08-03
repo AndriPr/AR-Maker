@@ -9,24 +9,32 @@ export default function AuditLogsPage() {
   const { activeWorkspace, activeRole } = useWorkspace();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     if (activeWorkspace) {
-      fetchLogs();
+      fetchLogs(limit);
     }
-  }, [activeWorkspace]);
+  }, [activeWorkspace, limit]);
 
-  const fetchLogs = async () => {
-    setLoading(true);
+  const fetchLogs = async (currentLimit: number) => {
+    if (currentLimit === 10) setLoading(true);
     const { data, error } = await supabase
       .from('audit_logs')
       .select('*')
       .eq('workspace_id', activeWorkspace?.id)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(currentLimit);
       
     if (data) setLogs(data);
     setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const handleLoadMore = () => {
+    setLoadingMore(true);
+    setLimit((prev) => prev + 10);
   };
 
   const getActionInfo = (action: string) => {
@@ -65,9 +73,12 @@ export default function AuditLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">Riwayat Aktivitas (Audit Logs)</h2>
-        <button onClick={fetchLogs} className="text-sm text-pln-blue font-medium hover:underline">
+      <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Riwayat Aktivitas</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Telusuri semua perubahan dan tindakan terbaru dalam ruang kerja Anda.</p>
+        </div>
+        <button onClick={() => fetchLogs(limit)} className="text-sm text-pln-blue font-medium hover:underline shrink-0">
           Segarkan Data
         </button>
       </div>
@@ -122,6 +133,18 @@ export default function AuditLogsPage() {
               );
             })}
           </ul>
+        </div>
+      )}
+
+      {!loading && logs.length > 0 && logs.length >= limit && (
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="px-5 py-2.5 rounded-full border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-50"
+          >
+            {loadingMore ? "Memuat..." : "Muat Aktivitas Lainnya"}
+          </button>
         </div>
       )}
     </div>
