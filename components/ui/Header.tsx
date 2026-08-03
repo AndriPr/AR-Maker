@@ -99,7 +99,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
   return (
-    <header className="flex items-center justify-between bg-white px-4 sm:px-8 py-4 mb-4 sm:mb-6 sticky top-0 z-10 border-b border-gray-50 shadow-sm">
+    <header className="flex items-center justify-between bg-white px-4 sm:px-8 py-4 mb-4 sm:mb-6 sticky top-0 z-30 border-b border-gray-50 shadow-sm">
       <div className="flex items-center flex-1 gap-2 sm:gap-4 max-w-2xl">
         <button 
           onClick={onMenuClick}

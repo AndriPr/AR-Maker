@@ -20,7 +20,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
     <aside className={`w-64 h-screen bg-white border-r border-gray-100 flex flex-col fixed left-0 top-0 z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Image src="/logo-pln.png" alt="Logo PLN" width={28} height={38} />
+          <Image src="/Logo_PLN.png" alt="Logo PLN" width={28} height={38} />
           <span className="text-xl font-bold text-pln-blue-dark">AR Maker</span>
         </div>
         {/* Close button for mobile */}
