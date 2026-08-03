@@ -6,15 +6,17 @@ import { useEditorStore } from '@/lib/store';
 import { GraphEditorPanel } from './Panels/GraphEditorPanel';
 
 // --- ENTERPRISE KEYFRAME NODE ---
-function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
+function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected, onSelect }: any) {
   const [isDragging, setIsDragging] = useState(false);
+  const [localTime, setLocalTime] = useState<number | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+
+  const displayTime = localTime !== null ? localTime : kf.time;
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
     if (e.button === 2) {
-       // Right click Context Menu
        e.preventDefault();
        setShowMenu(true);
        setMenuPos({ x: e.clientX, y: e.clientY });
@@ -22,6 +24,8 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
     }
     
     setIsDragging(true);
+    setLocalTime(kf.time);
+    if (onSelect) onSelect(e.shiftKey);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -33,21 +37,26 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
     const x = e.clientX - parentRect.left;
     let newTime = (x / parentRect.width) * duration;
     newTime = Math.max(0, Math.min(duration, newTime));
-    newTime = parseFloat(newTime.toFixed(1)); // snap to 0.1s
     
-    if (newTime !== kf.time) {
-      onUpdate(kf.time, { ...kf, time: newTime });
+    // Blender-like snapping: Hold Ctrl to snap to grid (0.1s)
+    if (e.ctrlKey) {
+      newTime = parseFloat(newTime.toFixed(1));
     }
+    
+    setLocalTime(newTime);
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (isDragging) {
       setIsDragging(false);
       e.currentTarget.releasePointerCapture(e.pointerId);
+      if (localTime !== null && localTime !== kf.time) {
+        onUpdate(kf.time, { ...kf, time: localTime });
+      }
+      setLocalTime(null);
     }
   };
 
-  // Close context menu on global click
   useEffect(() => {
     const close = () => setShowMenu(false);
     if (showMenu) document.addEventListener('click', close);
@@ -61,10 +70,16 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove }: any) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={(e) => e.preventDefault()}
-        className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 cursor-grab active:cursor-grabbing hover:scale-150 transition-transform bg-yellow-400`}
-        style={{ left: `${(kf.time / duration) * 100}%`, zIndex: isDragging ? 50 : 10 }}
-        title={`Keyframe at ${kf.time}s (${kf.easing || 'linear'})`}
-      ></div>
+        className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rotate-45 cursor-grab active:cursor-grabbing transition-transform ${isDragging ? 'scale-150' : 'hover:scale-150'} ${isSelected ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'bg-gray-300'} border border-[#1a1b1e]`}
+        style={{ left: `${(displayTime / duration) * 100}%`, zIndex: isDragging || isSelected ? 50 : 10 }}
+        title={`Keyframe at ${displayTime.toFixed(2)}s (${kf.easing || 'linear'})`}
+      >
+        {isDragging && (
+          <div className="absolute -top-6 -left-4 bg-gray-800 text-white text-[9px] px-1 py-0.5 rounded -rotate-45 whitespace-nowrap shadow-lg border border-gray-600">
+            {displayTime.toFixed(2)}s
+          </div>
+        )}
+      </div>
 
       {showMenu && (
         <div className="fixed z-[99999] bg-[#1a1b1e] border border-[#36393f] rounded shadow-2xl w-32 py-1 text-xs" style={{ left: menuPos.x, top: menuPos.y - 150 }}>
@@ -483,6 +498,19 @@ export default function TimelinePanel() {
                         elementId={el.id} 
                         kf={kf} 
                         duration={duration} 
+                        isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                        onSelect={(shift: boolean) => {
+                          if (shift) {
+                            const isAlreadySelected = selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time);
+                            if (isAlreadySelected) {
+                              setSelectedKeyframes(selectedKeyframes?.filter((sk: any) => !(sk.id === el.id && sk.time === kf.time)) || []);
+                            } else {
+                              setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                            }
+                          } else {
+                            setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                          }
+                        }}
                         onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
                         onRemove={(time: number) => removeKeyframe(el.id, time)}
                       />
@@ -500,6 +528,14 @@ export default function TimelinePanel() {
                             elementId={el.id} 
                             kf={kf} 
                             duration={duration} 
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                            onSelect={(shift: boolean) => {
+                              if (shift) {
+                                setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                              } else {
+                                setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                              }
+                            }}
                             onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
                             onRemove={(time: number) => removeKeyframe(el.id, time)}
                           />
@@ -513,6 +549,14 @@ export default function TimelinePanel() {
                             elementId={el.id} 
                             kf={kf} 
                             duration={duration} 
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                            onSelect={(shift: boolean) => {
+                              if (shift) {
+                                setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                              } else {
+                                setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                              }
+                            }}
                             onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
                             onRemove={(time: number) => removeKeyframe(el.id, time)}
                           />
@@ -526,6 +570,14 @@ export default function TimelinePanel() {
                             elementId={el.id} 
                             kf={kf} 
                             duration={duration} 
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                            onSelect={(shift: boolean) => {
+                              if (shift) {
+                                setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                              } else {
+                                setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                              }
+                            }}
                             onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
                             onRemove={(time: number) => removeKeyframe(el.id, time)}
                           />

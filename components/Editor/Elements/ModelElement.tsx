@@ -64,19 +64,10 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
         });
       }
 
-      // Center geometry to origin (Origin to Geometry)
-      const box = new THREE.Box3().setFromObject(clone);
-      const center = box.getCenter(new THREE.Vector3());
-      clone.position.x += (clone.position.x - center.x);
-      clone.position.y += (clone.position.y - center.y);
-      clone.position.z += (clone.position.z - center.z);
-      
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 5) {
-        const s = 3 / maxDim;
-        clone.scale.set(s, s, s);
-      }
+      // Auto-centering and auto-scaling have been removed.
+      // This ensures that meshes exported from Blender (especially when exploded)
+      // maintain their original positions, origins, and sizes.
+
 
       // Apply custom materials
       clone.traverse((node: any) => {
