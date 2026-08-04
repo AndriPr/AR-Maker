@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useEditorStore } from '@/lib/store';
-import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List } from 'lucide-react';
+import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List, GraduationCap, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ARFloatingEduHUD } from './ARFloatingEduHUD';
+
 
 export function ARUserInterface() {
   const selectedId = useEditorStore(state => state.selectedId);
@@ -13,6 +13,57 @@ export function ARUserInterface() {
   const [flash, setFlash] = useState(false);
   const [showList, setShowList] = useState(false);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
+  const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
+  const setCurrentARStepIndex = useEditorStore(state => state.setCurrentARStepIndex);
+  const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
+  const setArPlaybackProgress = useEditorStore(state => state.setArPlaybackProgress);
+  const [showBottomPanel, setShowBottomPanel] = useState(false);
+  const [showFinishBanner, setShowFinishBanner] = useState(false);
+
+  // Edu Dashboard Logic
+  const eduPanel = elements.find(el => el.type === 'edu_panel' && el.sceneId === currentSceneId);
+  const modules = eduPanel?.eduMaintenanceTasks || [];
+  const activeModule = modules.length > 0 ? modules[0] : null;
+  const steps = activeModule?.steps || [];
+  const activeStep = steps[currentARStepIndex];
+
+  useEffect(() => {
+    if (steps.length === 0) return;
+    const currentStep = steps[currentARStepIndex];
+    if (!currentStep) return;
+
+    setArPlaybackProgress(0);
+    
+    let start = performance.now();
+    let frameId: number;
+    const animate = (time: number) => {
+      const elapsed = (time - start) / 1000;
+      const progress = Math.min(elapsed / 2.0, 1.0);
+      setArPlaybackProgress(progress);
+      if (progress < 1.0) {
+        frameId = requestAnimationFrame(animate);
+      }
+    };
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [currentARStepIndex, steps]);
+
+  const handleNext = () => {
+    if (currentARStepIndex < steps.length - 1) {
+      setCurrentARStepIndex(currentARStepIndex + 1);
+    } else {
+      setShowFinishBanner(true);
+      setTimeout(() => setShowFinishBanner(false), 3000);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentARStepIndex > 0) {
+      setCurrentARStepIndex(currentARStepIndex - 1);
+    }
+  };
+
   
   const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
 
@@ -68,7 +119,7 @@ export function ARUserInterface() {
 
   return (
     <>
-      <ARFloatingEduHUD />
+      
       <div className="absolute inset-0 pointer-events-none flex flex-col z-[50]">
       {/* Screen Flash for Camera */}
       <AnimatePresence>
@@ -152,12 +203,12 @@ export function ARUserInterface() {
                 </div>
                 
                 <div className="text-white/80 text-sm leading-relaxed mb-4 max-h-32 overflow-y-auto custom-scrollbar">
-                  {selectedElement.data?.description ? (
-                    selectedElement.data.description
+                  {(selectedElement as any).data?.description ? (
+                    (selectedElement as any).data.description
                   ) : (
                     <>
                       {selectedElement.type === '3d_model' && "Model 3D interaktif. Anda dapat menambahkan deskripsi kustom untuk objek ini melalui panel properti di sebelah kanan editor."}
-                      {selectedElement.type === '3d_text' && `Konten Teks: "${selectedElement.data?.text || 'Teks kosong'}"`}
+                      {selectedElement.type === '3d_text' && `Konten Teks: "${(selectedElement as any).data?.text || 'Teks kosong'}"`}
                       {selectedElement.type === 'video' && "Konten Video. Pengguna dapat memutar atau menjeda video ini langsung di dunia nyata."}
                       {selectedElement.type === 'audio' && "Efek Suara. Mendekat ke sumber suara untuk mendengarkan lebih jelas (Spatial Audio)."}
                       {['image', 'hotspot', '3d_shape', 'vfx_sparkles', 'group_folder', 'ui_button'].includes(selectedElement.type) && `Ini adalah elemen berjenis ${selectedElement.type.replace('3d_', '').replace('vfx_', '').replace('ui_', '')}. Anda bisa menambahkan deskripsi kustom di panel kanan editor.`}
