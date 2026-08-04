@@ -81,23 +81,6 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const trackingMode = useEditorStore(state => state.trackingMode);
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
 
-  const [isShiftPressed, setIsShiftPressed] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') setIsShiftPressed(true);
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') setIsShiftPressed(false);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
   // Logic Engine Setup
   const nodes = useEditorStore(state => state.nodes);
   const { executeNextNodes } = useLogicEngine();
@@ -227,10 +210,9 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             
             {/* Render Root Elements Only (those without a parent) */}
             <Select 
-              box={isShiftPressed} 
+              box={true} 
               multiple 
               onChange={(selected) => {
-                if (!isShiftPressed) return; // Only process marquee when shift is held
                 const ids = new Set<string>();
                 selected.forEach(obj => {
                   let current: any = obj;

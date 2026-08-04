@@ -225,6 +225,8 @@ interface EditorState {
   
   // Camera
   cameraResetTrigger: number;
+  isShiftPressed: boolean;
+  setIsShiftPressed: (pressed: boolean) => void;
   triggerCameraReset: () => void;
   cameraFocusTarget: [number, number, number] | null;
   setCameraFocusTarget: (target: [number, number, number] | null) => void;
@@ -283,6 +285,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   past: [],
   future: [],
   cameraResetTrigger: 0,
+  isShiftPressed: false,
+  setIsShiftPressed: (pressed) => set({ isShiftPressed: pressed }),
   cameraFocusTarget: null,
   timelineTime: 0,
   timelinePlaying: false,

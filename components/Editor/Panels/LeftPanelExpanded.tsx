@@ -284,7 +284,7 @@ export function LeftPanelExpanded({
                         onClick={(e) => {
                           handleElementClick(el.id, e.ctrlKey || e.metaKey, e.shiftKey);
                         }}
-                        className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors ${bgClass}`}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors select-none ${bgClass}`}
                         style={{ paddingLeft: `${0.5 + (depth * 1.0)}rem` }}
                       >
                         <div className="flex items-center gap-2 overflow-hidden pointer-events-none">
