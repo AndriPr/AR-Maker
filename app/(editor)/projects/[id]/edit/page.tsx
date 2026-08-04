@@ -43,7 +43,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   
   // Mobile Panel States
   const [isLeftPanelOpen, setLeftPanelOpen] = useState(false);
-  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library' | 'shapes' | 'prefabs'>('hierarchy');
+  const [leftPanelTab, setLeftPanelTab] = useState<'hierarchy' | 'library' | 'media' | 'interact' | 'prefabs'>('hierarchy');
   const [isRightPanelOpen, setRightPanelOpen] = useState(true);
 
   // AI Assistant State
@@ -115,7 +115,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     setTransformMode,
     toggleLeftPanel: () => setLeftPanelOpen(prev => !prev),
     toggleRightPanel: () => setRightPanelOpen(prev => !prev),
-    openLibrary: () => { setLeftPanelOpen(true); setLeftPanelTab('shapes'); }
+    openLibrary: () => { setLeftPanelOpen(true); setLeftPanelTab('library'); }
   });
 
   // Auto-open right panel when an element is selected

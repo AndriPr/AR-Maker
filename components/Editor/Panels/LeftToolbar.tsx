@@ -1,16 +1,16 @@
 import { 
-  FolderOpen, Box, Shapes, LayoutTemplate, Type, 
+  FolderOpen, Box, LayoutTemplate, Type, 
   Wrench, Clock, MousePointerClick, Video, Music, 
-  Sparkles, LayoutDashboard, MapPin, Square 
+  Sparkles, LayoutDashboard, MapPin, Square, Film
 } from 'lucide-react';
 import { SceneElement, useEditorStore } from '@/lib/store';
 
 interface LeftToolbarProps {
   isLeftPanelOpen: boolean;
   setLeftPanelOpen: (open: boolean) => void;
-  leftPanelTab: 'hierarchy' | 'library' | 'shapes' | 'prefabs';
-  setLeftPanelTab: (tab: 'hierarchy' | 'library' | 'shapes' | 'prefabs') => void;
-    setShowLogicEditor: (show: boolean) => void;
+  leftPanelTab: 'hierarchy' | 'library' | 'media' | 'interact' | 'prefabs';
+  setLeftPanelTab: (tab: 'hierarchy' | 'library' | 'media' | 'interact' | 'prefabs') => void;
+  setShowLogicEditor: (show: boolean) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
   elements: SceneElement[];
 }
@@ -20,7 +20,7 @@ export function LeftToolbar({
   setLeftPanelOpen,
   leftPanelTab,
   setLeftPanelTab,
-    setShowLogicEditor,
+  setShowLogicEditor,
   addElement,
   elements
 }: LeftToolbarProps) {
@@ -67,18 +67,27 @@ export function LeftToolbar({
       >
         <Box size={18} />
       </button>
-      
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
-      
+
       <button 
         onClick={() => {
-          if (isLeftPanelOpen && leftPanelTab === 'shapes') setLeftPanelOpen(false);
-          else { setLeftPanelOpen(true); setLeftPanelTab('shapes'); }
+          if (isLeftPanelOpen && leftPanelTab === 'media') setLeftPanelOpen(false);
+          else { setLeftPanelOpen(true); setLeftPanelTab('media'); }
         }}
-        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'shapes' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
-        title="Basic Shapes"
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'media' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        title="Media & VFX"
       >
-        <Shapes size={18} />
+        <Film size={18} />
+      </button>
+
+      <button 
+        onClick={() => {
+          if (isLeftPanelOpen && leftPanelTab === 'interact') setLeftPanelOpen(false);
+          else { setLeftPanelOpen(true); setLeftPanelTab('interact'); }
+        }}
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'interact' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        title="Interactivity"
+      >
+        <MousePointerClick size={18} />
       </button>
       
       <div className="w-6 h-px bg-[#2b2d31]"></div>
@@ -115,44 +124,8 @@ export function LeftToolbar({
       >
         <Clock size={18} />
       </button>
-      
+
       <div className="w-6 h-px bg-[#2b2d31]"></div>
-      
-      <button 
-        onClick={() => {
-          const animatedModels = elements.filter(el => el.type === '3d_model' && el.availableAnimations && el.availableAnimations.length > 0);
-          const defaultTarget = animatedModels.length > 0 ? animatedModels[0].id : '';
-          const defaultAnim = animatedModels.length > 0 && animatedModels[0].availableAnimations ? animatedModels[0].availableAnimations[0] : '';
-          addElement({ 
-            type: 'ui_button', 
-            name: 'Tombol Aksi', 
-            position: [0, -1, 0], 
-            rotation: [0, 0, 0], 
-            scale: [1, 1, 1], 
-            buttonText: 'Mulai Animasi',
-            actionTargetId: defaultTarget,
-            actionAnimation: defaultAnim
-          });
-        }} 
-        className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
-        title="Add Interactive Button"
-      >
-        <MousePointerClick size={18} />
-      </button>
-      
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
-      
-      <button onClick={() => addElement({ type: 'video', name: 'Video Layar', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' })} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Video">
-        <Video size={18} />
-      </button>
-      
-      <button onClick={() => addElement({ type: 'audio', name: 'Audio BGM', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' })} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Audio">
-        <Music size={18} />
-      </button>
-      
-      <button onClick={() => addElement({ type: 'vfx_sparkles', name: 'Efek Sparkles', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sparkleColor: '#f1c40f', sparkleCount: 50, sparkleSize: 4 })} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Particle VFX">
-        <Sparkles size={18} />
-      </button>
 
       <button 
         onClick={() => {
@@ -171,23 +144,6 @@ export function LeftToolbar({
         title="Add UI Dashboard (Edu Panel)"
       >
         <LayoutDashboard size={18} />
-      </button>
-      
-      <button 
-        onClick={() => {
-          addElement({
-            type: 'hotspot',
-            name: 'Hotspot',
-            position: [0, 0, 0],
-            rotation: [0, 0, 0],
-            scale: [1, 1, 1],
-            hotspotText: 'Penjelasan...'
-          });
-        }} 
-        className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
-        title="Add Hotspot Penjelasan"
-      >
-        <MapPin size={18} />
       </button>
 
       <div className="w-6 h-px bg-[#2b2d31]"></div>
