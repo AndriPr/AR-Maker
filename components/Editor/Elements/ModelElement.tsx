@@ -8,31 +8,45 @@ import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls,
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
-// Custom Selection Bounding Box
-const SelectionBox = ({ targetRef }: { targetRef: React.RefObject<THREE.Group> }) => {
-  const boxRef = useRef<THREE.LineSegments>(null);
-  const geomRef = useRef<THREE.EdgesGeometry>(null);
+// Custom Selection Pointer
+const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Group> }) => {
+  const pointerGroupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
-    if (targetRef.current && boxRef.current && geomRef.current) {
+    if (targetRef.current && pointerGroupRef.current) {
       const box = new THREE.Box3().setFromObject(targetRef.current);
       if (box.isEmpty()) return;
       
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
+      const c = new THREE.Vector3();
+      box.getCenter(c);
       
-      boxRef.current.position.copy(center);
-      boxRef.current.scale.copy(size);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      
+      // Place pointer slightly above the object
+      c.y += size.y / 2 + 0.1;
+      
+      // Convert world center to local space of the group
+      targetRef.current.worldToLocal(c);
+      
+      pointerGroupRef.current.position.copy(c);
     }
   });
 
   return (
-    <lineSegments ref={boxRef} renderOrder={999}>
-      <edgesGeometry ref={geomRef} args={[new THREE.BoxGeometry(1, 1, 1)]} />
-      <lineBasicMaterial color="#0ea5e9" depthTest={false} linewidth={3} />
-    </lineSegments>
+    <group ref={pointerGroupRef}>
+      <Html center zIndexRange={[100, 0]} transform={false}>
+        <div className="flex flex-col items-center pointer-events-none animate-bounce" style={{ pointerEvents: 'none' }}>
+          <div className="w-8 h-8 bg-pln-blue text-white rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(14,165,233,0.5)] border border-white/50 backdrop-blur-md">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <div className="w-0.5 h-6 bg-gradient-to-b from-pln-blue to-transparent mt-1" />
+        </div>
+      </Html>
+    </group>
   );
 };
 
@@ -264,7 +278,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   return (
     <group position={element.position} rotation={element.rotation} scale={element.scale}>
       {primitiveObj}
-      {isSelectedInAR && <SelectionBox targetRef={groupRef} />}
+      {isSelectedInAR && <SelectionPointer targetRef={groupRef} />}
     </group>
   );
 }
