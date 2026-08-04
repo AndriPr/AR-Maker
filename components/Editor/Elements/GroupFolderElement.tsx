@@ -41,7 +41,8 @@ export function GroupFolderElement({ element, mode, children }: { element: any, 
   const transformSpace = useEditorStore(state => state.transformSpace);
   const snapGrid = useEditorStore(state => state.snapGrid);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
-  const isSelected = selectedId === element.id && !timelinePlaying;
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const isSelected = selectedId === element.id && !timelinePlaying && !isSimulating;
 
   useTransformLogic(element, isSelected, transformRef);
 

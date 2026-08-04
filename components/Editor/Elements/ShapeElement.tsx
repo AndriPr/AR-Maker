@@ -38,7 +38,8 @@ export function ShapeElement({ element, mode }: { element: any, mode: 'translate
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
-  const isSelected = selectedId === element.id && !timelinePlaying;
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const isSelected = selectedId === element.id && !timelinePlaying && !isSimulating;
   const isSnapping = useEditorStore(state => state.isSnapping);
   const axisLock = useEditorStore(state => state.axisLock);
   const transformSpace = useEditorStore(state => state.transformSpace);

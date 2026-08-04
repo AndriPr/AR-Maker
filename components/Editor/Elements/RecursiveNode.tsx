@@ -45,9 +45,25 @@ export function RecursiveNode({ element, elements, transformMode }: { element: a
   else if (element.type === 'hotspot') component = <HotspotElement element={element} mode={transformMode} />;
   else if (element.type === 'occluder_plane' || element.type === 'occluder_cube') component = <OccluderElement element={element} mode={transformMode} />;
 
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const selectedId = useEditorStore(state => state.selectedId);
+  const showIndicator = isSimulating && selectedId === element.id;
+
   return (
     <group visible={!element.isHidden}>
       {component}
+      
+      {/* AR Selection Indicator */}
+      {showIndicator && (
+        <group position={element.position as [number, number, number]}>
+          <Html center position={[0, 1.5, 0]}>
+            <div className="animate-bounce bg-pln-blue text-white rounded-full p-1.5 shadow-lg shadow-pln-blue/50 border-2 border-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            </div>
+          </Html>
+        </group>
+      )}
+
       {/* If it's NOT a group folder, but somehow has children, we render them here attached to the parent's pivot. */}
       {element.type !== 'group_folder' && children.length > 0 && (
         <group position={element.position as [number, number, number]} rotation={element.rotation as [number, number, number]} scale={element.scale as [number, number, number]}>

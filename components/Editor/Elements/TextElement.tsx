@@ -42,7 +42,8 @@ export function TextElement({ element, mode }: { element: any, mode: 'translate'
   const snapGrid = useEditorStore(state => state.snapGrid);
 
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
-  const isSelected = selectedId === element.id && !timelinePlaying;
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const isSelected = selectedId === element.id && !timelinePlaying && !isSimulating;
 
   const [liveText, setLiveText] = useState(element.content || '');
 

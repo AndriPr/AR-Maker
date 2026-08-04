@@ -41,7 +41,8 @@ export function ImageElement({ element, mode }: { element: any, mode: 'translate
   const transformSpace = useEditorStore(state => state.transformSpace);
   const snapGrid = useEditorStore(state => state.snapGrid);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
-  const isSelected = selectedId === element.id && !timelinePlaying;
+  const isSimulating = useEditorStore(state => state.isSimulating);
+  const isSelected = selectedId === element.id && !timelinePlaying && !isSimulating;
   
   // Optional: load the texture (if it fails, it just won't show)
   const texture = useTexture(element.url || 'https://via.placeholder.com/150');

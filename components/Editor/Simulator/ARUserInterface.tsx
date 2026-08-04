@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useEditorStore } from '@/lib/store';
-import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music } from 'lucide-react';
+import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function ARUserInterface() {
@@ -10,6 +10,8 @@ export function ARUserInterface() {
   const isScanningAR = useEditorStore(state => state.isScanningAR);
   const setIsScanningAR = useEditorStore(state => state.setIsScanningAR);
   const [flash, setFlash] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const currentSceneId = useEditorStore(state => state.currentSceneId);
   
   const selectedElement = elements.find(el => el.id === selectedId);
 
@@ -163,12 +165,57 @@ export function ARUserInterface() {
                   <Camera size={24} className="fill-black" />
                 </button>
                 
-                <button className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors">
-                  <div className="w-1.5 h-1.5 rounded-full bg-pln-blue"></div>
-                  <span className="text-[10px] font-bold text-pln-blue">INFO</span>
+                <button 
+                  onClick={() => setShowList(!showList)}
+                  className={`flex flex-col items-center gap-1 transition-colors ${showList ? 'text-pln-blue' : 'text-white/70 hover:text-white'}`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${showList ? 'bg-pln-blue' : 'bg-transparent'}`}></div>
+                  <span className="text-[10px] font-bold">OBJECTS</span>
                 </button>
              </div>
           </div>
+          
+          {/* Objects List Side Panel */}
+          <AnimatePresence>
+            {showList && (
+              <motion.div
+                initial={{ x: '100%', opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute top-0 right-0 bottom-0 w-64 bg-black/60 backdrop-blur-xl border-l border-white/20 pointer-events-auto flex flex-col z-40"
+              >
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                  <h3 className="text-white font-bold">Daftar Objek</h3>
+                  <button onClick={() => setShowList(false)} className="text-white/60 hover:text-white p-1">
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                  {elements.filter(el => el.sceneId === currentSceneId).length === 0 && (
+                    <div className="text-center text-white/50 text-sm mt-10">
+                      Tidak ada objek di scene ini
+                    </div>
+                  )}
+                  {elements.filter(el => el.sceneId === currentSceneId).map(el => (
+                    <button
+                      key={el.id}
+                      onClick={() => setSelectedId(el.id)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'hover:bg-white/10 border border-transparent'}`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${selectedId === el.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
+                        {getElementIcon(el.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`font-semibold text-sm truncate ${selectedId === el.id ? 'text-white' : 'text-white/80'}`}>{el.name}</div>
+                        <div className="text-[10px] text-white/50 capitalize">{el.type}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
