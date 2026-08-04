@@ -4,9 +4,37 @@ import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 
 import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line} from '@react-three/drei';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line, Edges} from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
+
+// Custom Selection Bounding Box
+const SelectionBox = ({ targetRef }: { targetRef: React.RefObject<THREE.Group> }) => {
+  const boxRef = useRef<THREE.LineSegments>(null);
+  const geomRef = useRef<THREE.EdgesGeometry>(null);
+
+  useFrame(() => {
+    if (targetRef.current && boxRef.current && geomRef.current) {
+      const box = new THREE.Box3().setFromObject(targetRef.current);
+      if (box.isEmpty()) return;
+      
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+      
+      boxRef.current.position.copy(center);
+      boxRef.current.scale.copy(size);
+    }
+  });
+
+  return (
+    <lineSegments ref={boxRef} renderOrder={999}>
+      <edgesGeometry ref={geomRef} args={[new THREE.BoxGeometry(1, 1, 1)]} />
+      <lineBasicMaterial color="#0ea5e9" depthTest={false} linewidth={3} />
+    </lineSegments>
+  );
+};
 
 // Logic Engine Hook
 import { useLogicEngine } from '@/hooks/useLogicEngine';
@@ -47,9 +75,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
   const isSimulating = useEditorStore(state => state.isSimulating);
   const isSelected = selectedId === element.id && !timelinePlaying && !isSimulating;
-  
-  // AR Selection Highlight
-  useHelper(isSimulating && selectedId === element.id ? groupRef : null, THREE.BoxHelper, '#0ea5e9');
+  const isSelectedInAR = selectedId === element.id && isSimulating;
   
   const clonedScene = useMemo(() => {
     if (!scene) return null;
@@ -238,6 +264,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   return (
     <group position={element.position} rotation={element.rotation} scale={element.scale}>
       {primitiveObj}
+      {isSelectedInAR && <SelectionBox targetRef={groupRef} />}
     </group>
   );
 }

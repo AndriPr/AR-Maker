@@ -15,6 +15,19 @@ export function ARUserInterface() {
   
   const selectedElement = elements.find(el => el.id === selectedId);
 
+  // Filter out orphaned (ghost) elements
+  const validElements = elements.filter(el => {
+    if (!el.parentId) return true;
+    let currentParent = el.parentId;
+    while (currentParent) {
+      const parent = elements.find(p => p.id === currentParent);
+      if (!parent) return false; // Parent doesn't exist, this is a ghost!
+      currentParent = parent.parentId;
+    }
+    return true;
+  });
+  const validSceneElements = validElements.filter(el => el.sceneId === currentSceneId);
+
   useEffect(() => {
     if (isScanningAR) {
       const timer = setTimeout(() => {
@@ -189,21 +202,22 @@ export function ARUserInterface() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="absolute top-0 right-0 bottom-0 w-64 bg-black/60 backdrop-blur-xl border-l border-white/20 pointer-events-auto flex flex-col z-40"
+                className="absolute top-16 right-4 bottom-24 w-64 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden flex flex-col pointer-events-auto shadow-2xl"
               >
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
-                  <h3 className="text-white font-bold">Daftar Objek</h3>
-                  <button onClick={() => setShowList(false)} className="text-white/60 hover:text-white p-1">
-                    <X size={16} />
+                <div className="p-3 border-b border-white/10 bg-white/5 flex justify-between items-center">
+                  <span className="text-white text-xs font-bold uppercase tracking-wider">Daftar Objek AR</span>
+                  <button onClick={() => setShowList(false)} className="text-white/50 hover:text-white">
+                    <X size={14} />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                  {elements.filter(el => el.sceneId === currentSceneId).length === 0 && (
-                    <div className="text-center text-white/50 text-sm mt-10">
-                      Tidak ada objek di scene ini
-                    </div>
-                  )}
-                  {elements.filter(el => el.sceneId === currentSceneId).map(el => (
+                <div className="flex-1 overflow-y-auto p-2">
+                  <div className="flex flex-col gap-1">
+                    {validSceneElements.length === 0 && (
+                      <div className="text-center text-white/50 text-sm mt-10">
+                        Tidak ada objek di scene ini
+                      </div>
+                    )}
+                    {validSceneElements.map(el => (
                     <button
                       key={el.id}
                       onClick={() => {
