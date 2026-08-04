@@ -130,7 +130,8 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const setViewportShading = useEditorStore(state => state.setViewportShading);
 
   return (
-    <div className="w-full h-full bg-[#393939] relative">
+    <div className={`w-full h-full relative ${simulateMode ? 'bg-[url("https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop")] bg-cover bg-center' : 'bg-[#393939]'}`}>
+      {simulateMode && <div className="absolute inset-0 bg-black/50 backdrop-blur-md pointer-events-none z-0"></div>}
       {/* Viewport Shading Toggles (Blender-like) */}
       {!simulateMode && (
         <div className="absolute top-4 right-28 z-10 flex bg-[#1a1b1e] rounded-md border border-[#2b2d31] p-0.5 shadow-lg">
@@ -210,7 +211,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             
             {/* Render Root Elements Only (those without a parent) */}
             <Select 
-              box={true} 
+              box={!simulateMode} 
               multiple 
               onChange={(selected) => {
                 const ids = new Set<string>();
