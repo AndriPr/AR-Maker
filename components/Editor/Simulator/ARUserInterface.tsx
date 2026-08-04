@@ -235,6 +235,7 @@ export function ARUserInterface() {
                       </div>
                     </button>
                   ))}
+                  </div>
                 </div>
               </motion.div>
             )}
