@@ -219,6 +219,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
   return (
     <group 
       ref={groupRef}
+      userData={{ elementId: element.id }}
       onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
       onPointerOut={(e: any) => { setHoveredId(null); }}
       onDoubleClick={(e: any) => {

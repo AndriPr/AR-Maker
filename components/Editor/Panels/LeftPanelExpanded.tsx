@@ -49,8 +49,45 @@ export function LeftPanelExpanded({
     currentSceneId 
   } = useEditorStore();
 
+  const getVisualOrder = () => {
+    const order: string[] = [];
+    const traverse = (elId: string) => {
+      order.push(elId);
+      const children = elements.filter(child => child.parentId === elId);
+      children.forEach(child => traverse(child.id));
+    };
+    elements.filter(el => !el.parentId).forEach(el => traverse(el.id));
+    return order;
+  };
+
   const handleElementClick = (id: string, ctrlKey: boolean, shiftKey: boolean) => {
-    if (ctrlKey || shiftKey) {
+    if (shiftKey && (selectedId || multiSelectedIds.length > 0)) {
+      const visualOrder = getVisualOrder();
+      const lastSelected = multiSelectedIds.length > 0 ? multiSelectedIds[multiSelectedIds.length - 1] : selectedId;
+      
+      if (lastSelected) {
+        const startIdx = visualOrder.indexOf(lastSelected);
+        const endIdx = visualOrder.indexOf(id);
+        
+        if (startIdx !== -1 && endIdx !== -1) {
+           const minIdx = Math.min(startIdx, endIdx);
+           const maxIdx = Math.max(startIdx, endIdx);
+           const newSelection = visualOrder.slice(minIdx, maxIdx + 1);
+           
+           if (ctrlKey) {
+              const combined = new Set([...multiSelectedIds, (selectedId ? selectedId : ''), ...newSelection]);
+              combined.delete('');
+              setMultiSelectedIds(Array.from(combined));
+           } else {
+              setMultiSelectedIds(newSelection);
+              setSelectedId(null);
+           }
+           return;
+        }
+      }
+    }
+    
+    if (ctrlKey) {
       if (multiSelectedIds.includes(id)) {
         setMultiSelectedIds(multiSelectedIds.filter(selId => selId !== id));
       } else {
@@ -59,6 +96,7 @@ export function LeftPanelExpanded({
            newIds.push(selectedId);
         }
         setMultiSelectedIds(newIds);
+        setSelectedId(null);
       }
     } else {
       setSelectedId(id);

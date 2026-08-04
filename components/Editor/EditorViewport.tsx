@@ -4,8 +4,8 @@ import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
-import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line} from '@react-three/drei';
+import { EffectComposer, Outline, Selection } from '@react-three/postprocessing';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line, Select} from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -80,6 +80,23 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const isOrthographic = useEditorStore(state => state.isOrthographic);
   const trackingMode = useEditorStore(state => state.trackingMode);
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
+
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setIsShiftPressed(true);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setIsShiftPressed(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   // Logic Engine Setup
   const nodes = useEditorStore(state => state.nodes);
@@ -209,9 +226,38 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             )}
             
             {/* Render Root Elements Only (those without a parent) */}
-            {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-              <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-            ))}
+            <Select 
+              box={isShiftPressed} 
+              multiple 
+              onChange={(selected) => {
+                if (!isShiftPressed) return; // Only process marquee when shift is held
+                const ids = new Set<string>();
+                selected.forEach(obj => {
+                  let current: any = obj;
+                  while (current) {
+                    if (current.userData && current.userData.elementId) {
+                      ids.add(current.userData.elementId);
+                      break;
+                    }
+                    current = current.parent;
+                  }
+                });
+                
+                const state = useEditorStore.getState();
+                if (ids.size === 0) {
+                  // If nothing was selected with the box, we can optionally clear selection, 
+                  // but standard behavior is usually clicking in empty space clears it, which is handled elsewhere.
+                  // For now, let's just do nothing if 0 to avoid breaking single clicks.
+                } else {
+                  state.setSelectedId(null);
+                  state.setMultiSelectedIds(Array.from(ids));
+                }
+              }}
+            >
+              {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+                <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+              ))}
+            </Select>
           </Suspense>
 
         {!simulateMode && (
