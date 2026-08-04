@@ -27,7 +27,7 @@ interface EduMaintenanceTask {
   steps: EduMaintenanceStep[];
 }
 
-type ActionType = 'play_animation' | 'play_audio' | 'toggle_visibility' | 'open_url' | 'change_scene';
+type ActionType = 'play_animation' | 'play_audio' | 'toggle_visibility' | 'open_url' | 'change_scene' | 'play_timeline_range';
 
 interface ElementAction {
   id: string;
@@ -251,6 +251,8 @@ interface EditorState {
   // Advanced Animation Features (Phase 10)
   playbackRange: [number, number] | null;
   setPlaybackRange: (range: [number, number] | null) => void;
+  playbackDirection: 1 | -1;
+  setPlaybackDirection: (dir: 1 | -1) => void;
   selectedKeyframes: { elementId: string, time: number }[];
   setSelectedKeyframes: (kfs: { elementId: string, time: number }[]) => void;
   fps: number;
@@ -298,6 +300,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isAutoKeying: false,
   currentEasing: 'linear',
   playbackRange: null,
+  playbackDirection: 1,
   selectedKeyframes: [],
   fps: 30,
 
@@ -700,6 +703,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setIsAutoKeying: (autoKeying) => set({ isAutoKeying: autoKeying }),
   setCurrentEasing: (easing) => set({ currentEasing: easing }),
   setPlaybackRange: (range) => set({ playbackRange: range }),
+  setPlaybackDirection: (dir) => set({ playbackDirection: dir }),
   setSelectedKeyframes: (kfs) => set({ selectedKeyframes: kfs }),
   setFps: (fps) => set({ fps }),
   

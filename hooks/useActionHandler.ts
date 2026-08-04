@@ -96,6 +96,27 @@ export function useActionHandler() {
        return true;
     }
 
+    if (element.onClickActionType === 'play_timeline_range' && element.onClickActionValue) {
+       const parts = element.onClickActionValue.split(',');
+       const start = parseFloat(parts[0]) || 0;
+       const end = parseFloat(parts[1]) || 1;
+       
+       const state = useEditorStore.getState();
+       state.setPlaybackRange([start, end]);
+       state.setTimelineLooping(false);
+       
+       if (Math.abs(state.timelineTime - end) < 0.1) {
+          state.setPlaybackDirection(-1);
+          state.setTimelineTime(end);
+       } else {
+          state.setPlaybackDirection(1);
+          state.setTimelineTime(start);
+       }
+       
+       state.setTimelinePlaying(true);
+       return true;
+    }
+
     return false; 
   };
 }

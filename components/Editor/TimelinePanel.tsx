@@ -235,25 +235,47 @@ export default function TimelinePanel() {
     let lastTime = performance.now();
 
     const loop = (currentTime: number) => {
-      if (!useEditorStore.getState().timelinePlaying) return;
+      const state = useEditorStore.getState();
+      if (!state.timelinePlaying) return;
 
       const delta = (currentTime - lastTime) / 1000; // convert to seconds
       lastTime = currentTime;
 
-      const prev = useEditorStore.getState().timelineTime;
-      if (prev >= duration) {
-        const isLooping = useEditorStore.getState().timelineLooping;
-        if (isLooping) {
-          setTimelineTime(0);
-          animationFrameId = requestAnimationFrame(loop);
-        } else {
-          setTimelinePlaying(false);
-          setTimelineTime(0);
+      const direction = state.playbackDirection || 1;
+      const range = state.playbackRange;
+      const prev = state.timelineTime;
+      const nextTime = prev + (delta * direction);
+
+      if (range) {
+        if (direction === 1 && nextTime >= range[1]) {
+           setTimelineTime(range[1]);
+           setTimelinePlaying(false);
+           return;
+        } else if (direction === -1 && nextTime <= range[0]) {
+           setTimelineTime(range[0]);
+           setTimelinePlaying(false);
+           return;
         }
       } else {
-        setTimelineTime(prev + delta);
-        animationFrameId = requestAnimationFrame(loop);
+        if (direction === 1 && nextTime >= duration) {
+          if (state.timelineLooping) {
+            setTimelineTime(0);
+            animationFrameId = requestAnimationFrame(loop);
+            return;
+          } else {
+            setTimelineTime(duration);
+            setTimelinePlaying(false);
+            return;
+          }
+        } else if (direction === -1 && nextTime <= 0) {
+          setTimelineTime(0);
+          setTimelinePlaying(false);
+          return;
+        }
       }
+
+      setTimelineTime(nextTime);
+      animationFrameId = requestAnimationFrame(loop);
     };
 
     if (timelinePlaying) {

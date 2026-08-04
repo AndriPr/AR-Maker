@@ -1717,6 +1717,7 @@ export function RightPanel({
                         className="bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
                       >
                         <option value="none">-- Tidak Ada Aksi --</option>
+                        <option value="play_timeline_range">Putar Rentang Animasi Timeline</option>
                         <option value="url">Buka Link (URL / WhatsApp)</option>
                         <option value="audio">Putar Audio</option>
                         <option value="animation">Mainkan Animasi Model 3D</option>
@@ -1753,6 +1754,49 @@ export function RightPanel({
                         <p className="text-[10px] text-gray-500">Saat objek ini diklik di AR, presentasi akan berpindah ke Scene yang dipilih.</p>
                       </div>
                     )}
+
+                    {selectedElement.onClickActionType === 'play_timeline_range' && (
+                        <div className="flex flex-col gap-1.5 bg-[#202227] p-2 rounded border border-[#2b2d31]">
+                          <label className="text-[10px] text-gray-400 font-medium mb-1">Pengaturan Rentang Animasi</label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 flex flex-col gap-1">
+                              <label className="text-[9px] text-gray-500">Mulai (detik)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={selectedElement.onClickActionValue?.split(',')[0] || '0'}
+                                onChange={(e) => {
+                                  const current = selectedElement.onClickActionValue?.split(',') || ['0', '1'];
+                                  current[0] = e.target.value || '0';
+                                  updateElement(selectedElement.id, { onClickActionValue: current.join(',') });
+                                }}
+                                className="bg-[#1a1b1e] border border-[#2b2d31] rounded px-2 py-1.5 text-xs text-white w-full"
+                              />
+                            </div>
+                            <div className="text-gray-500 mt-4">-</div>
+                            <div className="flex-1 flex flex-col gap-1">
+                              <label className="text-[9px] text-gray-500">Selesai (detik)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={selectedElement.onClickActionValue?.split(',')[1] || '1'}
+                                onChange={(e) => {
+                                  const current = selectedElement.onClickActionValue?.split(',') || ['0', '1'];
+                                  current[1] = e.target.value || '1';
+                                  updateElement(selectedElement.id, { onClickActionValue: current.join(',') });
+                                }}
+                                className="bg-[#1a1b1e] border border-[#2b2d31] rounded px-2 py-1.5 text-xs text-white w-full"
+                              />
+                            </div>
+                          </div>
+                          <div className="text-[9px] text-gray-400 mt-2 italic flex items-start gap-1">
+                            <span className="text-pln-blue text-xs leading-none">ℹ</span>
+                            Saat objek ditekan di AR, animasi akan diputar dari detik Mulai hingga Selesai. Ditekan lagi akan memutar mundur.
+                          </div>
+                        </div>
+                      )}
 
                     {selectedElement.onClickActionType === 'audio' && (
                       <div className="flex flex-col gap-1.5">
