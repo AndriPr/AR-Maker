@@ -18,10 +18,12 @@ export function SimulatorModal({ onClose }: SimulatorModalProps) {
     <div className="fixed inset-0 bg-[#0a0a0c] z-[100] flex flex-col">
       {/* Simulator Header / Toolbar */}
       <div className="h-16 bg-[#1a1b1e] border-b border-[#2b2d31] flex items-center justify-between px-6 shrink-0 shadow-md">
-        <h2 className="text-white font-bold flex items-center gap-2">
-          <Play className="text-green-400" size={20} />
-          AR Simulator
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-white font-bold flex items-center gap-2">
+            <Play className="text-green-400" size={20} />
+            AR Simulator <span className="text-xs text-pln-blue ml-1">v1.3</span>
+          </h2>
+        </div>
         
         {/* Device Selector */}
         <div className="flex items-center gap-1 bg-[#2b2d31] p-1 rounded-lg">
