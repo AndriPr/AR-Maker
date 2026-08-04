@@ -11,12 +11,15 @@ export function ARUserInterface() {
   const setIsScanningAR = useEditorStore(state => state.setIsScanningAR);
   const [flash, setFlash] = useState(false);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
+  const scenes = useEditorStore(state => state.scenes);
+  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
   
   const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
   const setCurrentARStepIndex = useEditorStore(state => state.setCurrentARStepIndex);
   const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
   const setArPlaybackProgress = useEditorStore(state => state.setArPlaybackProgress);
-  const [showBottomPanel, setShowBottomPanel] = useState(false);
+  
+  const [activeView, setActiveView] = useState<'closed' | 'menu' | 'module' | 'objects' | 'scenes'>('closed');
   const [showFinishBanner, setShowFinishBanner] = useState(false);
 
   const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
@@ -24,7 +27,7 @@ export function ARUserInterface() {
   // Filter out orphaned (ghost) elements
   const validElements = elements.filter(el => {
     if (!el.parentId) return true;
-    let currentParent = el.parentId;
+    let currentParent: string | undefined = el.parentId;
     while (currentParent) {
       const parent = elements.find(p => p.id === currentParent);
       if (!parent) return false;
@@ -205,7 +208,7 @@ export function ARUserInterface() {
           {/* Bottom Action Bar (Unified Panel) */}
           <div className="w-full p-4 flex justify-center items-end pointer-events-none absolute bottom-4">
             <AnimatePresence mode="wait">
-              {showBottomPanel ? (
+              {activeView !== 'closed' ? (
                 <motion.div
                   key="panel"
                   initial={{ y: 50, opacity: 0 }}
@@ -216,59 +219,97 @@ export function ARUserInterface() {
                 >
                   <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5">
                     <div className="flex items-center gap-2">
-                      <GraduationCap size={18} className="text-pln-blue" />
-                      <span className="text-white font-bold">Menu Pembelajaran AR</span>
+                      {activeView !== 'menu' && (
+                        <button onClick={() => setActiveView('menu')} className="mr-1 text-white/70 hover:text-white transition-colors">
+                          <ChevronLeft size={20} />
+                        </button>
+                      )}
+                      {activeView === 'menu' && <GraduationCap size={18} className="text-pln-blue" />}
+                      <span className="text-white font-bold">
+                        {activeView === 'menu' && "Edu Panel"}
+                        {activeView === 'module' && "Modul Edukasi"}
+                        {activeView === 'objects' && "Daftar Objek"}
+                        {activeView === 'scenes' && "Daftar Scene"}
+                      </span>
                     </div>
-                    <button onClick={() => setShowBottomPanel(false)} className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors">
+                    <button onClick={() => setActiveView('closed')} className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors">
                       <X size={16} />
                     </button>
                   </div>
 
-                  <div className="flex flex-col p-4 max-h-[50vh] overflow-y-auto custom-scrollbar gap-6">
-                    {/* Edu Dashboard Section */}
-                    <div className="flex flex-col gap-3">
-                      <h4 className="text-white/70 text-xs font-bold uppercase tracking-wider">Modul Aktif</h4>
-                      {!eduPanel || steps.length === 0 ? (
-                        <div className="bg-white/5 rounded-xl p-4 text-center text-white/50 text-xs">
-                          Belum ada modul edukasi yang ditambahkan pada scene ini.
-                        </div>
-                      ) : (
-                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                          <div className="bg-pln-blue/20 px-3 py-2 border-b border-white/5 flex items-center justify-between">
-                            <div>
-                              <span className="text-pln-blue text-[9px] font-bold uppercase tracking-wider">{activeModule?.title}</span>
-                              <h3 className="text-white font-bold text-xs leading-tight mt-0.5">Langkah {currentARStepIndex + 1} dari {steps.length}</h3>
+                  <div className="flex flex-col p-4 max-h-[50vh] overflow-y-auto custom-scrollbar gap-2">
+                    
+                    {/* MENU VIEW */}
+                    {activeView === 'menu' && (
+                      <div className="flex flex-col gap-2">
+                        <button onClick={() => setActiveView('objects')} className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-xl text-left transition-colors">
+                          <div className="flex items-center gap-3">
+                            <Box size={20} className="text-white/70" />
+                            <span className="text-white font-medium text-sm">Object</span>
+                          </div>
+                          <ChevronRight size={16} className="text-white/30" />
+                        </button>
+                        <button onClick={() => setActiveView('module')} className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-xl text-left transition-colors">
+                          <div className="flex items-center gap-3">
+                            <GraduationCap size={20} className="text-pln-blue" />
+                            <span className="text-white font-medium text-sm">Modul Edukasi</span>
+                          </div>
+                          <ChevronRight size={16} className="text-white/30" />
+                        </button>
+                        <button onClick={() => setActiveView('scenes')} className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-xl text-left transition-colors">
+                          <div className="flex items-center gap-3">
+                            <ImageIcon size={20} className="text-white/70" />
+                            <span className="text-white font-medium text-sm">Scene</span>
+                          </div>
+                          <ChevronRight size={16} className="text-white/30" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* MODULE VIEW */}
+                    {activeView === 'module' && (
+                      <div className="flex flex-col gap-3">
+                        {!eduPanel || steps.length === 0 ? (
+                          <div className="bg-white/5 rounded-xl p-4 text-center text-white/50 text-xs">
+                            Belum ada modul edukasi yang ditambahkan pada scene ini.
+                          </div>
+                        ) : (
+                          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                            <div className="bg-pln-blue/20 px-3 py-2 border-b border-white/5 flex items-center justify-between">
+                              <div>
+                                <span className="text-pln-blue text-[9px] font-bold uppercase tracking-wider">{activeModule?.title}</span>
+                                <h3 className="text-white font-bold text-xs leading-tight mt-0.5">Langkah {currentARStepIndex + 1} dari {steps.length}</h3>
+                              </div>
+                              
+                              <div className="relative w-6 h-6 flex items-center justify-center">
+                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                  <path className="text-white/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
+                                  <path className="text-pln-blue transition-all duration-300" strokeDasharray={`\${arPlaybackProgress * 100}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
+                                </svg>
+                                <span className="absolute text-[6px] font-bold text-white">{Math.round(arPlaybackProgress * 100)}%</span>
+                              </div>
                             </div>
-                            
-                            <div className="relative w-6 h-6 flex items-center justify-center">
-                              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                <path className="text-white/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
-                                <path className="text-pln-blue transition-all duration-300" strokeDasharray={`\${arPlaybackProgress * 100}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
-                              </svg>
-                              <span className="absolute text-[6px] font-bold text-white">{Math.round(arPlaybackProgress * 100)}%</span>
+
+                            <div className="p-3">
+                              <h4 className="text-white font-bold text-sm mb-1">{activeStep?.title}</h4>
+                              <p className="text-gray-300 text-xs leading-relaxed">{activeStep?.instruction}</p>
+                            </div>
+
+                            <div className="p-2 bg-black/20 flex gap-2">
+                              <button onClick={handlePrev} disabled={currentARStepIndex === 0} className="flex-1 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-lg flex items-center justify-center text-white text-xs font-medium transition-colors">
+                                <ChevronLeft size={14} className="mr-1" /> Prev
+                              </button>
+                              <button onClick={handleNext} className="flex-1 py-2 bg-pln-blue hover:bg-pln-blue/90 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-lg transition-colors">
+                                {currentARStepIndex === steps.length - 1 ? 'Selesai' : 'Next'} <ChevronRight size={14} className="ml-1" />
+                              </button>
                             </div>
                           </div>
+                        )}
+                      </div>
+                    )}
 
-                          <div className="p-3">
-                            <h4 className="text-white font-bold text-sm mb-1">{activeStep?.title}</h4>
-                            <p className="text-gray-300 text-xs leading-relaxed">{activeStep?.instruction}</p>
-                          </div>
-
-                          <div className="p-2 bg-black/20 flex gap-2">
-                            <button onClick={handlePrev} disabled={currentARStepIndex === 0} className="flex-1 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-lg flex items-center justify-center text-white text-xs font-medium transition-colors">
-                              <ChevronLeft size={14} className="mr-1" /> Prev
-                            </button>
-                            <button onClick={handleNext} className="flex-1 py-2 bg-pln-blue hover:bg-pln-blue/90 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-lg transition-colors">
-                              {currentARStepIndex === steps.length - 1 ? 'Selesai' : 'Next'} <ChevronRight size={14} className="ml-1" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Objects List Section */}
-                    <div className="flex flex-col gap-3">
-                      <h4 className="text-white/70 text-xs font-bold uppercase tracking-wider">Daftar Objek</h4>
+                    {/* OBJECTS VIEW */}
+                    {activeView === 'objects' && (
                       <div className="flex flex-col gap-2">
                         {validSceneElements.length === 0 && (
                           <div className="text-center text-white/50 text-xs py-4">
@@ -280,7 +321,7 @@ export function ARUserInterface() {
                             key={el.id}
                             onClick={() => {
                               setSelectedId(el.id);
-                              setShowBottomPanel(false);
+                              setActiveView('closed');
                             }}
                             className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left \${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
                           >
@@ -294,7 +335,34 @@ export function ARUserInterface() {
                           </button>
                         ))}
                       </div>
-                    </div>
+                    )}
+
+                    {/* SCENES VIEW */}
+                    {activeView === 'scenes' && (
+                      <div className="flex flex-col gap-2">
+                        {scenes.map(s => (
+                          <button
+                            key={s.id}
+                            onClick={() => {
+                              setCurrentSceneId(s.id);
+                              setActiveView('closed');
+                            }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left \${currentSceneId === s.id ? 'bg-pln-blue/20 border border-pln-blue/50' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+                          >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 \${currentSceneId === s.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
+                              <ImageIcon size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-semibold text-sm truncate \${currentSceneId === s.id ? 'text-white' : 'text-white/80'}`}>{s.name}</div>
+                            </div>
+                            {currentSceneId === s.id && (
+                              <CheckCircle2 size={16} className="text-pln-blue" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                   </div>
                 </motion.div>
               ) : (
@@ -305,22 +373,11 @@ export function ARUserInterface() {
                   exit={{ y: 50, opacity: 0 }}
                   className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex gap-4 items-center shadow-2xl"
                 >
-                  <button className="flex flex-col items-center justify-center w-12 h-12 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors">
-                    <span className="text-[8px] font-bold tracking-wider">SCENES</span>
-                  </button>
-                  
                   <button 
-                    onClick={() => setShowBottomPanel(true)}
+                    onClick={() => setActiveView('menu')}
                     className="w-16 h-16 rounded-full bg-pln-blue flex items-center justify-center shadow-[0_0_20px_rgba(0,162,233,0.4)] hover:scale-105 active:scale-95 transition-all text-white border-2 border-white/20"
                   >
                     <GraduationCap size={28} />
-                  </button>
-                  
-                  <button 
-                    onClick={() => setShowBottomPanel(true)}
-                    className="flex flex-col items-center justify-center w-12 h-12 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-                  >
-                    <span className="text-[8px] font-bold tracking-wider">OBJECTS</span>
                   </button>
                 </motion.div>
               )}
