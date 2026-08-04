@@ -384,10 +384,22 @@ export function RightPanel({
                   <div className="flex flex-col gap-1.5 mt-4">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Nama Elemen</label>
                     <input 
-                      type="text" 
-                      value={selectedElement.name}
+                      type="text"
+                      value={selectedElement.name || ''}
                       onChange={(e) => updateElement(selectedElement.id, { name: e.target.value })}
                       className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 mt-3">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Deskripsi (Edu Panel)</label>
+                    <textarea 
+                      value={selectedElement.data?.description || ''}
+                      onChange={(e) => updateElement(selectedElement.id, { 
+                        data: { ...selectedElement.data, description: e.target.value }
+                      })}
+                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors resize-none h-20"
+                      placeholder="Masukkan deskripsi untuk AR Edu Panel..."
                     />
                   </div>
                 </div>

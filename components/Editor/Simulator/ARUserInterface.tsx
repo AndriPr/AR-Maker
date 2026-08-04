@@ -43,8 +43,8 @@ export function ARUserInterface() {
 
   const getElementIcon = (type: string) => {
     switch(type) {
-      case 'model': return <Box size={20} />;
-      case 'text': return <Type size={20} />;
+      case '3d_model': return <Box size={20} />;
+      case '3d_text': return <Type size={20} />;
       case 'image': return <ImageIcon size={20} />;
       case 'video': return <Video size={20} />;
       case 'audio': return <Music size={20} />;
@@ -136,11 +136,17 @@ export function ARUserInterface() {
                 </div>
                 
                 <div className="text-white/80 text-sm leading-relaxed mb-4 max-h-32 overflow-y-auto custom-scrollbar">
-                  {selectedElement.type === 'model' && "Model 3D interaktif yang dapat dilihat dari berbagai sudut. Di aplikasi sesungguhnya, area ini akan menampilkan metadata atau deskripsi spesifik dari database terkait model ini."}
-                  {selectedElement.type === 'text' && `Konten Teks: "${selectedElement.data?.text || 'Teks kosong'}"`}
-                  {selectedElement.type === 'video' && "Konten Video. Pengguna dapat memutar atau menjeda video ini langsung di dunia nyata."}
-                  {selectedElement.type === 'audio' && "Efek Suara. Mendekat ke sumber suara untuk mendengarkan lebih jelas (Spatial Audio)."}
-                  {['image', 'hotspot', 'shape', 'sparkles', 'group_folder'].includes(selectedElement.type) && `Ini adalah elemen berjenis ${selectedElement.type}.`}
+                  {selectedElement.data?.description ? (
+                    selectedElement.data.description
+                  ) : (
+                    <>
+                      {selectedElement.type === '3d_model' && "Model 3D interaktif. Anda dapat menambahkan deskripsi kustom untuk objek ini melalui panel properti di sebelah kanan editor."}
+                      {selectedElement.type === '3d_text' && `Konten Teks: "${selectedElement.data?.text || 'Teks kosong'}"`}
+                      {selectedElement.type === 'video' && "Konten Video. Pengguna dapat memutar atau menjeda video ini langsung di dunia nyata."}
+                      {selectedElement.type === 'audio' && "Efek Suara. Mendekat ke sumber suara untuk mendengarkan lebih jelas (Spatial Audio)."}
+                      {['image', 'hotspot', '3d_shape', 'vfx_sparkles', 'group_folder', 'ui_button'].includes(selectedElement.type) && `Ini adalah elemen berjenis ${selectedElement.type.replace('3d_', '').replace('vfx_', '').replace('ui_', '')}. Anda bisa menambahkan deskripsi kustom di panel kanan editor.`}
+                    </>
+                  )}
                 </div>
                 
                 <button className="w-full py-2.5 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-xl transition-colors shadow-inner border border-white/10">
