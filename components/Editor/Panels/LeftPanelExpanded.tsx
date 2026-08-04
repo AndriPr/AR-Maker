@@ -270,6 +270,7 @@ export function LeftPanelExpanded({
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           e.currentTarget.classList.remove('bg-[#2b2d31]');
                           const draggedId = e.dataTransfer.getData('text/plain');
                           if (draggedId && draggedId !== el.id) {
@@ -282,6 +283,7 @@ export function LeftPanelExpanded({
                           }
                         }}
                         onClick={(e) => {
+                          e.stopPropagation();
                           handleElementClick(el.id, e.ctrlKey || e.metaKey, e.shiftKey);
                         }}
                         className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors select-none ${bgClass}`}
