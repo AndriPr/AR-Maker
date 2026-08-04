@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import * as React from 'react';
 
 import { EffectComposer, Outline, Selection } from '@react-three/postprocessing';
 import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line, Select} from '@react-three/drei';
@@ -30,6 +31,22 @@ import { OccluderElement } from '@/components/Editor/Elements/OccluderElement';
 import { CameraController } from '@/components/Editor/Elements/CameraController';
 import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
 import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElement';
+
+// Wrapper for reveal animation
+function SimulatorReveal({ children, isScanningAR, simulateMode }: { children: React.ReactNode, isScanningAR: boolean, simulateMode: boolean }) {
+  const groupRef = React.useRef<THREE.Group>(null);
+  
+  useFrame(() => {
+    if (simulateMode && groupRef.current) {
+      const targetScale = isScanningAR ? 0 : 1;
+      groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+    } else if (groupRef.current) {
+      groupRef.current.scale.set(1, 1, 1);
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
 
 function ExporterComponent() {
   const { scene } = useThree();
@@ -128,6 +145,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const currentSceneId = useEditorStore(state => state.currentSceneId);
   const viewportShading = useEditorStore(state => state.viewportShading);
   const setViewportShading = useEditorStore(state => state.setViewportShading);
+  const isScanningAR = useEditorStore(state => state.isScanningAR);
 
   return (
     <div className={`w-full h-full relative ${simulateMode ? 'bg-[url("https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop")] bg-cover bg-center' : 'bg-[#393939]'}`}>
@@ -210,37 +228,53 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             )}
             
             {/* Render Root Elements Only (those without a parent) */}
-            <Select 
-              box={!simulateMode} 
-              multiple 
-              onChange={(selected) => {
-                const ids = new Set<string>();
-                selected.forEach(obj => {
-                  let current: any = obj;
-                  while (current) {
-                    if (current.userData && current.userData.elementId) {
-                      ids.add(current.userData.elementId);
-                      break;
+            <SimulatorReveal isScanningAR={isScanningAR} simulateMode={simulateMode}>
+              <Select 
+                box={!simulateMode} 
+                multiple 
+                onChange={(selected) => {
+                  const ids = new Set<string>();
+                  selected.forEach(obj => {
+                    let current: any = obj;
+                    while (current) {
+                      if (current.userData && current.userData.elementId) {
+                        ids.add(current.userData.elementId);
+                        break;
+                      }
+                      current = current.parent;
                     }
-                    current = current.parent;
+                  });
+                  
+                  const state = useEditorStore.getState();
+                  if (ids.size === 0) {
+                    // Do nothing
+                  } else {
+                    state.setSelectedId(null);
+                    state.setMultiSelectedIds(Array.from(ids));
                   }
-                });
-                
-                const state = useEditorStore.getState();
-                if (ids.size === 0) {
-                  // If nothing was selected with the box, we can optionally clear selection, 
-                  // but standard behavior is usually clicking in empty space clears it, which is handled elsewhere.
-                  // For now, let's just do nothing if 0 to avoid breaking single clicks.
-                } else {
-                  state.setSelectedId(null);
-                  state.setMultiSelectedIds(Array.from(ids));
-                }
-              }}
-            >
-              {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-                <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-              ))}
-            </Select>
+                }}
+              >
+                {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+                  <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+                ))}
+              </Select>
+            </SimulatorReveal>
+
+            {/* AR Scanning Plane Grid */}
+            {simulateMode && isScanningAR && (
+              <Grid 
+                position={[0, -0.01, 0]} 
+                args={[10.5, 10.5]} 
+                cellSize={0.2} 
+                cellThickness={1} 
+                cellColor="#24e6ff" 
+                sectionSize={1} 
+                sectionThickness={1.5} 
+                sectionColor="#00d5ff" 
+                fadeDistance={8} 
+                fadeStrength={1} 
+              />
+            )}
           </Suspense>
 
         {!simulateMode && (

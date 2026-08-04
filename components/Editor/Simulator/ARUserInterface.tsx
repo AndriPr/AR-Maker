@@ -1,31 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEditorStore } from '@/lib/store';
-import { Camera, Maximize, X, Info, ScanLine } from 'lucide-react';
+import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function ARUserInterface() {
   const selectedId = useEditorStore(state => state.selectedId);
   const elements = useEditorStore(state => state.elements);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
+  const isScanningAR = useEditorStore(state => state.isScanningAR);
+  const setIsScanningAR = useEditorStore(state => state.setIsScanningAR);
+  const [flash, setFlash] = useState(false);
   
   const selectedElement = elements.find(el => el.id === selectedId);
 
-  // Scanning Phase State
-  const [isScanning, setIsScanning] = useState(true);
-
   useEffect(() => {
-    // Fake scanning phase for 2 seconds
-    const timer = setTimeout(() => {
-      setIsScanning(false);
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (isScanningAR) {
+      const timer = setTimeout(() => {
+        setIsScanningAR(false);
+      }, 3000); // 3 seconds scanning phase
+      return () => clearTimeout(timer);
+    }
+  }, [isScanningAR, setIsScanningAR]);
+
+  const takeScreenshot = () => {
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      // Trigger visual flash
+      setFlash(true);
+      setTimeout(() => setFlash(false), 200);
+
+      // We need to preserveDrawingBuffer to be true in the canvas context, 
+      // but if not, this might yield a blank image. Assuming R3F handles it or we'll get what we see.
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ar-screenshot.png';
+      a.click();
+    }
+  };
+
+  const getElementIcon = (type: string) => {
+    switch(type) {
+      case 'model': return <Box size={20} />;
+      case 'text': return <Type size={20} />;
+      case 'image': return <ImageIcon size={20} />;
+      case 'video': return <Video size={20} />;
+      case 'audio': return <Music size={20} />;
+      default: return <Info size={20} />;
+    }
+  };
 
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col z-[50]">
+      {/* Screen Flash for Camera */}
+      <AnimatePresence>
+        {flash && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-white z-[100]"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Scanning Overlay */}
       <AnimatePresence>
-        {isScanning && (
+        {isScanningAR && (
           <motion.div 
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -46,7 +86,7 @@ export function ARUserInterface() {
       </AnimatePresence>
 
       {/* Main AR UI (Only visible when not scanning) */}
-      {!isScanning && (
+      {!isScanningAR && (
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
@@ -84,18 +124,21 @@ export function ARUserInterface() {
                 </button>
                 
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pln-blue to-purple-600 flex items-center justify-center text-white shadow-lg">
-                    <Info size={20} />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pln-blue to-purple-600 flex items-center justify-center text-white shadow-lg shrink-0">
+                    {getElementIcon(selectedElement.type)}
                   </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg leading-tight">{selectedElement.name}</h3>
-                    <p className="text-white/60 text-xs">Informasi Edukasi</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-bold text-lg leading-tight truncate">{selectedElement.name}</h3>
+                    <p className="text-white/60 text-xs capitalize">{selectedElement.type} Element</p>
                   </div>
                 </div>
                 
-                <div className="text-white/80 text-sm leading-relaxed mb-4">
-                  Ini adalah panel edukasi interaktif untuk <strong>{selectedElement.name}</strong>. 
-                  Di aplikasi AR sungguhan, panel ini akan memuat deskripsi detail, spesifikasi, atau panduan visual terkait objek yang diketuk oleh pengguna.
+                <div className="text-white/80 text-sm leading-relaxed mb-4 max-h-32 overflow-y-auto custom-scrollbar">
+                  {selectedElement.type === 'model' && "Model 3D interaktif yang dapat dilihat dari berbagai sudut. Di aplikasi sesungguhnya, area ini akan menampilkan metadata atau deskripsi spesifik dari database terkait model ini."}
+                  {selectedElement.type === 'text' && `Konten Teks: "${selectedElement.data?.text || 'Teks kosong'}"`}
+                  {selectedElement.type === 'video' && "Konten Video. Pengguna dapat memutar atau menjeda video ini langsung di dunia nyata."}
+                  {selectedElement.type === 'audio' && "Efek Suara. Mendekat ke sumber suara untuk mendengarkan lebih jelas (Spatial Audio)."}
+                  {['image', 'hotspot', 'shape', 'sparkles', 'group_folder'].includes(selectedElement.type) && `Ini adalah elemen berjenis ${selectedElement.type}.`}
                 </div>
                 
                 <button className="w-full py-2.5 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-xl transition-colors shadow-inner border border-white/10">
@@ -113,7 +156,10 @@ export function ARUserInterface() {
                   <span className="text-[10px] font-bold">SCENES</span>
                 </button>
                 
-                <button className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95 transition-all text-black">
+                <button 
+                  onClick={takeScreenshot}
+                  className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95 transition-all text-black"
+                >
                   <Camera size={24} className="fill-black" />
                 </button>
                 

@@ -209,6 +209,8 @@ interface EditorState {
   setIsOrthographic: (val: boolean) => void;
   isSimulating: boolean;
   setIsSimulating: (val: boolean) => void;
+  isScanningAR: boolean;
+  setIsScanningAR: (val: boolean) => void;
   setTrackingMode: (mode: 'image' | 'face' | 'cylinder') => void;
   setMultisetMapId: (id: string) => void;
   setAmbientLightIntensity: (val: number) => void;
@@ -274,6 +276,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   logicVariables: {},
   isOrthographic: false,
   isSimulating: false,
+  isScanningAR: false,
   trackingMode: 'image',
   multisetMapId: '',
   ambientLightIntensity: 0.5,
@@ -608,7 +611,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setIsSnapping: (val) => set({ isSnapping: val }),
   setIsOrthographic: (val) => set({ isOrthographic: val }),
   
-  setIsSimulating: (val) => set({ isSimulating: val, selectedId: val ? null : get().selectedId }),
+  setIsSimulating: (val) => set({ 
+    isSimulating: val, 
+    selectedId: val ? null : get().selectedId,
+    isScanningAR: val // Set scanning to true when simulation starts
+  }),
+  setIsScanningAR: (val) => set({ isScanningAR: val }),
   setTrackingMode: (mode) => set({ trackingMode: mode }),
   setMultisetMapId: (id) => set({ multisetMapId: id }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
