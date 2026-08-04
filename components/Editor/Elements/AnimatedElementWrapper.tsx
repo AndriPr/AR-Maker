@@ -186,6 +186,36 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
 
+  useEffect(() => {
+    if (!groupRef.current) return;
+    const group = groupRef.current;
+    const shouldOutline = isPrimarySelected || isMultiSelected || isHovered;
+    const color = isPrimarySelected ? '#ff7f00' : isMultiSelected ? '#cc4400' : 'white';
+    
+    let outlines: any[] = [];
+    if (shouldOutline) {
+      const mat = new THREE.LineBasicMaterial({ color, depthTest: false, transparent: true });
+      group.traverse((node: any) => {
+        if (node.isMesh && node.name !== 'selection_outline' && !node.userData.isHelper) {
+           const edges = new THREE.EdgesGeometry(node.geometry, 15);
+           const line = new THREE.LineSegments(edges, mat);
+           line.name = 'selection_outline';
+           line.renderOrder = 999;
+           line.raycast = () => null;
+           node.add(line);
+           outlines.push(line);
+        }
+      });
+      return () => {
+        outlines.forEach(line => {
+           line.removeFromParent();
+           line.geometry.dispose();
+        });
+        mat.dispose();
+      };
+    }
+  }, [isPrimarySelected, isMultiSelected, isHovered, children]);
+
   return (
     <group 
       ref={groupRef}
@@ -201,9 +231,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
         }
       }}
     >
-      <Select enabled={isPrimarySelected || isMultiSelected || isHovered}>
-        {children}
-      </Select>
+      {children}
     </group>
   );
 }

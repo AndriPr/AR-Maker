@@ -209,14 +209,9 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             )}
             
             {/* Render Root Elements Only (those without a parent) */}
-            <Selection>
-              <EffectComposer autoClear={false}>
-                <Outline blur={false} visibleEdgeColor="#ff7f00" hiddenEdgeColor="#ff7f00" edgeStrength={100} width={1} />
-              </EffectComposer>
-              {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-                <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-              ))}
-            </Selection>
+            {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+              <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+            ))}
           </Suspense>
 
         {!simulateMode && (
