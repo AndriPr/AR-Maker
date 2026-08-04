@@ -3,7 +3,6 @@ import { useEditorStore } from '@/lib/store';
 import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List, GraduationCap, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-
 export function ARUserInterface() {
   const selectedId = useEditorStore(state => state.selectedId);
   const elements = useEditorStore(state => state.elements);
@@ -11,8 +10,8 @@ export function ARUserInterface() {
   const isScanningAR = useEditorStore(state => state.isScanningAR);
   const setIsScanningAR = useEditorStore(state => state.setIsScanningAR);
   const [flash, setFlash] = useState(false);
-  const [showList, setShowList] = useState(false);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
+  
   const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
   const setCurrentARStepIndex = useEditorStore(state => state.setCurrentARStepIndex);
   const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
@@ -20,9 +19,23 @@ export function ARUserInterface() {
   const [showBottomPanel, setShowBottomPanel] = useState(false);
   const [showFinishBanner, setShowFinishBanner] = useState(false);
 
-  // Edu Dashboard Logic
+  const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
+
+  // Filter out orphaned (ghost) elements
+  const validElements = elements.filter(el => {
+    if (!el.parentId) return true;
+    let currentParent = el.parentId;
+    while (currentParent) {
+      const parent = elements.find(p => p.id === currentParent);
+      if (!parent) return false;
+      currentParent = parent.parentId;
+    }
+    return true;
+  });
+  const validSceneElements = validElements.filter(el => el.sceneId === (currentSceneId || ''));
+
   const eduPanel = elements.find(el => el.type === 'edu_panel' && el.sceneId === currentSceneId);
-  const modules = eduPanel?.eduMaintenanceTasks || [];
+  const modules = (eduPanel as any)?.eduMaintenanceTasks || [];
   const activeModule = modules.length > 0 ? modules[0] : null;
   const steps = activeModule?.steps || [];
   const activeStep = steps[currentARStepIndex];
@@ -47,7 +60,7 @@ export function ARUserInterface() {
     frameId = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(frameId);
-  }, [currentARStepIndex, steps]);
+  }, [currentARStepIndex, steps, setArPlaybackProgress]);
 
   const handleNext = () => {
     if (currentARStepIndex < steps.length - 1) {
@@ -64,22 +77,6 @@ export function ARUserInterface() {
     }
   };
 
-  
-  const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
-
-  // Filter out orphaned (ghost) elements
-  const validElements = elements.filter(el => {
-    if (!el.parentId) return true;
-    let currentParent = el.parentId;
-    while (currentParent) {
-      const parent = elements.find(p => p.id === currentParent);
-      if (!parent) return false; // Parent doesn't exist, this is a ghost!
-      currentParent = parent.parentId;
-    }
-    return true;
-  });
-  const validSceneElements = validElements.filter(el => el.sceneId === currentSceneId);
-
   useEffect(() => {
     if (isScanningAR) {
       const timer = setTimeout(() => {
@@ -88,23 +85,6 @@ export function ARUserInterface() {
       return () => clearTimeout(timer);
     }
   }, [isScanningAR, setIsScanningAR]);
-
-  const takeScreenshot = () => {
-    const canvas = document.querySelector('canvas');
-    if (canvas) {
-      // Trigger visual flash
-      setFlash(true);
-      setTimeout(() => setFlash(false), 200);
-
-      // We need to preserveDrawingBuffer to be true in the canvas context, 
-      // but if not, this might yield a blank image. Assuming R3F handles it or we'll get what we see.
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ar-screenshot.png';
-      a.click();
-    }
-  };
 
   const getElementIcon = (type: string) => {
     switch(type) {
@@ -119,7 +99,6 @@ export function ARUserInterface() {
 
   return (
     <>
-      
       <div className="absolute inset-0 pointer-events-none flex flex-col z-[50]">
       {/* Screen Flash for Camera */}
       <AnimatePresence>
@@ -223,80 +202,149 @@ export function ARUserInterface() {
             )}
           </AnimatePresence>
 
-          {/* Bottom Action Bar */}
-          <div className="w-full p-6 flex justify-center items-end pointer-events-none">
-             <div className="pointer-events-auto bg-black/40 backdrop-blur-lg border border-white/10 rounded-full px-6 py-3 flex gap-8 items-center shadow-2xl">
-                <button className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors">
-                  <div className="w-1.5 h-1.5 rounded-full bg-transparent"></div>
-                  <span className="text-[10px] font-bold">SCENES</span>
-                </button>
-                
-                <button 
-                  onClick={takeScreenshot}
-                  className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95 transition-all text-black"
+          {/* Bottom Action Bar (Unified Panel) */}
+          <div className="w-full p-4 flex justify-center items-end pointer-events-none absolute bottom-4">
+            <AnimatePresence mode="wait">
+              {showBottomPanel ? (
+                <motion.div
+                  key="panel"
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 50, opacity: 0 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="pointer-events-auto w-full max-w-sm bg-black/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
                 >
-                  <Camera size={24} className="fill-black" />
-                </button>
-                
-                <button 
-                  onClick={() => setShowList(!showList)}
-                  className={`flex flex-col items-center gap-1 transition-colors ${showList ? 'text-pln-blue' : 'text-white/70 hover:text-white'}`}
-                >
-                  <div className={`w-1.5 h-1.5 rounded-full ${showList ? 'bg-pln-blue' : 'bg-transparent'}`}></div>
-                  <span className="text-[10px] font-bold">OBJECTS</span>
-                </button>
-             </div>
-          </div>
-          
-          {/* Objects List Side Panel */}
-          <AnimatePresence>
-            {showList && (
-              <motion.div
-                initial={{ x: '100%', opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: '100%', opacity: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="absolute top-16 right-4 bottom-24 w-64 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden flex flex-col pointer-events-auto shadow-2xl"
-              >
-                <div className="p-3 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                  <span className="text-white text-xs font-bold uppercase tracking-wider">Daftar Objek AR</span>
-                  <button onClick={() => setShowList(false)} className="text-white/50 hover:text-white">
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2">
-                  <div className="flex flex-col gap-1">
-                    {validSceneElements.length === 0 && (
-                      <div className="text-center text-white/50 text-sm mt-10">
-                        Tidak ada objek di scene ini
-                      </div>
-                    )}
-                    {validSceneElements.map(el => (
-                    <button
-                      key={el.id}
-                      onClick={() => {
-                        setSelectedId(el.id);
-                        setShowList(false); // Auto close list when object is selected
-                      }}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'hover:bg-white/10 border border-transparent'}`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${selectedId === el.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
-                        {getElementIcon(el.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-semibold text-sm truncate ${selectedId === el.id ? 'text-white' : 'text-white/80'}`}>{el.name}</div>
-                        <div className="text-[10px] text-white/50 capitalize">{el.type}</div>
-                      </div>
+                  <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap size={18} className="text-pln-blue" />
+                      <span className="text-white font-bold">Menu Pembelajaran AR</span>
+                    </div>
+                    <button onClick={() => setShowBottomPanel(false)} className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors">
+                      <X size={16} />
                     </button>
-                  ))}
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+
+                  <div className="flex flex-col p-4 max-h-[50vh] overflow-y-auto custom-scrollbar gap-6">
+                    {/* Edu Dashboard Section */}
+                    <div className="flex flex-col gap-3">
+                      <h4 className="text-white/70 text-xs font-bold uppercase tracking-wider">Modul Aktif</h4>
+                      {!eduPanel || steps.length === 0 ? (
+                        <div className="bg-white/5 rounded-xl p-4 text-center text-white/50 text-xs">
+                          Belum ada modul edukasi yang ditambahkan pada scene ini.
+                        </div>
+                      ) : (
+                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                          <div className="bg-pln-blue/20 px-3 py-2 border-b border-white/5 flex items-center justify-between">
+                            <div>
+                              <span className="text-pln-blue text-[9px] font-bold uppercase tracking-wider">{activeModule?.title}</span>
+                              <h3 className="text-white font-bold text-xs leading-tight mt-0.5">Langkah {currentARStepIndex + 1} dari {steps.length}</h3>
+                            </div>
+                            
+                            <div className="relative w-6 h-6 flex items-center justify-center">
+                              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                <path className="text-white/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
+                                <path className="text-pln-blue transition-all duration-300" strokeDasharray={`\${arPlaybackProgress * 100}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
+                              </svg>
+                              <span className="absolute text-[6px] font-bold text-white">{Math.round(arPlaybackProgress * 100)}%</span>
+                            </div>
+                          </div>
+
+                          <div className="p-3">
+                            <h4 className="text-white font-bold text-sm mb-1">{activeStep?.title}</h4>
+                            <p className="text-gray-300 text-xs leading-relaxed">{activeStep?.instruction}</p>
+                          </div>
+
+                          <div className="p-2 bg-black/20 flex gap-2">
+                            <button onClick={handlePrev} disabled={currentARStepIndex === 0} className="flex-1 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-lg flex items-center justify-center text-white text-xs font-medium transition-colors">
+                              <ChevronLeft size={14} className="mr-1" /> Prev
+                            </button>
+                            <button onClick={handleNext} className="flex-1 py-2 bg-pln-blue hover:bg-pln-blue/90 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-lg transition-colors">
+                              {currentARStepIndex === steps.length - 1 ? 'Selesai' : 'Next'} <ChevronRight size={14} className="ml-1" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Objects List Section */}
+                    <div className="flex flex-col gap-3">
+                      <h4 className="text-white/70 text-xs font-bold uppercase tracking-wider">Daftar Objek</h4>
+                      <div className="flex flex-col gap-2">
+                        {validSceneElements.length === 0 && (
+                          <div className="text-center text-white/50 text-xs py-4">
+                            Tidak ada objek di scene ini
+                          </div>
+                        )}
+                        {validSceneElements.map(el => (
+                          <button
+                            key={el.id}
+                            onClick={() => {
+                              setSelectedId(el.id);
+                              setShowBottomPanel(false);
+                            }}
+                            className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left \${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+                          >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 \${selectedId === el.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
+                              {getElementIcon(el.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-semibold text-xs truncate \${selectedId === el.id ? 'text-white' : 'text-white/80'}`}>{el.name}</div>
+                              <div className="text-[9px] text-white/50 capitalize">{el.type}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="pill"
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 50, opacity: 0 }}
+                  className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex gap-4 items-center shadow-2xl"
+                >
+                  <button className="flex flex-col items-center justify-center w-12 h-12 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors">
+                    <span className="text-[8px] font-bold tracking-wider">SCENES</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => setShowBottomPanel(true)}
+                    className="w-16 h-16 rounded-full bg-pln-blue flex items-center justify-center shadow-[0_0_20px_rgba(0,162,233,0.4)] hover:scale-105 active:scale-95 transition-all text-white border-2 border-white/20"
+                  >
+                    <GraduationCap size={28} />
+                  </button>
+                  
+                  <button 
+                    onClick={() => setShowBottomPanel(true)}
+                    className="flex flex-col items-center justify-center w-12 h-12 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                  >
+                    <span className="text-[8px] font-bold tracking-wider">OBJECTS</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Finish Banner Toast */}
+            <AnimatePresence>
+              {showFinishBanner && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
+                  animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+                  exit={{ opacity: 0, scale: 0.9, x: '-50%' }}
+                  className="absolute top-10 left-1/2 bg-green-500/20 backdrop-blur-md border border-green-500/50 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-2xl"
+                >
+                  <CheckCircle2 size={32} className="text-green-400 mb-2" />
+                  <h3 className="text-green-100 font-bold text-lg">Modul Selesai!</h3>
+                  <p className="text-green-200/80 text-xs">Anda telah menyelesaikan panduan ini.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       )}
-          </div>
+      </div>
     </>
   );
 }
