@@ -77,10 +77,11 @@ export function LeftPanelExpanded({
            if (ctrlKey) {
               const combined = new Set([...multiSelectedIds, (selectedId ? selectedId : ''), ...newSelection]);
               combined.delete('');
+              setSelectedId(null);
               setMultiSelectedIds(Array.from(combined));
            } else {
-              setMultiSelectedIds(newSelection);
               setSelectedId(null);
+              setMultiSelectedIds(newSelection);
            }
            return;
         }
@@ -95,8 +96,8 @@ export function LeftPanelExpanded({
         if (selectedId && !multiSelectedIds.includes(selectedId)) {
            newIds.push(selectedId);
         }
-        setMultiSelectedIds(newIds);
         setSelectedId(null);
+        setMultiSelectedIds(newIds);
       }
     } else {
       setSelectedId(id);
