@@ -122,7 +122,8 @@ export function RightPanel({
     elements, 
     selectedId, 
     updateElement, 
-    removeElement, 
+    removeElement,
+    removeElements,
     duplicateElement, 
     scenes, 
     previewAnimationData: previewAnim, 
@@ -366,7 +367,17 @@ export function RightPanel({
                      selectedElement.type === 'edu_panel' ? 'Edu Dashboard' : 'UI Button'}
                     <div className="flex gap-2">
                       <button className="text-blue-400 text-[10px] hover:text-blue-300 flex items-center gap-1 bg-[#1a1b1e] px-2 py-1 rounded border border-[#2b2d31]" onClick={() => duplicateElement(selectedElement.id)}><Copy size={10}/> Duplikat</button>
-                      <button className="text-red-400 text-[10px] hover:text-red-300 flex items-center gap-1 bg-[#1a1b1e] px-2 py-1 rounded border border-[#2b2d31]" onClick={() => removeElement(selectedElement.id)}><Trash2 size={10}/> Hapus</button>
+                      <button className="text-red-400 text-[10px] hover:text-red-300 flex items-center gap-1 bg-[#1a1b1e] px-2 py-1 rounded border border-[#2b2d31]" onClick={() => {
+                        const toDelete = [...multiSelectedIds];
+                        if (selectedElement.id && !toDelete.includes(selectedElement.id)) {
+                          toDelete.push(selectedElement.id);
+                        }
+                        if (toDelete.length > 1) {
+                          removeElements(toDelete);
+                        } else {
+                          removeElement(selectedElement.id);
+                        }
+                      }}><Trash2 size={10}/> Hapus</button>
                     </div>
                   </h3>
                   

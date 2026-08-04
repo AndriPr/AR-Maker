@@ -189,6 +189,7 @@ interface EditorState {
   updateElement: (id: string, element: Partial<SceneElement>) => void;
   applyTransformDelta: (primaryId: string, positionDelta: [number, number, number]) => void;
   removeElement: (id: string) => void;
+  removeElements: (ids: string[]) => void;
   duplicateElement: (id: string) => void;
   explodeModel: (id: string) => void;
   setSelectedId: (id: string | null) => void;
@@ -404,7 +405,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     past: [...state.past, state.elements],
     future: [],
     elements: state.elements.filter((el) => el.id !== id),
-    selectedId: state.selectedId === id ? null : state.selectedId
+    selectedId: state.selectedId === id ? null : state.selectedId,
+    multiSelectedIds: state.multiSelectedIds.filter(selected => selected !== id)
+  })),
+
+  removeElements: (ids) => set((state) => ({
+    past: [...state.past, state.elements],
+    future: [],
+    elements: state.elements.filter((el) => !ids.includes(el.id)),
+    selectedId: (state.selectedId && ids.includes(state.selectedId)) ? null : state.selectedId,
+    multiSelectedIds: state.multiSelectedIds.filter(selected => !ids.includes(selected))
   })),
 
   duplicateElement: (id) => set((state) => {

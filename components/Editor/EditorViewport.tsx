@@ -100,6 +100,27 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
     }
   }, [isSimulating, nodes, executeNextNodes]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
+      
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+         const state = useEditorStore.getState();
+         if (!state.selectedId && state.multiSelectedIds.length === 0) return;
+         
+         const toDelete = [...state.multiSelectedIds];
+         if (state.selectedId && !toDelete.includes(state.selectedId)) {
+            toDelete.push(state.selectedId);
+         }
+         if (toDelete.length > 0) {
+            state.removeElements(toDelete);
+         }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const isSnapping = useEditorStore(state => state.isSnapping);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
@@ -188,9 +209,14 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             )}
             
             {/* Render Root Elements Only (those without a parent) */}
-            {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-              <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
-            ))}
+            <Selection>
+              <EffectComposer autoClear={false}>
+                <Outline blur={false} visibleEdgeColor="#ff7f00" hiddenEdgeColor="#ff7f00" edgeStrength={100} width={1} />
+              </EffectComposer>
+              {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+                <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+              ))}
+            </Selection>
           </Suspense>
 
         {!simulateMode && (
