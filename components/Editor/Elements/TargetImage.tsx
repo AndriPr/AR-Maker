@@ -38,4 +38,4 @@ export function TargetImage({ url }: { url: string }) {
     </mesh>
   );
 }
-
+

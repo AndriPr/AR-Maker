@@ -109,7 +109,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const setViewportShading = useEditorStore(state => state.setViewportShading);
 
   return (
-    <div className="w-full h-full bg-[#242424] relative">
+    <div className="w-full h-full bg-[#393939] relative">
       {/* Viewport Shading Toggles (Blender-like) */}
       {!simulateMode && (
         <div className="absolute top-4 right-28 z-10 flex bg-[#1a1b1e] rounded-md border border-[#2b2d31] p-0.5 shadow-lg">
@@ -137,7 +137,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         ) : (
           <PerspectiveCamera makeDefault position={[0, 4, 8]} fov={45} />
         )}
-        <color attach="background" args={['#242424']} />
+        <color attach="background" args={['#393939']} />
         
         {environmentMap !== 'none' && (
           <Environment preset={environmentMap as any} background={false} />
@@ -151,10 +151,10 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
           <>
             <Grid 
               infiniteGrid 
-              fadeDistance={40} 
-              sectionColor="#4b4d52" 
+              fadeDistance={60} 
+              sectionColor="#4d4d4d" 
               sectionSize={1}
-              cellColor="#36393f" 
+              cellColor="#404040" 
               cellSize={0.2}
               position={[0, -0.02, 0]} 
             />
@@ -162,11 +162,11 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
             <group position={[0, -0.015, 0]}>
               <mesh rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[80, 0.02]} />
-                <meshBasicMaterial color="#ff3333" />
+                <meshBasicMaterial color="#ff3a54" />
               </mesh>
               <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
                 <planeGeometry args={[80, 0.02]} />
-                <meshBasicMaterial color="#33ff33" />
+                <meshBasicMaterial color="#86c73a" />
               </mesh>
             </group>
           </>

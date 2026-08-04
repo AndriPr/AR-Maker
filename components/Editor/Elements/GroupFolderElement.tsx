@@ -64,7 +64,7 @@ export function GroupFolderElement({ element, mode, children }: { element: any, 
 
   if (isSelected) {
     return (
-      <TransformControls size={1.2} space={transformSpace} showX={axisLock === null || axisLock === "x"} showY={axisLock === null || axisLock === "y"} showZ={axisLock === null || axisLock === "z"}
+      <TransformControls size={0.7} space={transformSpace} showX={axisLock === null || axisLock === "x"} showY={axisLock === null || axisLock === "y"} showZ={axisLock === null || axisLock === "z"}
         ref={transformRef}
         mode={mode}
         position={element.position as [number, number, number]}

@@ -108,11 +108,29 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
   );
 }
 
+function TimelineTimeDisplay() {
+  const timelineTime = useEditorStore(state => state.timelineTime);
+  return (
+    <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f] mx-2">
+      {timelineTime.toFixed(1)}s
+    </div>
+  );
+}
+
+function TimelineScrubber({ duration }: { duration: number }) {
+  const timelineTime = useEditorStore(state => state.timelineTime);
+  return (
+    <div className="absolute top-0 bottom-0 border-l-2 border-blue-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
+      <div className="w-3 h-3 bg-blue-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-blue-500/50"></div>
+    </div>
+  );
+}
+
 export default function TimelinePanel() {
   const elements = useEditorStore(state => state.elements);
   const selectedId = useEditorStore(state => state.selectedId);
   const updateElement = useEditorStore(state => state.updateElement);
-  const timelineTime = useEditorStore(state => state.timelineTime);
+  const updateElement = useEditorStore(state => state.updateElement);
   const setTimelineTime = useEditorStore(state => state.setTimelineTime);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
   const setTimelinePlaying = useEditorStore(state => state.setTimelinePlaying);
@@ -303,9 +321,7 @@ export default function TimelinePanel() {
         >
           <SkipForward size={14} />
         </button>
-        <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f] mx-2">
-          {timelineTime.toFixed(1)}s
-        </div>
+        <TimelineTimeDisplay />
         
         {/* Auto-keying Button (Blender style) */}
         <div className="w-px h-4 bg-gray-700 mx-1"></div>
@@ -453,9 +469,7 @@ export default function TimelinePanel() {
             </div>
 
             {/* Time Scrubber Background */}
-            <div className="absolute top-0 bottom-0 border-l-2 border-blue-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
-              <div className="w-3 h-3 bg-blue-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-blue-500/50"></div>
-            </div>
+            <TimelineScrubber duration={duration} />
 
             {/* Playback Range Overlay */}
             {playbackRange && (

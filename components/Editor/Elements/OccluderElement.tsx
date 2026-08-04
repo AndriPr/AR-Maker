@@ -59,4 +59,4 @@ export function OccluderElement({ element, mode }: { element: any, mode: 'transl
     </AnimatedElementWrapper>
   );
 }
-
+

@@ -37,4 +37,4 @@ export function MotionPathVisualizer({ element }: { element: any }) {
   const points = posKfs.map((kf: any) => new THREE.Vector3(...kf.position));
   return <Line points={points} color="#f97316" lineWidth={1.5} dashed={true} dashSize={0.2} gapSize={0.1} />;
 }
-
+

@@ -57,8 +57,10 @@ export function CameraController() {
     <OrbitControls 
       makeDefault 
       ref={controlsRef} 
-      enableDamping={true} 
-      dampingFactor={0.05}
+      enableDamping={false} 
+      zoomSpeed={0.8}
+      panSpeed={0.8}
+      rotateSpeed={0.8}
       onStart={() => {
         if (cameraFocusTarget) setCameraFocusTarget(null);
       }}
@@ -66,4 +68,4 @@ export function CameraController() {
   );
 }
 
-// Recursive Node Renderer
+// Recursive Node Renderer
