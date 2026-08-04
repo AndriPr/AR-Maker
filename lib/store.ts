@@ -12,16 +12,36 @@ interface EduComponent {
   hideTargetId?: string;
 }
 
-interface EduMaintenanceStep {
+export interface TransformKeyframe {
+  time: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+  easing: 'linear' | 'easeInOutQuad' | 'smoothstep';
+}
+
+export interface SubMeshAnimation {
+  targetElementId: string;
+  targetSubMeshName: string;
+  keyframes: TransformKeyframe[];
+}
+
+export interface EduMaintenanceStep {
   id: string;
+  stepNumber: number;
+  title: string;
   instruction: string;
+  voiceoverUrl?: string;
+  animations: SubMeshAnimation[];
+  
+  // Legacy fields (optional backward compatibility)
   actionTargetId?: string;
   actionAnimation?: string;
   showTargetId?: string;
   hideTargetId?: string;
 }
 
-interface EduMaintenanceTask {
+export interface EduMaintenanceTask {
   id: string;
   title: string;
   steps: EduMaintenanceStep[];
@@ -134,6 +154,12 @@ export interface SceneElement {
 }
 
 interface EditorState {
+  selectedSubMesh: { elementId: string, meshName: string } | null;
+  setSelectedSubMesh: (subMesh: { elementId: string, meshName: string } | null) => void;
+  currentARStepIndex: number;
+  arPlaybackProgress: number;
+  setArPlaybackProgress: (p: number) => void;
+  setCurrentARStepIndex: (index: number) => void;
   elements: SceneElement[];
   selectedId: string | null;
   targetImageUrl: string | null;
@@ -261,6 +287,13 @@ interface EditorState {
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
+  selectedSubMesh: null,
+  setSelectedSubMesh: (subMesh: { elementId: string, meshName: string } | null) => set({ selectedSubMesh: subMesh }),
+  currentARStepIndex: 0,
+  arPlaybackProgress: 0,
+  setArPlaybackProgress: (p) => set({ arPlaybackProgress: p }),
+  setCurrentARStepIndex: (index: number) => set({ currentARStepIndex: index }),
+
   selectedId: null,
   multiSelectedIds: [],
   hoveredId: null,

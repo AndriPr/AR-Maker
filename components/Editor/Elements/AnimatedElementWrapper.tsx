@@ -32,9 +32,9 @@ import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElem
 export function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
   
-  const posKfs = useMemo(() => element.keyframes?.filter((k) => k.position !== undefined) || [], [element.keyframes]);
-  const rotKfs = useMemo(() => element.keyframes?.filter((k) => k.rotation !== undefined) || [], [element.keyframes]);
-  const sclKfs = useMemo(() => element.keyframes?.filter((k) => k.scale !== undefined) || [], [element.keyframes]);
+  const posKfs = useMemo(() => element.keyframes?.filter((k: any) => k.position !== undefined) || [], [element.keyframes]);
+  const rotKfs = useMemo(() => element.keyframes?.filter((k: any) => k.rotation !== undefined) || [], [element.keyframes]);
+  const sclKfs = useMemo(() => element.keyframes?.filter((k: any) => k.scale !== undefined) || [], [element.keyframes]);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;

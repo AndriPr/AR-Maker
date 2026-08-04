@@ -344,7 +344,7 @@ export function LeftPanelExpanded({
         </>
       )}
       
-      {leftPanelTab === 'library' && (
+      {((leftPanelTab as string) === 'library') && (
         <>
           {/* Library View */}
           <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
@@ -480,7 +480,7 @@ export function LeftPanelExpanded({
             </div>
           </div>
         
-        {leftPanelTab === 'media' && (
+        {((leftPanelTab as string) === 'media') && (
           <>
             <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
               <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">MEDIA & VFX</button>
@@ -513,7 +513,7 @@ export function LeftPanelExpanded({
           </>
         )}
 
-        {leftPanelTab === 'interact' && (
+        {((leftPanelTab as string) === 'interact') && (
           <>
             <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
               <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">INTERACTIVITY</button>

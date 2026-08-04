@@ -71,6 +71,52 @@ import { CameraController } from '@/components/Editor/Elements/CameraController'
 import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
 import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElement';
 
+
+// --- Deep Edu Dashboard: Sub-Mesh Animator ---
+const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: string }) => {
+  const elements = useEditorStore(state => state.elements);
+  const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
+  const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
+
+  useFrame(() => {
+    const eduPanel = elements.find(el => el.type === 'edu_panel');
+    if (!eduPanel) return;
+    const modules = eduPanel.eduMaintenanceTasks || [];
+    if (modules.length === 0) return;
+    const activeModule = modules[0];
+    const steps = activeModule.steps || [];
+    if (steps.length === 0) return;
+    const currentStep = steps[currentARStepIndex];
+    if (!currentStep) return;
+
+    currentStep.animations?.forEach(anim => {
+      // In a full implementation, we'd check anim.targetElementId === elementId
+      const mesh = scene.getObjectByName(anim.targetSubMeshName);
+      if (!mesh) return;
+
+      if (anim.keyframes && anim.keyframes.length >= 2) {
+        const kfStart = anim.keyframes[0];
+        const kfEnd = anim.keyframes[1];
+        
+        const startPos = new THREE.Vector3(...kfStart.position);
+        const endPos = new THREE.Vector3(...kfEnd.position);
+        mesh.position.lerpVectors(startPos, endPos, arPlaybackProgress);
+        
+        const qStart = new THREE.Quaternion().setFromEuler(new THREE.Euler(...kfStart.rotation));
+        const qEnd = new THREE.Quaternion().setFromEuler(new THREE.Euler(...kfEnd.rotation));
+        mesh.quaternion.slerpQuaternions(qStart, qEnd, arPlaybackProgress);
+        
+        const startScale = new THREE.Vector3(...kfStart.scale);
+        const endScale = new THREE.Vector3(...kfEnd.scale);
+        mesh.scale.lerpVectors(startScale, endScale, arPlaybackProgress);
+      }
+    });
+  });
+
+  return null;
+}
+// ---------------------------------------------
+
 export function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
   const { scene, animations } = useGLTF(element.url) as any;
   const transformRef = useRef<any>(null);
@@ -243,10 +289,11 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   if (!clonedScene) return null;
 
   const primitiveObj = (
-    <group ref={groupRef}>
+    <group ref={groupRef as any}>
       <AnimatedElementWrapper element={element}>
         <group position={element.meshPositionOffset || [0, 0, 0]}>
-          <primitive dispose={null} object={clonedScene} 
+          <SubMeshAnimator scene={clonedScene as any} elementId={element.id} />
+            <primitive dispose={null} object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
               handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false);

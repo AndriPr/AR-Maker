@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useEditorStore } from '@/lib/store';
 import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ARFloatingEduHUD } from './ARFloatingEduHUD';
 
 export function ARUserInterface() {
   const selectedId = useEditorStore(state => state.selectedId);
@@ -13,7 +14,7 @@ export function ARUserInterface() {
   const [showList, setShowList] = useState(false);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
   
-  const selectedElement = elements.find(el => el.id === selectedId);
+  const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
 
   // Filter out orphaned (ghost) elements
   const validElements = elements.filter(el => {
@@ -66,7 +67,9 @@ export function ARUserInterface() {
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col z-[50]">
+    <>
+      <ARFloatingEduHUD />
+      <div className="absolute inset-0 pointer-events-none flex flex-col z-[50]">
       {/* Screen Flash for Camera */}
       <AnimatePresence>
         {flash && (
@@ -242,6 +245,7 @@ export function ARUserInterface() {
           </AnimatePresence>
         </motion.div>
       )}
-    </div>
+          </div>
+    </>
   );
 }

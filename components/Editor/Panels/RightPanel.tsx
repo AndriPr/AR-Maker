@@ -971,55 +971,81 @@ export function RightPanel({
 
                           <div className="h-px bg-[#1a1b1e] my-4"></div>
 
-                          {/* Maintenance Tasks Builder */}
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                              <Wrench size={14} /> Tugas Maintenance
-                            </h4>
-                            <button 
-                              onClick={() => {
-                                const newTasks = [...(selectedElement.eduMaintenanceTasks || []), { id: crypto.randomUUID(), title: 'Tugas Baru', steps: [] }];
-                                updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                              }}
-                              className="text-[10px] bg-pln-yellow/20 text-pln-yellow px-2 py-1 rounded border border-pln-yellow/30 hover:bg-pln-yellow/30 flex items-center gap-1"
-                            >
-                              <Plus size={10} /> Tambah
-                            </button>
-                          </div>
 
-                          <div className="space-y-3 mt-2">
-                            {(!selectedElement.eduMaintenanceTasks || selectedElement.eduMaintenanceTasks.length === 0) && (
-                              <div className="text-[10px] text-gray-500 italic text-center py-2 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada tugas maintenance.</div>
-                            )}
-                            {selectedElement.eduMaintenanceTasks?.map((task, tIdx) => (
-                              <div key={task.id} className="bg-[#202227] border border-[#2b2d31] rounded p-2 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <input 
-                                    type="text"
-                                    value={task.title}
-                                    onChange={(e) => {
-                                      const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                      newTasks[tIdx].title = e.target.value;
-                                      updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                    }}
-                                    className="flex-1 bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-xs font-bold text-pln-yellow outline-none focus:border-pln-yellow"
-                                    placeholder="Judul Tugas (misal: Ganti RAM)"
-                                  />
-                                  <button 
-                                    onClick={() => {
-                                      const newTasks = selectedElement.eduMaintenanceTasks!.filter(t => t.id !== task.id);
-                                      updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                    }}
-                                    className="text-red-400 hover:text-red-300 p-1"
-                                  ><Trash2 size={12} /></button>
-                                </div>
-                                
-                                {/* Steps Builder */}
-                                <div className="pl-3 border-l-2 border-gray-700 space-y-2">
-                                  {task.steps.map((step, sIdx) => (
-                                    <div key={step.id} className="bg-[#0f1013] border border-[#2b2d31] rounded p-2 space-y-1.5">
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-[10px] font-bold text-gray-500 bg-[#1a1b1e] px-1.5 rounded mt-0.5">{sIdx + 1}</span>
+                            {/* Maintenance Tasks Builder (Deep Edu Dashboard) */}
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                <Wrench size={14} /> Modul Edukasi
+                              </h4>
+                              <button 
+                                onClick={() => {
+                                  const newTasks = [...(selectedElement.eduMaintenanceTasks || []), { id: crypto.randomUUID(), title: 'Modul Baru', steps: [] }];
+                                  updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                }}
+                                className="text-[10px] bg-pln-yellow/20 text-pln-yellow px-2 py-1 rounded border border-pln-yellow/30 hover:bg-pln-yellow/30 flex items-center gap-1"
+                              >
+                                <Plus size={10} /> Tambah Modul
+                              </button>
+                            </div>
+  
+                            <div className="space-y-3 mt-2">
+                              {(!selectedElement.eduMaintenanceTasks || selectedElement.eduMaintenanceTasks.length === 0) && (
+                                <div className="text-[10px] text-gray-500 italic text-center py-2 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada modul edukasi.</div>
+                              )}
+                              {selectedElement.eduMaintenanceTasks?.map((task, tIdx) => (
+                                <div key={task.id} className="bg-[#202227] border border-[#2b2d31] rounded p-2 space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <input 
+                                      type="text"
+                                      value={task.title}
+                                      onChange={(e) => {
+                                        const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                        newTasks[tIdx].title = e.target.value;
+                                        updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                      }}
+                                      className="flex-1 bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-xs font-bold text-pln-yellow outline-none focus:border-pln-yellow"
+                                      placeholder="Judul Modul (misal: Ganti Baterai)"
+                                    />
+                                    <button 
+                                      onClick={() => {
+                                        const newTasks = selectedElement.eduMaintenanceTasks!.filter(t => t.id !== task.id);
+                                        updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                      }}
+                                      className="text-red-400 hover:text-red-300 p-1"
+                                    ><Trash2 size={12} /></button>
+                                  </div>
+                                  
+                                  {/* Steps Builder */}
+                                  <div className="pl-3 border-l-2 border-gray-700 space-y-2">
+                                    {task.steps.map((step, sIdx) => (
+                                      <div key={step.id} className="bg-[#0f1013] border border-[#2b2d31] rounded p-2 space-y-2">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex items-center gap-1.5 flex-1">
+                                            <span className="text-[9px] font-bold text-gray-500 bg-[#1a1b1e] px-1.5 py-0.5 rounded">{step.stepNumber}</span>
+                                            <input
+                                              type="text"
+                                              value={step.title || ''}
+                                              onChange={(e) => {
+                                                const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                                newTasks[tIdx].steps[sIdx].title = e.target.value;
+                                                updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                              }}
+                                              className="flex-1 min-w-0 bg-transparent border-b border-transparent hover:border-[#2b2d31] focus:border-pln-blue text-[10px] font-bold text-white outline-none px-1"
+                                              placeholder="Judul Langkah..."
+                                            />
+                                          </div>
+                                          <button 
+                                            onClick={() => {
+                                              const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                              newTasks[tIdx].steps = newTasks[tIdx].steps.filter(s => s.id !== step.id);
+                                              // Re-number
+                                              newTasks[tIdx].steps.forEach((s, idx) => s.stepNumber = idx + 1);
+                                              updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                            }}
+                                            className="text-red-400 hover:text-red-300 shrink-0"
+                                          ><X size={12} /></button>
+                                        </div>
+                                        
                                         <textarea
                                           value={step.instruction}
                                           onChange={(e) => {
@@ -1027,431 +1053,96 @@ export function RightPanel({
                                             newTasks[tIdx].steps[sIdx].instruction = e.target.value;
                                             updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
                                           }}
-                                          className="flex-1 bg-[#1a1b1e] border border-[#2b2d31] rounded p-1 text-[10px] text-white outline-none focus:border-pln-blue min-h-[40px] resize-none"
-                                          placeholder="Instruksi langkah..."
+                                          className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-[10px] text-gray-300 outline-none focus:border-pln-blue min-h-[40px] resize-none"
+                                          placeholder="Instruksi detail..."
                                         />
-                                        <button 
-                                          onClick={() => {
-                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                            newTasks[tIdx].steps = newTasks[tIdx].steps.filter(s => s.id !== step.id);
-                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                          }}
-                                          className="text-red-400 hover:text-red-300 mt-1"
-                                        ><X size={12} /></button>
-                                      </div>
-                                      <div className="flex gap-2 pl-6">
-                                        <select
-                                          value={step.actionTargetId || ''}
-                                          onChange={(e) => {
-                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                            newTasks[tIdx].steps[sIdx].actionTargetId = e.target.value;
-                                            newTasks[tIdx].steps[sIdx].actionAnimation = '';
-                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                          }}
-                                          className="flex-1 min-w-0 text-ellipsis bg-[#1a1b1e] border border-[#2b2d31] rounded p-1 text-[9px] text-white outline-none"
-                                        >
-                                          <option value="">- Animasi Model -</option>
-                                          {elements.filter(el => el.type === '3d_model').map(model => (
-                                            <option key={model.id} value={model.id}>{model.name}</option>
-                                          ))}
-                                        </select>
-                                        {step.actionTargetId && (
-                                          <select
-                                            value={step.actionAnimation || ''}
-                                            onChange={(e) => {
-                                              const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                              newTasks[tIdx].steps[sIdx].actionAnimation = e.target.value;
-                                              updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                            }}
-                                            className="flex-1 min-w-0 text-ellipsis bg-[#1a1b1e] border border-[#2b2d31] rounded p-1 text-[9px] text-white outline-none"
-                                          >
-                                            <option value="">- Clip -</option>
-                                            <option value="*">Semua (*)</option>
-                                            {elements.find(el => el.id === step.actionTargetId)?.availableAnimations?.map(anim => (
-                                              <option key={anim} value={anim}>{anim}</option>
-                                            ))}
-                                          </select>
-                                        )}
-                                      </div>
-                                      <div className="flex gap-2 pl-6">
-                                        <select
-                                          value={step.showTargetId || ''}
-                                          onChange={(e) => {
-                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                            newTasks[tIdx].steps[sIdx].showTargetId = e.target.value;
-                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                          }}
-                                          className="flex-1 min-w-0 text-ellipsis bg-[#1a1b1e] border border-[#2b2d31] rounded p-1 text-[9px] text-green-400 outline-none"
-                                        >
-                                          <option value="">- Munculkan Model -</option>
-                                          {elements.filter(el => el.type === '3d_model').map(model => (
-                                            <option key={model.id} value={model.id}>{model.name}</option>
-                                          ))}
-                                        </select>
-                                        <select
-                                          value={step.hideTargetId || ''}
-                                          onChange={(e) => {
-                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                            newTasks[tIdx].steps[sIdx].hideTargetId = e.target.value;
-                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                          }}
-                                          className="flex-1 min-w-0 text-ellipsis bg-[#1a1b1e] border border-[#2b2d31] rounded p-1 text-[9px] text-red-400 outline-none"
-                                        >
-                                          <option value="">- Sembunyikan Model -</option>
-                                          {elements.filter(el => el.type === '3d_model').map(model => (
-                                            <option key={model.id} value={model.id}>{model.name}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    </div>
-                                  ))}
-                                  
-                                  <button 
-                                    onClick={() => {
-                                      const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                      newTasks[tIdx].steps.push({ id: crypto.randomUUID(), instruction: '' });
-                                      updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                    }}
-                                    className="text-[9px] text-gray-400 hover:text-white flex items-center gap-1 ml-1"
-                                  >
-                                    <Plus size={10} /> Tambah Langkah
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
-                      {/* 3D Model Visibility Options */}
-                      {selectedElement.type === '3d_model' && (
-                        <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Eye size={12} className="text-pln-blue"/> Visibilitas Awal
-                          </h4>
-                          <div className="flex bg-gray-900 rounded p-1 border border-gray-700">
-                            <button
-                              onClick={() => updateElement(selectedElement.id, { visibilityMode: 'visible' })}
-                              className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors ${selectedElement.visibilityMode !== 'hidden' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white'}`}
-                            >
-                              Tampil (Main)
-                            </button>
-                            <button
-                              onClick={() => updateElement(selectedElement.id, { visibilityMode: 'hidden' })}
-                              className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors ${selectedElement.visibilityMode === 'hidden' ? 'bg-pln-blue text-white' : 'text-gray-400 hover:text-white'}`}
-                            >
-                              Sembunyi (Second)
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                                        {/* Sub-Mesh Animation UI */}
+                                        <div className="bg-[#1a1b1e] rounded border border-[#2b2d31] p-1.5 space-y-1.5">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-[9px] font-medium text-gray-400">Part Animasi ({step.animations?.length || 0})</span>
+                                            <button 
+                                              onClick={() => {
+                                                const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                                if (!newTasks[tIdx].steps[sIdx].animations) newTasks[tIdx].steps[sIdx].animations = [];
+                                                newTasks[tIdx].steps[sIdx].animations.push({
+                                                  targetElementId: '',
+                                                  targetSubMeshName: 'Pilih Part 3D...',
+                                                  keyframes: [
+                                                    { time: 0, position: [0,0,0], rotation: [0,0,0], scale: [1,1,1], easing: 'easeInOutQuad' },
+                                                    { time: 2, position: [0,0,0], rotation: [0,0,0], scale: [1,1,1], easing: 'easeInOutQuad' }
+                                                  ]
+                                                });
+                                                updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                              }}
+                                              className="text-[9px] bg-[#2b2d31] text-gray-300 hover:text-white px-1.5 py-0.5 rounded flex items-center gap-1"
+                                            >
+                                              <Plus size={10} /> Tambah Part
+                                            </button>
+                                          </div>
+                                          
+                                          {step.animations?.map((anim, aIdx) => (
+                                            <div key={aIdx} className="bg-[#202227] p-1.5 rounded border border-[#2b2d31] flex flex-col gap-1.5">
+                                              <div className="flex justify-between items-center">
+                                                <input 
+                                                  type="text" 
+                                                  value={anim.targetSubMeshName}
+                                                  onChange={(e) => {
+                                                    const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                                    newTasks[tIdx].steps[sIdx].animations[aIdx].targetSubMeshName = e.target.value;
+                                                    updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                                  }}
+                                                  className="bg-[#0f1013] text-[9px] text-pln-blue border border-[#2b2d31] rounded px-1 w-[100px] outline-none"
+                                                  placeholder="Nama Part..."
+                                                />
+                                                <button 
+                                                  onClick={() => {
+                                                    const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                                    newTasks[tIdx].steps[sIdx].animations = newTasks[tIdx].steps[sIdx].animations.filter((_, i) => i !== aIdx);
+                                                    updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
+                                                  }}
+                                                  className="text-red-400 p-0.5 hover:bg-red-400/20 rounded"
+                                                ><X size={10}/></button>
+                                              </div>
+                                              <div className="flex gap-1">
+                                                <button className="flex-1 bg-pln-blue/20 text-pln-blue text-[8px] py-1 rounded hover:bg-pln-blue/30 text-center font-bold">
+                                                  Rekam Awal (0s)
+                                                </button>
+                                                <button className="flex-1 bg-pln-yellow/20 text-pln-yellow text-[8px] py-1 rounded hover:bg-pln-yellow/30 text-center font-bold">
+                                                  Rekam Akhir (ts)
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
 
-                      {/* 3D Model Custom Materials */}
-                      {selectedElement.type === '3d_model' && selectedElement.availableMaterials && selectedElement.availableMaterials.length > 0 && (
-                        <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Palette size={12} className="text-pln-blue"/> Material & Warna
-                          </h4>
-                          <div className="flex flex-col gap-2">
-                            {selectedElement.availableMaterials.map((matName: string, i: number) => (
-                              <div key={i} className="flex items-center justify-between bg-[#1a1b1e] border border-[#2b2d31] p-2 rounded">
-                                <span className="text-[10px] text-gray-300 truncate max-w-[120px]" title={matName}>{matName}</span>
-                                <div className="flex items-center gap-2">
-                                  <input 
-                                    type="color" 
-                                    value={selectedElement.customMaterials?.[matName] || '#ffffff'}
-                                    onChange={(e) => {
-                                      const newMats = { ...(selectedElement.customMaterials || {}) };
-                                      newMats[matName] = e.target.value;
-                                      updateElement(selectedElement.id, { customMaterials: newMats });
-                                    }}
-                                    className="w-6 h-6 p-0 border-0 rounded cursor-pointer"
-                                  />
-                                  {selectedElement.customMaterials?.[matName] && (
-                                    <button
+                                      </div>
+                                    ))}
+                                    
+                                    <button 
                                       onClick={() => {
-                                        const newMats = { ...(selectedElement.customMaterials || {}) };
-                                        delete newMats[matName];
-                                        updateElement(selectedElement.id, { customMaterials: newMats });
+                                        const newTasks = [...selectedElement.eduMaintenanceTasks!];
+                                        const currentSteps = newTasks[tIdx].steps;
+                                        currentSteps.push({ 
+                                          id: crypto.randomUUID(), 
+                                          stepNumber: currentSteps.length + 1, 
+                                          title: 'Langkah Baru', 
+                                          instruction: '',
+                                          animations: []
+                                        });
+                                        updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
                                       }}
-                                      className="text-red-400 hover:text-red-300 ml-1"
-                                      title="Reset Warna"
+                                      className="text-[9px] text-gray-400 hover:text-white flex items-center gap-1 ml-1"
                                     >
-                                      <X size={12} />
+                                      <Plus size={10} /> Tambah Langkah
                                     </button>
-                                  )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Phase 7: Mesh Separation (Explode) */}
-                      {selectedElement.type === '3d_model' && !selectedElement.targetMeshName && selectedElement.availableSubMeshes && selectedElement.availableSubMeshes.length > 0 && (
-                        <div className="space-y-3 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Layers size={12} className="text-orange-400"/> Pisah Objek (Blender Outliner)
-                          </h4>
-                          <p className="text-[10px] text-gray-400 leading-tight">
-                            Terdeteksi <strong>{selectedElement.availableSubMeshes.length}</strong> komponen di dalam model ini. Anda bisa memisahkannya menjadi elemen-elemen terpisah agar bisa dianimasikan secara mandiri (roda, pintu, dll).
-                          </p>
-                          <button
-                            onClick={() => {
-                              if (confirm('Apakah Anda yakin ingin memecah model ini? Tindakan ini tidak bisa dibatalkan dan akan memisahkan semua mesh ke Timeline.')) {
-                                explodeModel(selectedElement.id);
-                              }
-                            }}
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-orange-500/20 text-orange-400 border border-orange-500/50 hover:bg-orange-500 hover:text-white transition-all rounded text-[11px] font-bold"
-                          >
-                            <Box size={14} />
-                            Pecah Model (Explode)
-                          </button>
-                        </div>
-                      )}
-
-                      {/* 3D Model Animations Display */}
-                      {selectedElement.type === '3d_model' && selectedElement.availableAnimations && selectedElement.availableAnimations.length > 0 && (
-                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Play size={12} className="text-pln-yellow"/> Animasi Bawaan (Blender/GLTF)
-                          </h4>
-                          
-                          {/* Autoplay Selection */}
-                          <div className="space-y-2">
-                            <label className="text-[10px] text-gray-400">Autoplay Animasi (Default)</label>
-                            <select 
-                              value={selectedElement.autoplayAnimation || ""}
-                              onChange={(e) => updateElement(selectedElement.id, { autoplayAnimation: e.target.value })}
-                              className="w-full bg-[#1a1b1e] text-xs text-gray-300 border border-gray-700 rounded p-1.5 focus:border-pln-blue outline-none"
-                            >
-                              <option value="">-- Tidak ada (Idle) --</option>
-                              <option value="*">Mainkan Semua Bersamaan</option>
-                              {selectedElement.availableAnimations.map(anim => (
-                                <option key={anim} value={anim}>{anim}</option>
-                              ))}
-                            </select>
-                            <p className="text-[9px] text-gray-500">Animasi ini akan langsung diputar saat objek dirender di AR.</p>
-                          </div>
-
-                          {/* Loop Mode */}
-                          <div className="space-y-2">
-                            <label className="text-[10px] text-gray-400">Mode Pengulangan (Loop)</label>
-                            <div className="flex gap-2">
-                              {['loop', 'once', 'pingpong'].map(mode => (
-                                <button
-                                  key={mode}
-                                  onClick={() => updateElement(selectedElement.id, { animationLoopMode: mode as any })}
-                                  className={`flex-1 py-1.5 text-[10px] font-medium rounded border transition-colors ${
-                                    (selectedElement.animationLoopMode || 'loop') === mode
-                                      ? 'bg-pln-yellow/20 border-pln-yellow text-pln-yellow'
-                                      : 'bg-[#1a1b1e] border-gray-700 text-gray-400 hover:bg-gray-700'
-                                  }`}
-                                >
-                                  {mode === 'loop' ? 'Ulang Terus' : mode === 'once' ? '1x Saja' : 'Maju Mundur'}
-                                </button>
                               ))}
                             </div>
-                          </div>
-
-                          {/* Animation Speed */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <label className="text-[10px] text-gray-400">Kecepatan (Time Scale)</label>
-                              <span className="text-[10px] text-gray-300">{selectedElement.animationSpeed || 1}x</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="0.1"
-                              max="3"
-                              step="0.1"
-                              value={selectedElement.animationSpeed || 1}
-                              onChange={(e) => updateElement(selectedElement.id, { animationSpeed: parseFloat(e.target.value) })}
-                              className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-pln-yellow"
-                            />
-                          </div>
-
-                          {/* Preview Manual */}
-                          <div className="pt-2">
-                            <label className="text-[10px] text-gray-400 block mb-2">Uji Coba Manual</label>
-                            <div className="flex flex-col gap-2">
-                              {selectedElement.availableAnimations.map(anim => (
-                                <button 
-                                  key={anim}
-                                  onClick={() => {
-                                    if (previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim) {
-                                      setPreviewAnimationData(null);
-                                    } else {
-                                      setPreviewAnimationData({ targetId: selectedElement.id, animationName: anim });
-                                    }
-                                  }}
-                                  className={`flex items-center justify-between px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
-                                    previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim 
-                                    ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
-                                    : 'bg-[#1a1b1e]/50 hover:bg-gray-700 border-gray-700/50 text-gray-400'
-                                  }`}
-                                >
-                                  <span className="truncate pr-2">{anim}</span>
-                                  {previewAnim?.targetId === selectedElement.id && previewAnim?.animationName === anim ? <span className="text-[10px]">🛑 Stop</span> : <Play size={10} />}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Audio Properties Display */}
-                      {selectedElement.type === 'audio' && (
-                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Volume2 size={12} className="text-pink-400"/> Audio Settings
-                          </h4>
-                          
-                          <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[10px] text-gray-300 font-medium">Autoplay (BGM)</label>
-                              <input 
-                                type="checkbox"
-                                checked={selectedElement.autoplay !== false}
-                                onChange={(e) => updateElement(selectedElement.id, { autoplay: e.target.checked })}
-                                className="w-4 h-4 accent-pln-blue"
-                              />
-                            </div>
                             
-                            <div className="flex items-center justify-between">
-                              <label className="text-[10px] text-gray-300 font-medium">Loop (Ulang Terus)</label>
-                              <input 
-                                type="checkbox"
-                                checked={selectedElement.loop !== false}
-                                onChange={(e) => updateElement(selectedElement.id, { loop: e.target.checked })}
-                                className="w-4 h-4 accent-pln-blue"
-                              />
-                            </div>
-                            
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[10px] text-gray-400 font-medium flex justify-between">
-                                Volume
-                                <span className="font-mono text-[10px]">{(selectedElement.volume ?? 1).toFixed(1)}</span>
-                              </label>
-                              <input 
-                                type="range" 
-                                min="0" max="1" step="0.1" 
-                                value={selectedElement.volume ?? 1}
-                                onChange={(e) => updateElement(selectedElement.id, { volume: parseFloat(e.target.value) })}
-                                className="w-full accent-pln-blue"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Video Properties Display */}
-                      {selectedElement.type === 'video' && (
-                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Video size={12} className="text-red-400"/> Video Settings
-                          </h4>
-                          
-                          <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[10px] text-gray-300 font-medium">Autoplay</label>
-                              <input 
-                                type="checkbox"
-                                checked={selectedElement.autoplay !== false}
-                                onChange={(e) => updateElement(selectedElement.id, { autoplay: e.target.checked })}
-                                className="w-4 h-4 accent-pln-blue"
-                              />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <label className="text-[10px] text-gray-300 font-medium">Loop</label>
-                              <input 
-                                type="checkbox"
-                                checked={selectedElement.loop !== false}
-                                onChange={(e) => updateElement(selectedElement.id, { loop: e.target.checked })}
-                                className="w-4 h-4 accent-pln-blue"
-                              />
-                            </div>
+                            <div className="h-px bg-[#1a1b1e] my-4"></div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
-                              <label className="text-[10px] text-gray-300 font-medium font-bold">Hologram (Chroma Key)</label>
-                              <input 
-                                type="checkbox"
-                                checked={selectedElement.chromaKey || false}
-                                onChange={(e) => updateElement(selectedElement.id, { chromaKey: e.target.checked })}
-                                className="w-4 h-4 accent-pln-blue"
-                              />
-                            </div>
-
-                            {selectedElement.chromaKey && (
-                              <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] text-gray-400 font-medium flex justify-between">
-                                  Warna Latar untuk Dihapus
-                                  <span className="font-mono text-[10px] bg-[#1a1b1e] px-1 rounded">{selectedElement.chromaKeyColor || '#00ff00'}</span>
-                                </label>
-                                <input 
-                                  type="color" 
-                                  value={selectedElement.chromaKeyColor || '#00ff00'}
-                                  onChange={(e) => updateElement(selectedElement.id, { chromaKeyColor: e.target.value })}
-                                  className="w-full h-8 bg-[#1a1b1e] border border-[#2b2d31] rounded cursor-pointer"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {selectedElement.type === '3d_shape' && (
-                        <div className="p-4 space-y-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Box size={12} className="text-blue-400"/> Pengaturan Objek 3D Dasar
-                          </h4>
-                          
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] text-gray-400 font-medium">Bentuk Objek</label>
-                            <select
-                              value={selectedElement.shapeType || 'cube'}
-                              onChange={(e) => updateElement(selectedElement.id, { shapeType: e.target.value as any })}
-                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-white outline-none focus:border-pln-blue"
-                            >
-                            <option value="cube">Kubus (Cube)</option>
-                            <option value="sphere">Bola (Sphere)</option>
-                            <option value="cylinder">Silinder (Cylinder)</option>
-                            <option value="plane">Bidang (Plane)</option>
-                            <option value="cone">Kerucut (Cone)</option>
-                            <option value="torus">Cincin (Torus)</option>
-                            <option value="tetrahedron">Piramida (Tetrahedron)</option>
-                            <option value="icosahedron">Polihedron (Icosahedron)</option>
-                            </select>
-                          </div>
-                          
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] text-gray-400 font-medium">Warna Objek</label>
-                            <div className="flex items-center gap-2">
-                              <input 
-                                type="color" 
-                                value={selectedElement.color || '#ffffff'}
-                                onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
-                                className="w-8 h-8 bg-[#1a1b1e] border border-[#2b2d31] rounded cursor-pointer shrink-0"
-                              />
-                              <input 
-                                type="text" 
-                                value={selectedElement.color || '#ffffff'}
-                                onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
-                                className="flex-1 bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-xs text-white outline-none focus:border-pln-blue font-mono"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Hotspot Properties Display */}
-                      {selectedElement.type === 'hotspot' && (
-                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <MapPin size={12} className="text-orange-400"/> Hotspot Settings
-                          </h4>
-                          
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10px] text-gray-400 font-medium">Teks Penjelasan</label>
                             <textarea
@@ -1755,7 +1446,7 @@ export function RightPanel({
                       </div>
                     )}
 
-                    {selectedElement.onClickActionType === 'play_timeline_range' && (
+                    {(selectedElement.onClickActionType as string) === "play_timeline_range" && (
                         <div className="flex flex-col gap-1.5 bg-[#202227] p-2 rounded border border-[#2b2d31]">
                           <label className="text-[10px] text-gray-400 font-medium mb-1">Pengaturan Rentang Animasi</label>
                           <div className="flex items-center gap-2">
