@@ -408,21 +408,41 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  removeElement: (id) => set((state) => ({
-    past: [...state.past, state.elements],
-    future: [],
-    elements: state.elements.filter((el) => el.id !== id),
-    selectedId: state.selectedId === id ? null : state.selectedId,
-    multiSelectedIds: state.multiSelectedIds.filter(selected => selected !== id)
-  })),
+  removeElement: (id) => set((state) => {
+    const getChildrenIds = (parentId: string): string[] => {
+      const children = state.elements.filter(e => e.parentId === parentId);
+      return [...children.map(c => c.id), ...children.flatMap(c => getChildrenIds(c.id))];
+    };
+    const idsToRemove = [id, ...getChildrenIds(id)];
 
-  removeElements: (ids) => set((state) => ({
-    past: [...state.past, state.elements],
-    future: [],
-    elements: state.elements.filter((el) => !ids.includes(el.id)),
-    selectedId: (state.selectedId && ids.includes(state.selectedId)) ? null : state.selectedId,
-    multiSelectedIds: state.multiSelectedIds.filter(selected => !ids.includes(selected))
-  })),
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: state.elements.filter((el) => !idsToRemove.includes(el.id)),
+      selectedId: state.selectedId && idsToRemove.includes(state.selectedId) ? null : state.selectedId,
+      multiSelectedIds: state.multiSelectedIds.filter(selected => !idsToRemove.includes(selected))
+    };
+  }),
+
+  removeElements: (ids) => set((state) => {
+    const getChildrenIds = (parentId: string): string[] => {
+      const children = state.elements.filter(e => e.parentId === parentId);
+      return [...children.map(c => c.id), ...children.flatMap(c => getChildrenIds(c.id))];
+    };
+    const allIdsToRemove = new Set<string>();
+    ids.forEach(id => {
+      allIdsToRemove.add(id);
+      getChildrenIds(id).forEach(childId => allIdsToRemove.add(childId));
+    });
+
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: state.elements.filter((el) => !allIdsToRemove.has(el.id)),
+      selectedId: state.selectedId && allIdsToRemove.has(state.selectedId) ? null : state.selectedId,
+      multiSelectedIds: state.multiSelectedIds.filter(selected => !allIdsToRemove.has(selected))
+    };
+  }),
 
   duplicateElement: (id) => set((state) => {
     const element = state.elements.find(el => el.id === id);

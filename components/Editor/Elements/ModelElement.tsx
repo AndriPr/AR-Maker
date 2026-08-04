@@ -48,6 +48,9 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   const isSimulating = useEditorStore(state => state.isSimulating);
   const isSelected = selectedId === element.id && !timelinePlaying && !isSimulating;
   
+  // AR Selection Highlight
+  useHelper(isSimulating && selectedId === element.id ? groupRef : null, THREE.BoxHelper, '#0ea5e9');
+  
   const clonedScene = useMemo(() => {
     if (!scene) return null;
     const clone = scene.clone();
