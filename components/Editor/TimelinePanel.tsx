@@ -130,7 +130,6 @@ export default function TimelinePanel() {
   const elements = useEditorStore(state => state.elements);
   const selectedId = useEditorStore(state => state.selectedId);
   const updateElement = useEditorStore(state => state.updateElement);
-  const updateElement = useEditorStore(state => state.updateElement);
   const setTimelineTime = useEditorStore(state => state.setTimelineTime);
   const timelinePlaying = useEditorStore(state => state.timelinePlaying);
   const setTimelinePlaying = useEditorStore(state => state.setTimelinePlaying);
