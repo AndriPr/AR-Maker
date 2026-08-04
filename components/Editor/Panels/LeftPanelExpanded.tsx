@@ -213,7 +213,7 @@ export function LeftPanelExpanded({
             <div className="p-2 space-y-0.5">
               <div 
                 className={`flex items-center justify-between px-2 py-1.5 mt-1 rounded-sm text-xs cursor-pointer transition-colors ${
-                  selectedId === null ? 'bg-[#ff7f00] text-white font-medium' : 'text-gray-300 hover:bg-[#2b2d31]'
+                  (selectedId === null && multiSelectedIds.length === 0) ? 'bg-[#ff7f00] text-white font-medium' : 'text-gray-300 hover:bg-[#2b2d31]'
                 }`}
                 onClick={() => { setSelectedId(null); setMultiSelectedIds([]); }}
               >
