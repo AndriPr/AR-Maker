@@ -112,11 +112,11 @@ export function ARUserInterface() {
           <AnimatePresence>
             {selectedElement && (
               <motion.div
-                initial={{ y: 50, opacity: 0, scale: 0.95 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                initial={{ y: 50, opacity: 0, scale: 0.95, x: '-50%' }}
+                animate={{ y: 0, opacity: 1, scale: 1, x: '-50%' }}
+                exit={{ y: 50, opacity: 0, scale: 0.95, x: '-50%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="absolute bottom-24 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-3xl shadow-2xl pointer-events-auto"
+                className="absolute bottom-28 left-1/2 w-[90%] max-w-sm bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-3xl shadow-2xl pointer-events-auto"
               >
                 <button 
                   onClick={() => setSelectedId(null)}
@@ -200,7 +200,10 @@ export function ARUserInterface() {
                   {elements.filter(el => el.sceneId === currentSceneId).map(el => (
                     <button
                       key={el.id}
-                      onClick={() => setSelectedId(el.id)}
+                      onClick={() => {
+                        setSelectedId(el.id);
+                        setShowList(false); // Auto close list when object is selected
+                      }}
                       className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'hover:bg-white/10 border border-transparent'}`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${selectedId === el.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
