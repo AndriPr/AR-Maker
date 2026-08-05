@@ -533,17 +533,17 @@ export default function TimelinePanel() {
                         elementId={el.id} 
                         kf={kf} 
                         duration={duration} 
-                        isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                        isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
                         onSelect={(shift: boolean) => {
                           if (shift) {
-                            const isAlreadySelected = selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time);
+                            const isAlreadySelected = selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time);
                             if (isAlreadySelected) {
-                              setSelectedKeyframes(selectedKeyframes?.filter((sk: any) => !(sk.id === el.id && sk.time === kf.time)) || []);
+                              setSelectedKeyframes(selectedKeyframes?.filter((sk: any) => !(sk.elementId === el.id && sk.time === kf.time)) || []);
                             } else {
-                              setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                              setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
                             }
                           } else {
-                            setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                            setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
                           }
                         }}
                         onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
@@ -563,12 +563,12 @@ export default function TimelinePanel() {
                             elementId={el.id} 
                             kf={kf} 
                             duration={duration} 
-                            isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
                             onSelect={(shift: boolean) => {
                               if (shift) {
-                                setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
                               } else {
-                                setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                                setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
                               }
                             }}
                             onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
@@ -584,12 +584,12 @@ export default function TimelinePanel() {
                             elementId={el.id} 
                             kf={kf} 
                             duration={duration} 
-                            isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
                             onSelect={(shift: boolean) => {
                               if (shift) {
-                                setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
                               } else {
-                                setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                                setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
                               }
                             }}
                             onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
@@ -605,12 +605,12 @@ export default function TimelinePanel() {
                             elementId={el.id} 
                             kf={kf} 
                             duration={duration} 
-                            isSelected={selectedKeyframes?.some((sk: any) => sk.id === el.id && sk.time === kf.time)}
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
                             onSelect={(shift: boolean) => {
                               if (shift) {
-                                setSelectedKeyframes([...(selectedKeyframes || []), { id: el.id, time: kf.time }]);
+                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
                               } else {
-                                setSelectedKeyframes([{ id: el.id, time: kf.time }]);
+                                setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
                               }
                             }}
                             onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}

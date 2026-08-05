@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
 // Custom Selection Pointer
-const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Group> }) => {
+const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) => {
   const pointerGroupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
