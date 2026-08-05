@@ -1,18 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
-
-// Service-role client: auth.admin.listUsers() and cross-workspace invitation
-// lookups need elevated privileges. Server-only.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // GET: Fetch pending invitations
 export async function GET(request: Request) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get('workspace_id');
     const email = searchParams.get('email');
@@ -55,6 +49,7 @@ export async function GET(request: Request) {
 // POST: Create a new invitation
 export async function POST(request: Request) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const body = await request.json();
     const { workspace_id, email, role, invited_by } = body;
 
@@ -132,6 +127,7 @@ export async function POST(request: Request) {
 // DELETE: Revoke an invitation
 export async function DELETE(request: Request) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const workspaceId = searchParams.get('workspace_id');
