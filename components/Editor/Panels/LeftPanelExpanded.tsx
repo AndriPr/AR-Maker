@@ -38,6 +38,7 @@ export function LeftPanelExpanded({
   
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  const isTransforming = useEditorStore(state => state.isTransforming);
   const { 
     elements, 
     selectedId, 
@@ -292,7 +293,7 @@ export function LeftPanelExpanded({
                         }}
                         onMouseEnter={() => {
                           if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-                          hoverTimeoutRef.current = setTimeout(() => setHoveredId(el.id), 150);
+                          hoverTimeoutRef.current = setTimeout(() => { if (!isTransforming) setHoveredId(el.id); }, 150);
                         }}
                         onMouseLeave={() => {
                           if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);

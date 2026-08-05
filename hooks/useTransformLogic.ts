@@ -112,6 +112,7 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
       };
 
       const onChangeEnd = (e: any) => {
+         useEditorStore.getState().setIsTransforming(e.value);
          if (e.value) callbackStart(e);
          else callbackEnd(e);
       };

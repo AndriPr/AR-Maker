@@ -185,6 +185,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
   const isMultiSelected = useEditorStore(state => state.multiSelectedIds.includes(element.id));
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
   const setHoveredId = useEditorStore(state => state.setHoveredId);
+  const isTransforming = useEditorStore(state => state.isTransforming);
 
   useEffect(() => {
     if (!groupRef.current) return;
@@ -220,7 +221,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
     <group 
       ref={groupRef}
       userData={{ elementId: element.id }}
-      onPointerOver={(e: any) => { e.stopPropagation(); setHoveredId(element.id); }}
+      onPointerOver={(e: any) => { e.stopPropagation(); if (!isTransforming) setHoveredId(element.id); }}
       onPointerOut={(e: any) => { setHoveredId(null); }}
       onDoubleClick={(e: any) => {
         e.stopPropagation();
