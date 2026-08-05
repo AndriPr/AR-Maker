@@ -99,9 +99,53 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
        }
     }
 
-    // Keyframe Animation (Timeline)
+    // Keyframe Animation (Timeline & Custom Triggers)
     if (element.keyframes && element.keyframes.length > 0) {
-      const tTime = useEditorStore.getState().timelineTime;
+      const stateStore = useEditorStore.getState();
+      const tTimeGlobal = stateStore.timelineTime;
+      const activeTriggers = stateStore.activeTriggers;
+      const elements = stateStore.elements;
+      
+      // Determine if this element is targeted by an active trigger
+      let isTargeted = false;
+      let isActive = false;
+      
+      const eduPanels = elements.filter(el => el.type === 'edu_panel');
+      for (const panel of eduPanels) {
+        if (panel.eduCustomTriggers) {
+          for (const trigger of panel.eduCustomTriggers) {
+            if (trigger.targetElementId === element.id) {
+              isTargeted = true;
+              if (activeTriggers.includes(trigger.id)) {
+                isActive = true;
+                break;
+              }
+            }
+          }
+        }
+        if (isActive) break;
+      }
+      
+      // Calculate local time for trigger animation
+      let tTime = tTimeGlobal;
+      
+      if (isTargeted) {
+        if (group.userData.localAnimTime === undefined) {
+          group.userData.localAnimTime = 0;
+        }
+        
+        const maxTime = Math.max(...element.keyframes.map((k: any) => k.time));
+        const animSpeed = 1.0; // Frames per second equivalent
+        
+        if (isActive && group.userData.localAnimTime < maxTime) {
+          group.userData.localAnimTime = Math.min(maxTime, group.userData.localAnimTime + delta * animSpeed * 10); // scale speed to timeline format (fps)
+        } else if (!isActive && group.userData.localAnimTime > 0) {
+          group.userData.localAnimTime = Math.max(0, group.userData.localAnimTime - delta * animSpeed * 10);
+        }
+        
+        tTime = group.userData.localAnimTime;
+      }
+      
       const keyframes = element.keyframes;
       
       if (keyframes.length === 1) {

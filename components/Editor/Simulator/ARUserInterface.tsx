@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useEditorStore } from '@/lib/store';
-import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List, GraduationCap, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List, GraduationCap, ChevronLeft, ChevronRight, CheckCircle2, ToggleLeft, Power } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function ARUserInterface() {
@@ -18,8 +18,10 @@ export function ARUserInterface() {
   const setCurrentARStepIndex = useEditorStore(state => state.setCurrentARStepIndex);
   const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
   const setArPlaybackProgress = useEditorStore(state => state.setArPlaybackProgress);
+  const activeTriggers = useEditorStore(state => state.activeTriggers);
+  const toggleTrigger = useEditorStore(state => state.toggleTrigger);
   
-  const [activeView, setActiveView] = useState<'closed' | 'menu' | 'module' | 'objects' | 'scenes'>('closed');
+  const [activeView, setActiveView] = useState<'closed' | 'menu' | 'module' | 'objects' | 'scenes' | 'actions'>('closed');
   const [showFinishBanner, setShowFinishBanner] = useState(false);
 
   const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
@@ -234,6 +236,7 @@ export function ARUserInterface() {
                         {activeView === 'module' && "Modul Edukasi"}
                         {activeView === 'objects' && "Daftar Objek"}
                         {activeView === 'scenes' && "Daftar Scene"}
+                        {activeView === 'actions' && "Tombol Aksi"}
                       </span>
                     </div>
                     <button onClick={() => setActiveView('closed')} className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors">
@@ -254,12 +257,19 @@ export function ARUserInterface() {
                           <GraduationCap size={24} className="text-pln-blue" />
                           <span className="text-white font-medium text-xs text-center leading-tight">Modul<br/>Edukasi</span>
                         </button>
-                        <button onClick={() => setActiveView('scenes')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
-                          <ImageIcon size={24} className="text-white/70" />
-                          <span className="text-white font-medium text-xs">Scene</span>
-                        </button>
-                      </div>
-                    )}
+                          <button onClick={() => setActiveView('scenes')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
+                            <ImageIcon size={24} className="text-white/70" />
+                            <span className="text-white font-medium text-xs">Scene</span>
+                          </button>
+                          
+                          {eduPanel?.eduCustomTriggers && eduPanel.eduCustomTriggers.length > 0 && (
+                            <button onClick={() => setActiveView('actions')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-2xl transition-colors">
+                              <ToggleLeft size={24} className="text-purple-400" />
+                              <span className="text-white font-medium text-xs">Aksi</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
 
                     {/* MODULE VIEW */}
                     {activeView === 'module' && (
@@ -357,6 +367,48 @@ export function ARUserInterface() {
                         ))}
                       </div>
                     )}
+                    {/* ACTIONS VIEW */}
+                    {activeView === 'actions' && (
+                      <div className="flex flex-col gap-3">
+                        {!eduPanel?.eduCustomTriggers || eduPanel.eduCustomTriggers.length === 0 ? (
+                          <div className="bg-white/5 rounded-xl p-4 text-center text-white/50 text-xs">
+                            Belum ada tombol aksi.
+                          </div>
+                        ) : (
+                          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden p-3 space-y-3">
+                            <h4 className="text-white font-bold text-xs border-b border-white/10 pb-2 flex items-center gap-2">
+                              <ToggleLeft size={14} className="text-purple-400" /> Sakelar Aksi
+                            </h4>
+                            
+                            <div className="grid grid-cols-2 gap-2">
+                              {eduPanel.eduCustomTriggers.map(trigger => (
+                                <button
+                                  key={trigger.id}
+                                  onClick={() => toggleTrigger(trigger.id)}
+                                  className={`relative overflow-hidden rounded-xl p-3 flex flex-col items-center justify-center gap-2 transition-all ${
+                                    activeTriggers.includes(trigger.id) 
+                                      ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
+                                      : 'bg-white/5 hover:bg-white/10 text-white/70 border border-white/10'
+                                  }`}
+                                >
+                                  <Power size={20} className={activeTriggers.includes(trigger.id) ? 'text-white' : 'text-purple-400'} />
+                                  <span className="text-[10px] font-bold text-center leading-tight">{trigger.label}</span>
+                                  {activeTriggers.includes(trigger.id) && (
+                                    <div className="absolute top-1 right-1">
+                                      <span className="flex h-2 w-2 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                      </span>
+                                    </div>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
 
                   </div>
                 </motion.div>

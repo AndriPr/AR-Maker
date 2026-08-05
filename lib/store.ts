@@ -56,6 +56,12 @@ interface ElementAction {
   value?: string;    // URL for 'open_url', Scene ID for 'change_scene', or Animation Name
 }
 
+export interface EduCustomTrigger {
+  id: string;
+  label: string;
+  targetElementId: string;
+}
+
 export interface SceneElement {
   id: string;
   type: ElementType;
@@ -165,6 +171,10 @@ interface EditorState {
   arPlaybackProgress: number;
   setArPlaybackProgress: (p: number) => void;
   setCurrentARStepIndex: (index: number) => void;
+  
+  activeTriggers: string[];
+  toggleTrigger: (triggerId: string) => void;
+
   elements: SceneElement[];
   selectedId: string | null;
   targetImageUrl: string | null;
@@ -301,6 +311,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   arPlaybackProgress: 0,
   setArPlaybackProgress: (p) => set({ arPlaybackProgress: p }),
   setCurrentARStepIndex: (index: number) => set({ currentARStepIndex: index }),
+
+  activeTriggers: [],
+  toggleTrigger: (id: string) => set((state) => ({
+    activeTriggers: state.activeTriggers.includes(id) 
+      ? state.activeTriggers.filter(t => t !== id)
+      : [...state.activeTriggers, id]
+  })),
 
   selectedId: null,
   multiSelectedIds: [],

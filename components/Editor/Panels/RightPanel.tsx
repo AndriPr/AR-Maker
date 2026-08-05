@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   ChevronLeft, X, ImageIcon, Copy, Trash2, Sparkles, Type, Loader2, 
   MousePointerClick, Magnet, Plus, ExternalLink, LayoutDashboard, ListChecks,
-  Wrench, Eye, Palette, Layers, Box, Play, Volume2, Video, MapPin, FolderOpen, LayoutTemplate, Globe
+  Wrench, Eye, Palette, Layers, Box, Play, Volume2, Video, MapPin, FolderOpen, LayoutTemplate, Globe, ToggleLeft
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1161,7 +1161,87 @@ export function RightPanel({
                             </div>
                             
                             <div className="h-px bg-[#1a1b1e] my-4"></div>
-
+                            
+                            {/* Custom Triggers Builder (AR Toggles) */}
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                <ToggleLeft size={14} className="text-purple-400" /> Tombol Aksi (AR)
+                              </h4>
+                              <button 
+                                onClick={() => {
+                                  const newTriggers = [...(selectedElement.eduCustomTriggers || []), { id: crypto.randomUUID(), label: 'Aksi Baru', targetElementId: '' }];
+                                  updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
+                                }}
+                                className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded border border-purple-500/30 hover:bg-purple-500/30 flex items-center gap-1"
+                              >
+                                <Plus size={10} /> Tambah
+                              </button>
+                            </div>
+                            
+                            <div className="space-y-3 mt-2">
+                              {(!selectedElement.eduCustomTriggers || selectedElement.eduCustomTriggers.length === 0) && (
+                                <div className="text-[10px] text-gray-500 italic text-center py-2 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada tombol aksi.</div>
+                              )}
+                              {selectedElement.eduCustomTriggers?.map((trigger, trIdx) => (
+                                <div key={trigger.id} className="bg-[#202227] border border-[#2b2d31] rounded p-2 space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <input 
+                                      type="text"
+                                      value={trigger.label}
+                                      onChange={(e) => {
+                                        const newTriggers = [...selectedElement.eduCustomTriggers!];
+                                        newTriggers[trIdx].label = e.target.value;
+                                        updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
+                                      }}
+                                      className="flex-1 bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-xs font-bold text-white outline-none focus:border-purple-400"
+                                      placeholder="Label Tombol (misal: Buka Laptop)"
+                                    />
+                                    <button 
+                                      onClick={() => {
+                                        const newTriggers = selectedElement.eduCustomTriggers!.filter(t => t.id !== trigger.id);
+                                        updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
+                                      }}
+                                      className="text-red-400 hover:text-red-300 p-1"
+                                    ><Trash2 size={12} /></button>
+                                  </div>
+                                  
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-[9px] text-gray-400 font-medium">Pilih Objek Target:</label>
+                                    <select
+                                      value={trigger.targetElementId}
+                                      onChange={(e) => {
+                                        const newTriggers = [...selectedElement.eduCustomTriggers!];
+                                        newTriggers[trIdx].targetElementId = e.target.value;
+                                        updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
+                                      }}
+                                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none focus:border-purple-400"
+                                    >
+                                      <option value="">-- Pilih Objek 3D --</option>
+                                      {elements.filter(e => e.type === '3d_model' || e.type === '3d_shape' || e.type === 'group_folder').map(e => (
+                                        <option key={e.id} value={e.id}>{e.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  
+                                  {trigger.targetElementId && (
+                                    <div className="bg-purple-500/10 border border-purple-500/20 rounded p-1.5 flex items-center justify-between gap-2 mt-2">
+                                      <span className="text-[9px] text-purple-200 flex-1 leading-tight">Pilih objek ini lalu gunakan panel Timeline di bawah untuk membuat animasinya.</span>
+                                      <button 
+                                        onClick={() => {
+                                          setSelectedId(trigger.targetElementId);
+                                          // Optional: Auto open timeline
+                                        }}
+                                        className="bg-purple-500 hover:bg-purple-600 text-white text-[9px] px-2 py-1 rounded shadow"
+                                      >
+                                        Edit Animasi
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div className="h-px bg-[#1a1b1e] my-4"></div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10px] text-gray-400 font-medium">Teks Penjelasan</label>
                             <textarea
