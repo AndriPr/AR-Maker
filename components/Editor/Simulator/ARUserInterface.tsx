@@ -305,9 +305,9 @@ export function ARUserInterface() {
 
                     {/* OBJECTS VIEW */}
                     {activeView === 'objects' && (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 snap-x">
                         {validSceneElements.length === 0 && (
-                          <div className="text-center text-white/50 text-xs py-4">
+                          <div className="text-center text-white/50 text-xs py-4 w-full">
                             Tidak ada objek di scene ini
                           </div>
                         )}
@@ -318,14 +318,14 @@ export function ARUserInterface() {
                               setSelectedId(el.id);
                               setActiveView('closed');
                             }}
-                            className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left \${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+                            className={`snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 \${selectedId === el.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
+                            <div className={`${selectedId === el.id ? 'text-pln-blue' : 'text-white/70'}`}>
                               {getElementIcon(el.type)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className={`font-semibold text-xs truncate \${selectedId === el.id ? 'text-white' : 'text-white/80'}`}>{el.name}</div>
-                              <div className="text-[9px] text-white/50 capitalize">{el.type}</div>
+                            <div className="flex flex-col items-center w-full px-2">
+                              <span className={`font-medium text-xs truncate w-full text-center ${selectedId === el.id ? 'text-white' : 'text-white/80'}`}>{el.name}</span>
+                              <span className="text-[9px] text-white/50 capitalize truncate w-full text-center">{el.type}</span>
                             </div>
                           </button>
                         ))}
@@ -334,7 +334,7 @@ export function ARUserInterface() {
 
                     {/* SCENES VIEW */}
                     {activeView === 'scenes' && (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 snap-x">
                         {scenes.map(s => (
                           <button
                             key={s.id}
@@ -342,16 +342,16 @@ export function ARUserInterface() {
                               setCurrentSceneId(s.id);
                               setActiveView('closed');
                             }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left \${currentSceneId === s.id ? 'bg-pln-blue/20 border border-pln-blue/50' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+                            className={`relative snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${currentSceneId === s.id ? 'bg-pln-blue/20 border border-pln-blue/50' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 \${currentSceneId === s.id ? 'bg-pln-blue text-white' : 'bg-black/40 text-white/70'}`}>
-                              <ImageIcon size={16} />
+                            <div className={`${currentSceneId === s.id ? 'text-pln-blue text-white' : 'text-white/70'}`}>
+                              <ImageIcon size={24} />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className={`font-semibold text-sm truncate \${currentSceneId === s.id ? 'text-white' : 'text-white/80'}`}>{s.name}</div>
+                            <div className="flex flex-col items-center w-full px-2">
+                              <span className={`font-medium text-xs truncate w-full text-center ${currentSceneId === s.id ? 'text-white' : 'text-white/80'}`}>{s.name}</span>
                             </div>
                             {currentSceneId === s.id && (
-                              <CheckCircle2 size={16} className="text-pln-blue" />
+                              <CheckCircle2 size={12} className="text-pln-blue absolute top-2 right-2" />
                             )}
                           </button>
                         ))}
