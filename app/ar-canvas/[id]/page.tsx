@@ -187,6 +187,14 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
     ? allElements.filter((el: any) => !el.sceneId || el.sceneId === activeSceneId)
     : allElements;
 
+  const childrenByParentId = new Map<string, any[]>();
+  for (const el of allElements) {
+    if (!el.parentId) continue;
+    const siblings = childrenByParentId.get(el.parentId);
+    if (siblings) siblings.push(el);
+    else childrenByParentId.set(el.parentId, [el]);
+  }
+
   const handleElementClick = (e: any, el: any) => {
     e.stopPropagation();
     if (el.onClickActionType === 'change_scene' && el.onClickActionValue) {
@@ -264,11 +272,11 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         <group position={[0, 0, 0]}> 
           
           {currentElements.filter((el: any) => el.parentId === 'root' || !el.parentId).map((el: any) => (
-            <RecursiveNode 
-              key={el.id} 
-              element={el} 
-              elements={allElements} 
-              transformMode="translate" 
+            <RecursiveNode
+              key={el.id}
+              element={el}
+              childrenByParentId={childrenByParentId}
+              transformMode="translate"
             />
           ))}
         </group>

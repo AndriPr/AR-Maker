@@ -1,5 +1,5 @@
 "use client";
-import { viewportElementRefs } from '@/lib/viewportRefs';
+import { viewportElementRefs, transformDragState } from '@/lib/viewportRefs';
 
 import { useEffect } from 'react';
 import { useEditorStore } from '@/lib/store';
@@ -87,8 +87,16 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
 
       const onChangeEnd = (e: any) => {
          useEditorStore.getState().setIsTransforming(e.value);
-         if (e.value) callbackStart(e);
-         else callbackEnd(e);
+         if (e.value) {
+           callbackStart(e);
+         } else {
+           // The mouse-up that ends this drag will trigger a native "click" on
+           // the canvas right after this. Swallow that one ghost click so it
+           // can't re-select the parent folder (see transformDragState).
+           transformDragState.suppressNextClick = true;
+           setTimeout(() => { transformDragState.suppressNextClick = false; }, 300);
+           callbackEnd(e);
+         }
       };
 
       controls.addEventListener('dragging-changed', onChangeEnd);

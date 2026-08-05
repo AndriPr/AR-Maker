@@ -8,10 +8,24 @@ import { useEditorStore } from '@/lib/store';
 export function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
     const prevTimeRef = useRef<number | null>(null);
-  
+
   const posKfs = useMemo(() => element.keyframes?.filter((k: any) => k.position !== undefined) || [], [element.keyframes]);
   const rotKfs = useMemo(() => element.keyframes?.filter((k: any) => k.rotation !== undefined) || [], [element.keyframes]);
   const sclKfs = useMemo(() => element.keyframes?.filter((k: any) => k.scale !== undefined) || [], [element.keyframes]);
+
+  // Every animated element re-scanned the full elements array for edu_panel
+  // triggers on every frame (O(n) x every animated element x 60fps). Cache the
+  // result and only recompute when the elements array reference actually
+  // changes (a real edit), not on every render of the useFrame loop.
+  const eduPanelsCacheRef = useRef<{ elements: any[] | null, eduPanels: any[] }>({ elements: null, eduPanels: [] });
+  const getEduPanels = (elements: any[]) => {
+    const cache = eduPanelsCacheRef.current;
+    if (cache.elements !== elements) {
+      cache.elements = elements;
+      cache.eduPanels = elements.filter((el: any) => el.type === 'edu_panel');
+    }
+    return cache.eduPanels;
+  };
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -82,12 +96,12 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
       const tTimeGlobal = stateStore.timelineTime;
       const activeTriggers = stateStore.activeTriggers;
       const elements = stateStore.elements;
-      
+
       // Determine if this element is targeted by an active trigger
       let isTargeted = false;
       let isActive = false;
-      
-      const eduPanels = elements.filter(el => el.type === 'edu_panel');
+
+      const eduPanels = getEduPanels(elements);
       for (const panel of eduPanels) {
         if (panel.eduCustomTriggers) {
           for (const trigger of panel.eduCustomTriggers) {
@@ -135,8 +149,9 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
             group.scale.set(scl[0], scl[1], scl[2]);
          }
       } else {
-        const getBoundingKeyframes = (prop: 'position' | 'rotation' | 'scale') => {
-          const propKfs = keyframes.filter((k: any) => k[prop] !== undefined);
+        // Reuse the arrays already memoized above (per element.keyframes change)
+        // instead of re-filtering the full keyframe list 3x every frame.
+        const getBoundingKeyframes = (propKfs: any[]) => {
           if (propKfs.length === 0) return null;
           if (propKfs.length === 1) return { kf1: propKfs[0], kf2: propKfs[0] };
           
@@ -175,7 +190,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           return progress;
         };
 
-        const posBounds = getBoundingKeyframes('position');
+        const posBounds = getBoundingKeyframes(posKfs);
         if (posBounds && posBounds.kf1.position && posBounds.kf2.position) {
           const progress = calculateProgress(posBounds.kf1, posBounds.kf2);
           group.position.x = THREE.MathUtils.lerp(posBounds.kf1.position[0], posBounds.kf2.position[0], progress);
@@ -183,7 +198,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           group.position.z = THREE.MathUtils.lerp(posBounds.kf1.position[2], posBounds.kf2.position[2], progress);
         }
 
-        const rotBounds = getBoundingKeyframes('rotation');
+        const rotBounds = getBoundingKeyframes(rotKfs);
         if (rotBounds && rotBounds.kf1.rotation && rotBounds.kf2.rotation) {
           const progress = calculateProgress(rotBounds.kf1, rotBounds.kf2);
           group.rotation.x = THREE.MathUtils.lerp(rotBounds.kf1.rotation[0], rotBounds.kf2.rotation[0], progress);
@@ -191,7 +206,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           group.rotation.z = THREE.MathUtils.lerp(rotBounds.kf1.rotation[2], rotBounds.kf2.rotation[2], progress);
         }
 
-        const sclBounds = getBoundingKeyframes('scale');
+        const sclBounds = getBoundingKeyframes(sclKfs);
         if (sclBounds && sclBounds.kf1.scale && sclBounds.kf2.scale) {
           const progress = calculateProgress(sclBounds.kf1, sclBounds.kf2);
           group.scale.x = THREE.MathUtils.lerp(sclBounds.kf1.scale[0], sclBounds.kf2.scale[0], progress);

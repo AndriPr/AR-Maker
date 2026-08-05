@@ -12,11 +12,11 @@ import { HotspotElement } from '@/components/Editor/Elements/HotspotElement';
 import { OccluderElement } from '@/components/Editor/Elements/OccluderElement';
 import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElement';
 
-export function RecursiveNode({ element, elements, transformMode }: { element: any, elements: any[], transformMode: 'translate' | 'rotate' | 'scale' }) {
-  const children = elements.filter(el => el.parentId === element.id);
-  
+export function RecursiveNode({ element, childrenByParentId, transformMode }: { element: any, childrenByParentId: Map<string, any[]>, transformMode: 'translate' | 'rotate' | 'scale' }) {
+  const children = childrenByParentId.get(element.id) || [];
+
   let component = null;
-  if (element.type === 'group_folder') component = <GroupFolderElement element={element} mode={transformMode}>{children.map(child => <RecursiveNode key={child.id} element={child} elements={elements} transformMode={transformMode} />)}</GroupFolderElement>;
+  if (element.type === 'group_folder') component = <GroupFolderElement element={element} mode={transformMode}>{children.map(child => <RecursiveNode key={child.id} element={child} childrenByParentId={childrenByParentId} transformMode={transformMode} />)}</GroupFolderElement>;
   else if (element.type === '3d_shape') component = <ShapeElement element={element} mode={transformMode} />;
   else if (element.type === '3d_model') component = <ModelElement element={element} mode={transformMode} />;
   else if (element.type === '3d_text') component = <TextElement element={element} mode={transformMode} />;
@@ -35,7 +35,7 @@ export function RecursiveNode({ element, elements, transformMode }: { element: a
       {/* If it's NOT a group folder, but somehow has children, we render them here attached to the parent's pivot. */}
       {element.type !== 'group_folder' && children.length > 0 && (
         <group position={element.position as [number, number, number]} rotation={element.rotation as [number, number, number]} scale={element.scale as [number, number, number]}>
-          {children.map(child => <RecursiveNode key={child.id} element={child} elements={elements} transformMode={transformMode} />)}
+          {children.map(child => <RecursiveNode key={child.id} element={child} childrenByParentId={childrenByParentId} transformMode={transformMode} />)}
         </group>
       )}
     </group>

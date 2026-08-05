@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as React from 'react';
@@ -73,6 +73,19 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const updateElement = useEditorStore(state => state.updateElement);
   const selectedId = useEditorStore(state => state.selectedId);
   const selectedElement = elements.find(el => el.id === selectedId);
+  // Precomputed once per elements change instead of every RecursiveNode doing
+  // its own elements.filter(el => el.parentId === element.id) - that turned
+  // building the scene tree into O(n^2) work on every store update.
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<string, typeof elements>();
+    for (const el of elements) {
+      if (!el.parentId) continue;
+      const siblings = map.get(el.parentId);
+      if (siblings) siblings.push(el);
+      else map.set(el.parentId, [el]);
+    }
+    return map;
+  }, [elements]);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
@@ -162,7 +175,11 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
       )}
 
       <Canvas onPointerMissed={() => setSelectedId(null)}>
-        <Bvh firstHitOnly>
+        {/* firstHitOnly trades raycast correctness for speed - it stops at the
+            first triangle the BVH traversal encounters instead of the closest
+            one, which misselects when parts overlap/stack (common in a teardown
+            scene). Keeping Bvh without it still accelerates picking. */}
+        <Bvh>
         <ExporterComponent />
         {isOrthographic ? (
           <OrthographicCamera makeDefault position={[0, 4, 8]} zoom={80} />
@@ -261,7 +278,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
                 }}
               >
                 {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
-                  <RecursiveNode key={el.id} element={el} elements={elements} transformMode={transformMode} />
+                  <RecursiveNode key={el.id} element={el} childrenByParentId={childrenByParentId} transformMode={transformMode} />
                 ))}
               </Select>
             </SimulatorReveal>

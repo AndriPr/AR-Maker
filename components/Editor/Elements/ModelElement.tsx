@@ -56,8 +56,17 @@ const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: 
   const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
   const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
 
+  // Every 3D model instance re-scanned the full elements array for the edu
+  // panel on every frame. Cache it and only re-scan when elements actually changes.
+  const eduPanelCacheRef = useRef<{ elements: any[] | null, eduPanel: any }>({ elements: null, eduPanel: undefined });
+
   useFrame(() => {
-    const eduPanel = elements.find(el => el.type === 'edu_panel');
+    const cache = eduPanelCacheRef.current;
+    if (cache.elements !== elements) {
+      cache.elements = elements;
+      cache.eduPanel = elements.find(el => el.type === 'edu_panel');
+    }
+    const eduPanel = cache.eduPanel;
     if (!eduPanel) return;
     const modules = eduPanel.eduMaintenanceTasks || [];
     if (modules.length === 0) return;
@@ -67,7 +76,7 @@ const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: 
     const currentStep = steps[currentARStepIndex];
     if (!currentStep) return;
 
-    currentStep.animations?.forEach(anim => {
+    currentStep.animations?.forEach((anim: any) => {
       // In a full implementation, we'd check anim.targetElementId === elementId
       const mesh = scene.getObjectByName(anim.targetSubMeshName);
       if (!mesh) return;

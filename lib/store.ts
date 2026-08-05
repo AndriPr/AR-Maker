@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
+import { transformDragState } from '@/lib/viewportRefs';
+
+// Snaps a raw timeline time to the nearest exact frame boundary for the given
+// fps, so a keyframe placed at "frame 1" is stored at that frame's exact time
+// instead of a coarse 0.1s-rounded value that visually drifts from the playhead.
+function snapTimeToFrame(time: number, fps: number): number {
+  return Math.round(time * fps) / fps;
+}
 
 type ElementType = 'group_folder' | '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
 
@@ -430,8 +438,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             if (e.id !== id) return e;
             
             let kfs = [...(e.keyframes || [])];
-            let existingKfIndex = kfs.findIndex(k => Math.abs(k.time - state.timelineTime) < 0.05);
-            
+            // Half a frame of tolerance - wide enough to re-key the same frame,
+            // narrow enough that adjacent frames (as close as 1/fps apart) don't
+            // collapse into a single keyframe and silently erase the other one.
+            const frameTolerance = 0.5 / state.fps;
+            const snappedTime = snapTimeToFrame(state.timelineTime, state.fps);
+            let existingKfIndex = kfs.findIndex(k => Math.abs(k.time - state.timelineTime) < frameTolerance);
+
             if (existingKfIndex >= 0) {
               // Update existing keyframe with ONLY the changed properties
               const updatedKf = { ...kfs[existingKfIndex] };
@@ -441,7 +454,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
               kfs[existingKfIndex] = updatedKf;
             } else {
               // Create new property-specific keyframe
-              const newKf: any = { id: Math.random().toString(36).substring(2, 9), time: state.timelineTime };
+              const newKf: any = { id: Math.random().toString(36).substring(2, 9), time: snappedTime };
               if ('position' in data) newKf.position = data.position;
               if ('rotation' in data) newKf.rotation = data.rotation;
               if ('scale' in data) newKf.scale = data.scale;
@@ -625,6 +638,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setMultiSelectedIds: (ids) => set({ multiSelectedIds: ids }),
   setHoveredId: (id) => set({ hoveredId: id }),
   handleElementClick: (id, ctrlKey, shiftKey) => set((state) => {
+    // Swallow the ghost click that follows a TransformControls drag release
+    // (see transformDragState) so it can't re-select the parent folder.
+    if (transformDragState.suppressNextClick) {
+      transformDragState.suppressNextClick = false;
+      return state;
+    }
+
     // Redirect selection to parent if part of a Joint Object
     let targetId = id;
     const el = state.elements.find(e => e.id === id);
@@ -903,11 +923,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!targetElement) return state;
 
     const currentKeyframes = targetElement.keyframes || [];
-    const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - state.timelineTime) < 0.05);
-    
+    // Half a frame of tolerance - wide enough to re-key the same frame, narrow
+    // enough that two keyframes only 1 frame apart (as little as 1/fps seconds,
+    // e.g. ~0.033s at 30fps) don't get merged into a single overwritten one.
+    const frameTolerance = 0.5 / state.fps;
+    const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - state.timelineTime) < frameTolerance);
+
     const newKeyframe = {
       id: Math.random().toString(36).substring(2, 9),
-      time: parseFloat(state.timelineTime.toFixed(1)),
+      time: snapTimeToFrame(state.timelineTime, state.fps),
       position: [...targetElement.position],
       rotation: [...targetElement.rotation],
       scale: [...targetElement.scale],
