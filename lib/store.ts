@@ -87,7 +87,8 @@ export interface SceneElement {
   
   onClickActions?: ElementAction[]; // Advanced Triggers (New)
   isHidden?: boolean; // Default visibility state
-  isLocked?: boolean; // Selectability state (Blender Outliner)
+  isLocked?: boolean;
+  isJoint?: boolean; // Selectability state (Blender Outliner)
   
   // Audio Properties
   loop?: boolean;
@@ -230,6 +231,7 @@ interface EditorState {
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
   groupSelectedElements: () => void;
+    joinSelectedElements: () => void;
   reparentElement: (childId: string, newParentId: string | undefined) => void;
   handleElementClick: (id: string, ctrlKey: boolean, shiftKey: boolean) => void;
   
@@ -578,6 +580,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setMultiSelectedIds: (ids) => set({ multiSelectedIds: ids }),
   setHoveredId: (id) => set({ hoveredId: id }),
   handleElementClick: (id, ctrlKey, shiftKey) => set((state) => {
+    // Redirect selection to parent if part of a Joint Object
+    let targetId = id;
+    const el = state.elements.find(e => e.id === id);
+    if (el && el.parentId) {
+       const parent = state.elements.find(p => p.id === el.parentId);
+       if (parent && parent.isJoint) {
+          targetId = parent.id;
+       }
+    }
+    id = targetId;
+    
     if (ctrlKey) {
       // Toggle single item selection
       const isMulti = state.multiSelectedIds.includes(id);
@@ -608,6 +621,60 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     } else {
       return { selectedId: id, multiSelectedIds: [] };
     }
+  }),
+  
+  joinSelectedElements: () => set((state) => {
+    const allSelected = state.selectedId 
+      ? [state.selectedId, ...state.multiSelectedIds].filter((v, i, a) => a.indexOf(v) === i) 
+      : state.multiSelectedIds;
+      
+    if (allSelected.length < 2) return state; // Need at least 2 elements to join
+    
+    const firstEl = state.elements.find(e => e.id === allSelected[0]);
+    if (!firstEl) return state;
+    
+    const selectedElements = state.elements.filter(e => allSelected.includes(e.id));
+    
+    // Calculate the center of all selected elements
+    let sumX = 0, sumY = 0, sumZ = 0;
+    selectedElements.forEach(e => {
+       sumX += e.position[0];
+       sumY += e.position[1];
+       sumZ += e.position[2];
+    });
+    const centerX = sumX / selectedElements.length;
+    const centerY = sumY / selectedElements.length;
+    const centerZ = sumZ / selectedElements.length;
+
+    const newGroupId = Math.random().toString(36).substring(2, 9);
+    const newGroup: SceneElement = {
+      id: newGroupId,
+      type: 'group_folder',
+      name: 'Joint Object',
+      position: [centerX, centerY, centerZ],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      isJoint: true,
+      sceneId: firstEl.sceneId || state.currentSceneId,
+      parentId: firstEl.parentId
+    };
+    
+    const newElements = state.elements.map(el => {
+      if (allSelected.includes(el.id)) {
+        return { 
+          ...el, 
+          parentId: newGroupId,
+          position: [el.position[0] - centerX, el.position[1] - centerY, el.position[2] - centerZ] as [number, number, number]
+        };
+      }
+      return el;
+    });
+    
+    return {
+      elements: [...newElements, newGroup],
+      selectedId: newGroupId,
+      multiSelectedIds: []
+    };
   }),
   groupSelectedElements: () => set((state) => {
     const allSelected = state.selectedId 

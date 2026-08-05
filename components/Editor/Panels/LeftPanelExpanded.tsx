@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  ImageIcon, FolderOpen, Box, Type, MousePointerClick, 
+  ImageIcon, FolderOpen, Box, Link2, Type, MousePointerClick, 
   LayoutDashboard, Volume2, Video, Sparkles, MapPin, 
   Trash2, Search, Loader2, Plus, Music, Eye, EyeOff, Lock, Unlock
 } from 'lucide-react';
@@ -295,7 +295,7 @@ export function LeftPanelExpanded({
                       >
                         <div className="flex items-center gap-2 overflow-hidden pointer-events-none">
                           {el.type === 'group_folder' ? (
-                            <FolderOpen size={12} className={isSelected ? "text-pln-blue" : "text-gray-400"} />
+                            el.isJoint ? <Link2 size={12} className={isSelected ? "text-pln-blue" : "text-green-400"} /> : <FolderOpen size={12} className={isSelected ? "text-pln-blue" : "text-gray-400"} />
                           ) : el.type === '3d_model' ? (
                             <Box size={12} className="shrink-0" />
                           ) : el.type === '3d_text' ? (

@@ -121,6 +121,13 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
       
+      if (e.key.toLowerCase() === 'j' && (e.ctrlKey || e.metaKey)) {
+         e.preventDefault();
+         const state = useEditorStore.getState();
+         state.joinSelectedElements();
+         return;
+      }
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
          const state = useEditorStore.getState();
          if (!state.selectedId && state.multiSelectedIds.length === 0) return;
@@ -250,8 +257,22 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
                   if (ids.size === 0) {
                     // Do nothing
                   } else {
+                    // Redirect to joint parents if needed
+                    const finalIds = new Set<string>();
+                    Array.from(ids).forEach(id => {
+                        let targetId = id;
+                        const el = state.elements.find(e => e.id === id);
+                        if (el && el.parentId) {
+                           const parent = state.elements.find(p => p.id === el.parentId);
+                           if (parent && parent.isJoint) {
+                              targetId = parent.id;
+                           }
+                        }
+                        finalIds.add(targetId);
+                    });
+                    
                     state.setSelectedId(null);
-                    state.setMultiSelectedIds(Array.from(ids));
+                    state.setMultiSelectedIds(Array.from(finalIds));
                   }
                 }}
               >
