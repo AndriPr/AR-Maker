@@ -133,7 +133,9 @@ export function RightPanel({
     currentSceneId, 
     addElement,
     timelineTime,
-    multiSelectedIds
+    multiSelectedIds,
+    setSelectedId,
+    setShowTimeline
   } = useEditorStore();
 
   const selectedElement = elements.find(el => el.id === selectedId);
@@ -1229,7 +1231,7 @@ export function RightPanel({
                                       <button 
                                         onClick={() => {
                                           setSelectedId(trigger.targetElementId);
-                                          // Optional: Auto open timeline
+                                          if (setShowTimeline) setShowTimeline(true);
                                         }}
                                         className="bg-purple-500 hover:bg-purple-600 text-white text-[9px] px-2 py-1 rounded shadow"
                                       >
