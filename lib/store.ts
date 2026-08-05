@@ -155,7 +155,7 @@ export interface SceneElement {
 
   // Keyframe Animations (Phase 3)
   keyframes?: {
-    id?: string;
+    id: string;
     time: number; // in seconds
     position?: [number, number, number];
     rotation?: [number, number, number];
@@ -228,7 +228,7 @@ interface EditorState {
   setTargetImageUrl: (url: string | null) => void;
   setPreviewAnimationData: (data: { targetId: string, animationName: string } | null) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
-  updateElement: (id: string, element: Partial<SceneElement>) => void;
+  updateElement: (id: string, element: Partial<SceneElement>, options?: { skipHistory?: boolean }) => void;
   applyTransformDelta: (primaryId: string, positionDelta: [number, number, number]) => void;
   removeElement: (id: string) => void;
   removeElements: (ids: string[]) => void;
@@ -265,6 +265,7 @@ interface EditorState {
   
   // Scene Management
   addScene: (name: string) => void;
+  setScenes: (scenes: { id: string; name: string }[]) => void;
   setCurrentSceneId: (id: string) => void;
   removeScene: (id: string) => void;
 
@@ -299,8 +300,8 @@ interface EditorState {
   setPlaybackRange: (range: [number, number] | null) => void;
   playbackDirection: 1 | -1;
   setPlaybackDirection: (dir: 1 | -1) => void;
-  selectedKeyframes: { elementId: string, time: number }[];
-  setSelectedKeyframes: (kfs: { elementId: string, time: number }[]) => void;
+  selectedKeyframes: { elementId: string, id: string }[];
+  setSelectedKeyframes: (kfs: { elementId: string, id: string }[]) => void;
   fps: number;
   setFps: (fps: number) => void;
 }
@@ -364,7 +365,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedKeyframes: [],
   fps: 30,
 
-  setElements: (elements) => set({ elements }),
+  setElements: (elements) => set({
+    // Backfill ids on keyframes from older saved projects - everything downstream
+    // (React keys, select/remove/update) identifies a keyframe by id, not time,
+    // since two keyframes can land at the same or near-identical time.
+    elements: elements.map(el => {
+      if (!el.keyframes || el.keyframes.length === 0) return el;
+      let changed = false;
+      const keyframes = el.keyframes.map(kf => {
+        if (kf.id) return kf;
+        changed = true;
+        return { ...kf, id: Math.random().toString(36).substring(2, 9) };
+      });
+      return changed ? { ...el, keyframes } : el;
+    })
+  }),
   
   setTargetImageUrl: (url) => set({ targetImageUrl: url }),
   setPreviewAnimationData: (data) => set({ previewAnimationData: data }),
@@ -403,7 +418,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  updateElement: (id, data) => set((state) => {
+  updateElement: (id, data, options) => set((state) => {
     // INTERCEPT AUTO-KEYING
     if (state.isAutoKeying && state.timelineTime > 0) {
       // Check if data contains transform changes (position, rotation, scale)
@@ -426,7 +441,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
               kfs[existingKfIndex] = updatedKf;
             } else {
               // Create new property-specific keyframe
-              const newKf: any = { time: state.timelineTime };
+              const newKf: any = { id: Math.random().toString(36).substring(2, 9), time: state.timelineTime };
               if ('position' in data) newKf.position = data.position;
               if ('rotation' in data) newKf.rotation = data.rotation;
               if ('scale' in data) newKf.scale = data.scale;
@@ -440,12 +455,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
     }
 
+    const nextElements = state.elements.map((el) =>
+      el.id === id ? { ...el, ...data } : el
+    );
+
+    // Auto-derived metadata writes (available sub-meshes/animations/materials
+    // extracted from a loaded GLTF) shouldn't create an undo step - the user
+    // never asked for this change and it wasn't their edit to undo.
+    if (options?.skipHistory) {
+      return { elements: nextElements };
+    }
+
     return {
       past: [...state.past, state.elements],
       future: [],
-      elements: state.elements.map((el) => 
-        el.id === id ? { ...el, ...data } : el
-      )
+      elements: nextElements
     };
   }),
 
@@ -817,6 +841,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       currentSceneId: newSceneId
     };
   }),
+  setScenes: (scenes) => set({ scenes }),
   setCurrentSceneId: (id) => set({ currentSceneId: id, selectedId: null }),
   removeScene: (id) => set((state) => {
     if (state.scenes.length <= 1) return state;

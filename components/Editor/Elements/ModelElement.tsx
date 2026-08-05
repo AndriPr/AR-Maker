@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-
-import { EffectComposer, Outline, Selection, Select } from '@react-three/postprocessing';
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line, Edges} from '@react-three/drei';
+import { useEffect, useRef, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useGLTF, TransformControls, Html, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
+import { AnimatedElementWrapper } from '@/components/Editor/Elements/AnimatedElementWrapper';
+import { useTransformLogic } from '@/hooks/useTransformLogic';
 
 // Custom Selection Pointer
 const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) => {
@@ -49,28 +49,6 @@ const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Grou
     </group>
   );
 };
-
-// Logic Engine Hook
-import { useLogicEngine } from '@/hooks/useLogicEngine';
-import { ProximitySensorEngine } from '@/components/Editor/Elements/ProximitySensorEngine';
-import { useActionHandler } from '@/hooks/useActionHandler';
-import { AnimatedElementWrapper } from '@/components/Editor/Elements/AnimatedElementWrapper';
-import { MotionPathVisualizer } from '@/components/Editor/Elements/MotionPathVisualizer';
-import { useTransformLogic } from '@/hooks/useTransformLogic';
-import { ShapeElement } from '@/components/Editor/Elements/ShapeElement';
-import { TextElement } from '@/components/Editor/Elements/TextElement';
-import { UIButtonElement } from '@/components/Editor/Elements/UIButtonElement';
-import { AudioElement } from '@/components/Editor/Elements/AudioElement';
-import { ImageElement } from '@/components/Editor/Elements/ImageElement';
-import { VideoElement } from '@/components/Editor/Elements/VideoElement';
-import { SparklesElement } from '@/components/Editor/Elements/SparklesElement';
-import { HotspotElement } from '@/components/Editor/Elements/HotspotElement';
-import { TargetImage } from '@/components/Editor/Elements/TargetImage';
-import { OccluderElement } from '@/components/Editor/Elements/OccluderElement';
-import { CameraController } from '@/components/Editor/Elements/CameraController';
-import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
-import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElement';
-
 
 // --- Deep Edu Dashboard: Sub-Mesh Animator ---
 const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: string }) => {
@@ -252,7 +230,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
       
       if (JSON.stringify(element.availableSubMeshes) !== JSON.stringify(subMeshes)) {
         // Use timeout to prevent state update during render
-        setTimeout(() => updateElement(element.id, { availableSubMeshes: subMeshes }), 0);
+        setTimeout(() => updateElement(element.id, { availableSubMeshes: subMeshes }, { skipHistory: true }), 0);
       }
     }
   }, [clonedScene, element.id, element.targetMeshName, element.availableSubMeshes, updateElement]);
@@ -263,7 +241,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
       const animNames = animations.map((a: any) => a.name);
       // Only update if it has changed to prevent infinite loops
       if (JSON.stringify(element.availableAnimations) !== JSON.stringify(animNames)) {
-        updateElement(element.id, { availableAnimations: animNames });
+        updateElement(element.id, { availableAnimations: animNames }, { skipHistory: true });
       }
     }
   }, [animations, element.id, element.availableAnimations, updateElement]);
@@ -279,7 +257,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
         }
       });
       if (JSON.stringify(element.availableMaterials) !== JSON.stringify(matNames)) {
-        updateElement(element.id, { availableMaterials: matNames });
+        updateElement(element.id, { availableMaterials: matNames }, { skipHistory: true });
       }
     }
   }, [scene, element.id, element.availableMaterials, updateElement]);

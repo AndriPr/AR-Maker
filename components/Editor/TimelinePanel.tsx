@@ -51,7 +51,7 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
       setIsDragging(false);
       e.currentTarget.releasePointerCapture(e.pointerId);
       if (localTime !== null && localTime !== kf.time) {
-        onUpdate(kf.time, { ...kf, time: localTime });
+        onUpdate(kf.id, { ...kf, time: localTime });
       }
       setLocalTime(null);
     }
@@ -88,7 +88,7 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
              <button 
                key={ease} 
                className="w-full text-left px-3 py-1.5 text-gray-300 hover:bg-pln-blue/20 hover:text-pln-blue flex justify-between"
-               onClick={() => { onUpdate(kf.time, { ...kf, easing: ease }); setShowMenu(false); }}
+               onClick={() => { onUpdate(kf.id, { ...kf, easing: ease }); setShowMenu(false); }}
              >
                {ease}
                {kf.easing === ease || (!kf.easing && ease === 'linear') ? <span className="text-pln-blue text-[10px]">✔</span> : null}
@@ -97,7 +97,7 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
           <div className="border-t border-[#36393f] mt-1 pt-1">
              <button 
                className="w-full text-left px-3 py-1.5 text-red-400 hover:bg-red-500/20"
-               onClick={() => { onRemove(kf.time); setShowMenu(false); }}
+               onClick={() => { onRemove(kf.id); setShowMenu(false); }}
              >
                Delete Keyframe
              </button>
@@ -300,27 +300,27 @@ export default function TimelinePanel() {
 
 
 
-  const removeKeyframe = (elementId: string, time: number) => {
+  const removeKeyframe = (elementId: string, kfId: string) => {
     const el = elements.find(e => e.id === elementId);
     if (!el || !el.keyframes) return;
-    const updatedKeyframes = el.keyframes.filter(kf => kf.time !== time);
+    const updatedKeyframes = el.keyframes.filter(kf => kf.id !== kfId);
     updateElement(elementId, { keyframes: updatedKeyframes });
   };
 
-  const updateKeyframe = (elementId: string, oldTime: number, newKeyframe: any) => {
+  const updateKeyframe = (elementId: string, kfId: string, newKeyframe: any) => {
     const el = elements.find(e => e.id === elementId);
     if (!el || !el.keyframes) return;
-    
+
     // Replace the old keyframe with the new one
-    const updatedKeyframes = el.keyframes.map(kf => 
-      kf.time === oldTime ? newKeyframe : kf
+    const updatedKeyframes = el.keyframes.map(kf =>
+      kf.id === kfId ? newKeyframe : kf
     ).sort((a, b) => a.time - b.time);
-    
-    // Remove duplicates if dragging on top of another keyframe (unless it's the exact same one)
-    const uniqueKeyframes = updatedKeyframes.filter((kf, index, self) => 
+
+    // Remove duplicates if dragging on top of another keyframe's time (unless it's the exact same one)
+    const uniqueKeyframes = updatedKeyframes.filter((kf, index, self) =>
       index === self.findIndex((k) => k.time === kf.time)
     );
-    
+
     updateElement(elementId, { keyframes: uniqueKeyframes });
   };
 
@@ -381,7 +381,7 @@ export default function TimelinePanel() {
           {selectedKeyframes && selectedKeyframes.length > 0 && (
             <button 
               onClick={() => {
-                selectedKeyframes.forEach(kf => removeKeyframe(kf.elementId, kf.time));
+                selectedKeyframes.forEach(kf => removeKeyframe(kf.elementId, kf.id));
                 setSelectedKeyframes([]);
               }}
               className="px-3 py-1.5 ml-2 rounded-md text-xs font-medium bg-red-900/30 text-red-400 hover:bg-red-800/40 transition-colors border border-red-800/50"
@@ -523,93 +523,93 @@ export default function TimelinePanel() {
                   {/* Main Summary Track */}
                   <div className="relative h-8 border-b border-[#2b2d31]">
                     {el.keyframes?.map(kf => (
-                      <KeyframeNode 
-                        key={`kf-${el.id}-${kf.time}`} 
-                        elementId={el.id} 
-                        kf={kf} 
-                        duration={duration} 
-                        isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
+                      <KeyframeNode
+                        key={`kf-${el.id}-${kf.id}`}
+                        elementId={el.id}
+                        kf={kf}
+                        duration={duration}
+                        isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.id === kf.id)}
                         onSelect={(shift: boolean) => {
                           if (shift) {
-                            const isAlreadySelected = selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time);
+                            const isAlreadySelected = selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.id === kf.id);
                             if (isAlreadySelected) {
-                              setSelectedKeyframes(selectedKeyframes?.filter((sk: any) => !(sk.elementId === el.id && sk.time === kf.time)) || []);
+                              setSelectedKeyframes(selectedKeyframes?.filter((sk: any) => !(sk.elementId === el.id && sk.id === kf.id)) || []);
                             } else {
-                              setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
+                              setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, id: kf.id }]);
                             }
                           } else {
-                            setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
+                            setSelectedKeyframes([{ elementId: el.id, id: kf.id }]);
                           }
                         }}
-                        onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
-                        onRemove={(time: number) => removeKeyframe(el.id, time)}
+                        onUpdate={(kfId: string, newKf: any) => updateKeyframe(el.id, kfId, newKf)}
+                        onRemove={(kfId: string) => removeKeyframe(el.id, kfId)}
                       />
                     ))}
                   </div>
-                  
+
                   {/* Expanded Sub-tracks */}
                   {el.isTimelineExpanded && (
                     <div className="bg-[#151618]">
                       {/* Position Track */}
                       <div className="relative h-6 border-b border-[#2b2d31]/50">
                         {el.keyframes?.filter(k => k.position).map(kf => (
-                          <KeyframeNode 
-                            key={`kf-pos-${el.id}-${kf.time}`} 
-                            elementId={el.id} 
-                            kf={kf} 
-                            duration={duration} 
-                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
+                          <KeyframeNode
+                            key={`kf-pos-${el.id}-${kf.id}`}
+                            elementId={el.id}
+                            kf={kf}
+                            duration={duration}
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.id === kf.id)}
                             onSelect={(shift: boolean) => {
                               if (shift) {
-                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
+                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, id: kf.id }]);
                               } else {
-                                setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
+                                setSelectedKeyframes([{ elementId: el.id, id: kf.id }]);
                               }
                             }}
-                            onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
-                            onRemove={(time: number) => removeKeyframe(el.id, time)}
+                            onUpdate={(kfId: string, newKf: any) => updateKeyframe(el.id, kfId, newKf)}
+                            onRemove={(kfId: string) => removeKeyframe(el.id, kfId)}
                           />
                         ))}
                       </div>
                       {/* Rotation Track */}
                       <div className="relative h-6 border-b border-[#2b2d31]/50">
                         {el.keyframes?.filter(k => k.rotation).map(kf => (
-                          <KeyframeNode 
-                            key={`kf-rot-${el.id}-${kf.time}`} 
-                            elementId={el.id} 
-                            kf={kf} 
-                            duration={duration} 
-                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
+                          <KeyframeNode
+                            key={`kf-rot-${el.id}-${kf.id}`}
+                            elementId={el.id}
+                            kf={kf}
+                            duration={duration}
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.id === kf.id)}
                             onSelect={(shift: boolean) => {
                               if (shift) {
-                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
+                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, id: kf.id }]);
                               } else {
-                                setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
+                                setSelectedKeyframes([{ elementId: el.id, id: kf.id }]);
                               }
                             }}
-                            onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
-                            onRemove={(time: number) => removeKeyframe(el.id, time)}
+                            onUpdate={(kfId: string, newKf: any) => updateKeyframe(el.id, kfId, newKf)}
+                            onRemove={(kfId: string) => removeKeyframe(el.id, kfId)}
                           />
                         ))}
                       </div>
                       {/* Scale Track */}
                       <div className="relative h-6 border-b border-[#2b2d31]/50">
                         {el.keyframes?.filter(k => k.scale).map(kf => (
-                          <KeyframeNode 
-                            key={`kf-scl-${el.id}-${kf.time}`} 
-                            elementId={el.id} 
-                            kf={kf} 
-                            duration={duration} 
-                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.time === kf.time)}
+                          <KeyframeNode
+                            key={`kf-scl-${el.id}-${kf.id}`}
+                            elementId={el.id}
+                            kf={kf}
+                            duration={duration}
+                            isSelected={selectedKeyframes?.some((sk: any) => sk.elementId === el.id && sk.id === kf.id)}
                             onSelect={(shift: boolean) => {
                               if (shift) {
-                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, time: kf.time }]);
+                                setSelectedKeyframes([...(selectedKeyframes || []), { elementId: el.id, id: kf.id }]);
                               } else {
-                                setSelectedKeyframes([{ elementId: el.id, time: kf.time }]);
+                                setSelectedKeyframes([{ elementId: el.id, id: kf.id }]);
                               }
                             }}
-                            onUpdate={(oldTime: number, newKf: any) => updateKeyframe(el.id, oldTime, newKf)}
-                            onRemove={(time: number) => removeKeyframe(el.id, time)}
+                            onUpdate={(kfId: string, newKf: any) => updateKeyframe(el.id, kfId, newKf)}
+                            onRemove={(kfId: string) => removeKeyframe(el.id, kfId)}
                           />
                         ))}
                       </div>

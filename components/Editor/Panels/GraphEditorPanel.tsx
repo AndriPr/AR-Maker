@@ -20,7 +20,7 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   
   // Node Dragging State
-  const [draggingNode, setDraggingNode] = useState<{ originalTime: number, axis: 0|1|2, startClientX: number, startClientY: number, initialTime: number, initialValue: number } | null>(null);
+  const [draggingNode, setDraggingNode] = useState<{ id: string, axis: 0|1|2, startClientX: number, startClientY: number, initialTime: number, initialValue: number } | null>(null);
 
   // Handle panning
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -53,29 +53,20 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
        
        // Clone keyframes
        const newKfs = [...(selectedElement.keyframes || [])];
-       const kfIndex = newKfs.findIndex(k => k.time === draggingNode.originalTime);
-       
+       const kfIndex = newKfs.findIndex(k => k.id === draggingNode.id);
+
        if (kfIndex !== -1) {
-          // If time changed significantly, we might need to update the time
-          // But to avoid changing the ID/Time constantly while dragging, we update the existing object
-          // Wait, modifying time while dragging might break if it swaps order. 
-          // For simplicity in this professional upgrade, we only allow dragging Value (Y-axis) for now to prevent time-swapping bugs, OR we update both.
           const kf = { ...newKfs[kfIndex] };
-          
+
           if (kf.position) {
              const newPos = [...kf.position] as [number, number, number];
              newPos[draggingNode.axis] = newValue;
              kf.position = newPos;
-             
-             // Time change
              kf.time = Number(newTime.toFixed(2));
-             
+
              newKfs[kfIndex] = kf;
-             // Don't sort during drag to avoid losing track, sort on mouse up? Actually let's just update value.
+             // Don't sort during drag to avoid losing track, sort on mouse up.
              updateElement(selectedElement.id, { keyframes: newKfs });
-             
-             // Update draggingNode's originalTime if time changed so we can keep tracking it!
-             setDraggingNode(prev => prev ? { ...prev, originalTime: kf.time } : null);
           }
        }
        return;
@@ -122,14 +113,14 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
     }));
   };
 
-  const startDragNode = (e: React.PointerEvent, time: number, axis: 0|1|2, val: number) => {
+  const startDragNode = (e: React.PointerEvent, kf: { id: string, time: number }, axis: 0|1|2, val: number) => {
      e.stopPropagation();
      setDraggingNode({
-        originalTime: time,
+        id: kf.id,
         axis,
         startClientX: e.clientX,
         startClientY: e.clientY,
-        initialTime: time,
+        initialTime: kf.time,
         initialValue: val
      });
      if (svgRef.current) svgRef.current.setPointerCapture(e.pointerId);
@@ -216,21 +207,21 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
 
           {/* Keyframe Interactive Dots */}
           {renderKfs.map((kf) => (
-            <g key={`dots-${kf.time}`}>
-              <circle 
-                 cx={kf.time} cy={-kf.position![0]} r={viewBox.h * 0.04} fill="#ef4444" 
+            <g key={`dots-${kf.id}`}>
+              <circle
+                 cx={kf.time} cy={-kf.position![0]} r={viewBox.h * 0.04} fill="#ef4444"
                  className="cursor-move hover:stroke-white hover:stroke-[0.2]"
-                 onPointerDown={(e) => startDragNode(e, kf.time, 0, kf.position![0])} 
+                 onPointerDown={(e) => startDragNode(e, kf as { id: string, time: number }, 0, kf.position![0])}
               />
-              <circle 
-                 cx={kf.time} cy={-kf.position![1]} r={viewBox.h * 0.04} fill="#22c55e" 
+              <circle
+                 cx={kf.time} cy={-kf.position![1]} r={viewBox.h * 0.04} fill="#22c55e"
                  className="cursor-move hover:stroke-white hover:stroke-[0.2]"
-                 onPointerDown={(e) => startDragNode(e, kf.time, 1, kf.position![1])} 
+                 onPointerDown={(e) => startDragNode(e, kf as { id: string, time: number }, 1, kf.position![1])}
               />
-              <circle 
-                 cx={kf.time} cy={-kf.position![2]} r={viewBox.h * 0.04} fill="#3b82f6" 
+              <circle
+                 cx={kf.time} cy={-kf.position![2]} r={viewBox.h * 0.04} fill="#3b82f6"
                  className="cursor-move hover:stroke-white hover:stroke-[0.2]"
-                 onPointerDown={(e) => startDragNode(e, kf.time, 2, kf.position![2])} 
+                 onPointerDown={(e) => startDragNode(e, kf as { id: string, time: number }, 2, kf.position![2])}
               />
             </g>
           ))}

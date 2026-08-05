@@ -3,9 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
+// Service-role client: auth.admin.listUsers() and cross-workspace invitation
+// lookups need elevated privileges. Server-only.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // Uses service_role payload implicitly based on .env
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 // GET: Fetch pending invitations

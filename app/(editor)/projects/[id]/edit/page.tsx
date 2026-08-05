@@ -102,11 +102,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const multisetMapId = useEditorStore(state => state.multisetMapId);
   const setMultisetMapId = useEditorStore(state => state.setMultisetMapId);
   const scenes = useEditorStore(state => state.scenes);
+  const setScenes = useEditorStore(state => state.setScenes);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
   const addScene = useEditorStore(state => state.addScene);
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
   const removeScene = useEditorStore(state => state.removeScene);
   const triggerCameraReset = useEditorStore(state => state.triggerCameraReset);
+  const nodes = useEditorStore(state => state.nodes);
+  const setNodes = useEditorStore(state => state.setNodes);
+  const edges = useEditorStore(state => state.edges);
+  const setEdges = useEditorStore(state => state.setEdges);
   
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
   
@@ -232,6 +237,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         if (projData.scene_data.multiset_map_id) {
           setMultisetMapId(projData.scene_data.multiset_map_id);
         }
+        if (projData.scene_data.scenes && projData.scene_data.scenes.length > 0) {
+          setScenes(projData.scene_data.scenes);
+          setCurrentSceneId(projData.scene_data.scenes[0].id);
+        }
+        if (projData.scene_data.nodes) {
+          setNodes(projData.scene_data.nodes);
+        }
+        if (projData.scene_data.edges) {
+          setEdges(projData.scene_data.edges);
+        }
       }
     }
 
@@ -257,7 +272,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     if (!silent) setSaving(true);
     
     try {
-      const sceneData = { elements, multiset_map_id: multisetMapId };
+      const sceneData = { elements, scenes, nodes, edges, multiset_map_id: multisetMapId };
       const { error } = await supabase
         .from('ar_projects')
         .update({
@@ -286,7 +301,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       handleSave(true);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [elements, targetImageUrl]);
+  }, [elements, targetImageUrl, scenes, nodes, edges]);
 
   const [publishProgress, setPublishProgress] = useState<string | null>(null);
 
@@ -386,7 +401,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgress("Menyimpan proyek...");
 
       // 5. Update Database
-      const sceneData = { elements, multiset_map_id: multisetMapId };
+      const sceneData = { elements, scenes, nodes, edges, multiset_map_id: multisetMapId };
       const { error: finalError } = await supabase
         .from('ar_projects')
         .update({ 

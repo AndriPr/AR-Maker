@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from 'react';
+import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Canvas, useThree } from '@react-three/fiber';
 import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
 import { useEditorStore } from '@/lib/store';
-import { useGLTF, Text , Bvh } from '@react-three/drei';
+import { Bvh } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Import MultiSet AI SDK
 import { MultisetClient, XRSessionManager } from '@multisetai/vps/core';
 import { ThreeAdapter } from '@multisetai/vps/three';
-
-function Model({ url, position, rotation, scale, onClick }: any) {
-  const { scene } = useGLTF(url as string) as any;
-  return <primitive object={scene.clone()} position={position} rotation={rotation} scale={scale} onClick={onClick} />;
-}
 
 // HACK: WebXR Viewer di iOS melempar error jika addEventListener dipanggil sebelum session dimulai.
 if (typeof navigator !== 'undefined' && navigator.xr) {
@@ -165,26 +160,32 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
     fetchProject();
   }, [unwrappedParams.id]);
 
-  if (!project) return <div className="text-white flex items-center justify-center h-full bg-gray-900">Memuat 3D Canvas...</div>;
-
-  
   const setElements = useEditorStore(state => state.setElements);
-
+  const setNodes = useEditorStore(state => state.setNodes);
+  const setEdges = useEditorStore(state => state.setEdges);
   const setIsSimulating = useEditorStore(state => state.setIsSimulating);
+
   useEffect(() => {
     setIsSimulating(true);
   }, [setIsSimulating]);
 
-  const elements = useEditorStore(state => state.elements);
-  
   useEffect(() => {
-    if (project && project.scene_data && project.scene_data.elements) {
-      setElements(project.scene_data.elements);
+    if (project && project.scene_data) {
+      if (project.scene_data.elements) setElements(project.scene_data.elements);
+      if (project.scene_data.nodes) setNodes(project.scene_data.nodes);
+      if (project.scene_data.edges) setEdges(project.scene_data.edges);
     }
-  }, [project, setElements]);
+  }, [project, setElements, setNodes, setEdges]);
+
+  if (!project) return <div className="text-white flex items-center justify-center h-full bg-gray-900">Memuat 3D Canvas...</div>;
 
   const allElements = project.scene_data?.elements || [];
-  const currentElements = allElements.filter((el: any) => !el.sceneId || el.sceneId === activeSceneId);
+  // Older saves have no `scenes` metadata at all - in that case we can't tell which
+  // scene is "active", so show everything rather than filtering down to nothing.
+  const hasSceneMetadata = !!(project.scene_data?.scenes && project.scene_data.scenes.length > 0);
+  const currentElements = hasSceneMetadata
+    ? allElements.filter((el: any) => !el.sceneId || el.sceneId === activeSceneId)
+    : allElements;
 
   const handleElementClick = (e: any, el: any) => {
     e.stopPropagation();
