@@ -117,6 +117,23 @@ const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: 
 }
 // ---------------------------------------------
 
+// Logical Object Helper for Multi-material Meshes
+const isLogicalObject = (node: any) => {
+  if (node.isMesh) {
+    const parent = node.parent;
+    if (parent && parent.isGroup && parent.children.length > 0 && parent.children.every((c: any) => c.isMesh && c.name.startsWith(parent.name + '_'))) {
+      return false;
+    }
+    return true;
+  }
+  if (node.isGroup) {
+    if (node.children.length > 0 && node.children.every((c: any) => c.isMesh && c.name.startsWith(node.name + '_'))) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export function ModelElement({ element, mode }: { element: any, mode: 'translate' | 'rotate' | 'scale' }) {
   const { scene, animations } = useGLTF(element.url) as any;
   const transformRef = useRef<any>(null);
@@ -156,21 +173,34 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
         } else {
           let targetNode: any = null;
           clone.traverse((node: any) => {
-             if (node.isMesh && node.name === element.targetMeshName) {
+             if (isLogicalObject(node) && node.name === element.targetMeshName) {
                targetNode = node;
              }
           });
           
           if (targetNode) {
-             const newMesh = new THREE.Mesh(targetNode.geometry, targetNode.material);
-             if (newMesh.material && newMesh.material.name) {
-               if (element.customMaterials && element.customMaterials[newMesh.material.name]) {
-                 newMesh.material = newMesh.material.clone();
-                 newMesh.material.color.set(element.customMaterials[newMesh.material.name]);
-               }
+             const newObj = targetNode.clone(false);
+             if (targetNode.isGroup && targetNode.children.length > 0 && targetNode.children.every((c: any) => c.isMesh && c.name.startsWith(targetNode.name + '_'))) {
+                targetNode.children.forEach((c: any) => {
+                   newObj.add(c.clone(false));
+                });
              }
+             
+             newObj.position.set(0, 0, 0);
+             newObj.quaternion.identity();
+             newObj.scale.set(1, 1, 1);
+             
+             newObj.traverse((child: any) => {
+               if (child.isMesh && child.material && child.material.name) {
+                 if (element.customMaterials && element.customMaterials[child.material.name]) {
+                   child.material = child.material.clone();
+                   child.material.color.set(element.customMaterials[child.material.name]);
+                 }
+               }
+             });
+             
              const newGroup = new THREE.Group();
-             newGroup.add(newMesh);
+             newGroup.add(newObj);
              return newGroup;
           }
         }
@@ -204,7 +234,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
       const subMeshes: {name: string, position: [number, number, number], offset: [number, number, number], quaternion: [number, number, number, number], scale: [number, number, number]}[] = [];
       clonedScene.updateMatrixWorld(true);
       clonedScene.traverse((node: any) => {
-        if (node.isMesh && node.geometry) {
+        if (isLogicalObject(node)) {
            const pos = new THREE.Vector3();
            const quat = new THREE.Quaternion();
            const scale = new THREE.Vector3();
