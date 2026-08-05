@@ -6,7 +6,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as React from 'react';
 
 import { EffectComposer, Outline, Selection } from '@react-three/postprocessing';
-import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line, Select} from '@react-three/drei';
+import { useHelper, OrbitControls, Grid, useGLTF, useTexture, TransformControls, Text, Text3D, Center, Html, useAnimations, Sparkles, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Box as DreiBox, Sphere, Cylinder, Plane, Cone, Torus, Tetrahedron, Icosahedron, Outlines , Line, Select, Bvh} from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -171,6 +171,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
       )}
 
       <Canvas onPointerMissed={() => setSelectedId(null)}>
+        <Bvh firstHitOnly>
         <ExporterComponent />
         {isOrthographic ? (
           <OrthographicCamera makeDefault position={[0, 4, 8]} zoom={80} />
@@ -288,6 +289,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
 
         <CameraController />
 
+      </Bvh>
       </Canvas>
     </div>
   );

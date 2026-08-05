@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Canvas, useThree } from '@react-three/fiber';
 import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
 import { useEditorStore } from '@/lib/store';
-import { useGLTF, Text } from '@react-three/drei';
+import { useGLTF, Text , Bvh } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Import MultiSet AI SDK
@@ -251,6 +251,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
       </div>
 
       <Canvas>
+        <Bvh firstHitOnly>
         {isXrSupported && mapId && (
           <VPSManager mapId={mapId} setIsArActive={setIsArActive} />
         )}
@@ -270,6 +271,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
             />
           ))}
         </group>
+      </Bvh>
       </Canvas>
     </div>
   );

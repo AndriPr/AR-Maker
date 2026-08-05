@@ -354,7 +354,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
     <group ref={groupRef as any}>
       <AnimatedElementWrapper element={element}>
         <group position={element.meshPositionOffset || [0, 0, 0]}>
-          <SubMeshAnimator scene={clonedScene as any} elementId={element.id} />
+          {!element.targetMeshName && <SubMeshAnimator scene={clonedScene as any} elementId={element.id} />}
             <primitive dispose={null} object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
