@@ -165,20 +165,32 @@ export default function TimelinePanel() {
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (e.shiftKey) {
-           // Jump to start
            setTimelineTime(0);
         } else {
-           // Step back 0.1s
-           setTimelineTime(Math.max(0, state.timelineTime - 0.1));
+           const selEl = state.selectedId ? state.elements.find(el => el.id === state.selectedId) : null;
+           if (selEl && selEl.keyframes && selEl.keyframes.length > 0) {
+             const times = selEl.keyframes.map(k => k.time).sort((a,b)=>a-b);
+             const prev = times.reverse().find(t => t < state.timelineTime - 0.01);
+             if (prev !== undefined) setTimelineTime(prev);
+             else setTimelineTime(Math.max(0, state.timelineTime - 0.1));
+           } else {
+             setTimelineTime(Math.max(0, state.timelineTime - 0.1));
+           }
         }
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         if (e.shiftKey) {
-           // Jump to end
            setTimelineTime(duration);
         } else {
-           // Step forward 0.1s
-           setTimelineTime(Math.min(duration, state.timelineTime + 0.1));
+           const selEl = state.selectedId ? state.elements.find(el => el.id === state.selectedId) : null;
+           if (selEl && selEl.keyframes && selEl.keyframes.length > 0) {
+             const times = selEl.keyframes.map(k => k.time).sort((a,b)=>a-b);
+             const next = times.find(t => t > state.timelineTime + 0.01);
+             if (next !== undefined) setTimelineTime(next);
+             else setTimelineTime(Math.min(duration, state.timelineTime + 0.1));
+           } else {
+             setTimelineTime(Math.min(duration, state.timelineTime + 0.1));
+           }
         }
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
@@ -365,6 +377,19 @@ export default function TimelinePanel() {
           <Plus size={12} />
           Keyframe (I)
         </button>
+          
+          {selectedKeyframes && selectedKeyframes.length > 0 && (
+            <button 
+              onClick={() => {
+                selectedKeyframes.forEach(kf => removeKeyframe(kf.elementId, kf.time));
+                setSelectedKeyframes([]);
+              }}
+              className="px-3 py-1.5 ml-2 rounded-md text-xs font-medium bg-red-900/30 text-red-400 hover:bg-red-800/40 transition-colors border border-red-800/50"
+              title="Delete Selected Keyframes"
+            >
+              Hapus Keyframe
+            </button>
+          )}
         
         <button 
           onClick={() => setPlaybackRange(playbackRange ? null : [0, duration])}

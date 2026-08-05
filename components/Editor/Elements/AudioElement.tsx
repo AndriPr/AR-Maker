@@ -48,7 +48,7 @@ export function AudioElement({ element, mode }: { element: any, mode: 'translate
   const audioObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
         onPointerMissed={() => {}}
       >
         <Html transform center position={[0,0,0]} scale={[0.5, 0.5, 0.5]}>
@@ -88,5 +88,6 @@ export function AudioElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
+
 
 

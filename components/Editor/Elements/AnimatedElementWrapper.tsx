@@ -31,6 +31,7 @@ import { GroupFolderElement } from '@/components/Editor/Elements/GroupFolderElem
 
 export function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
+    const prevTimeRef = useRef<number | null>(null);
   
   const posKfs = useMemo(() => element.keyframes?.filter((k: any) => k.position !== undefined) || [], [element.keyframes]);
   const rotKfs = useMemo(() => element.keyframes?.filter((k: any) => k.rotation !== undefined) || [], [element.keyframes]);

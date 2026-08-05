@@ -130,6 +130,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
          const state = useEditorStore.getState();
+         if (state.selectedKeyframes && state.selectedKeyframes.length > 0) return; // Let TimelinePanel handle it
          if (!state.selectedId && state.multiSelectedIds.length === 0) return;
          
          const toDelete = [...state.multiSelectedIds];

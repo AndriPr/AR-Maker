@@ -50,7 +50,7 @@ export function GroupFolderElement({ element, mode, children }: { element: any, 
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); }}
+          onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
           onPointerMissed={() => {}}
         >
 
@@ -93,5 +93,6 @@ export function GroupFolderElement({ element, mode, children }: { element: any, 
 }
 
 const viewportElementRefs: Record<string, THREE.Group> = {};
+
 
 

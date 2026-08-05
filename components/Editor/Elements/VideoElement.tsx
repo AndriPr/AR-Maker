@@ -48,7 +48,7 @@ export function VideoElement({ element, mode }: { element: any, mode: 'translate
   const videoObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
         onPointerMissed={() => {}}
       >
         <mesh>
@@ -92,5 +92,6 @@ export function VideoElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
+
 
 

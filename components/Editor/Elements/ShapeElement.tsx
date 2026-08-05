@@ -51,7 +51,7 @@ export function ShapeElement({ element, mode }: { element: any, mode: 'translate
     <group ref={groupRef}>
       <AnimatedElementWrapper element={element}>
         <group
-          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); }}
+          onClick={(e) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
           onPointerMissed={() => {}}
         >
           {element.shapeType === 'cube' && <DreiBox args={[1, 1, 1]}><meshStandardMaterial color={element.color || '#ffffff'} /></DreiBox>}
@@ -100,5 +100,6 @@ export function ShapeElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
+
 
 

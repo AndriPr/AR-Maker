@@ -95,6 +95,7 @@ export interface SceneElement {
   isHidden?: boolean; // Default visibility state
   isLocked?: boolean;
   isJoint?: boolean; // Selectability state (Blender Outliner)
+  eduCustomTriggers?: any[];
   
   // Audio Properties
   loop?: boolean;
@@ -177,6 +178,8 @@ interface EditorState {
 
   elements: SceneElement[];
   selectedId: string | null;
+  selectedKeyframes: { elementId: string, time: number }[];
+  setSelectedKeyframes: (kfs: { elementId: string, time: number }[]) => void;
   targetImageUrl: string | null;
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
@@ -321,6 +324,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   })),
 
   selectedId: null,
+  selectedKeyframes: [],
+  setSelectedKeyframes: (kfs) => set({ selectedKeyframes: kfs }),
   multiSelectedIds: [],
   hoveredId: null,
   targetImageUrl: null,
