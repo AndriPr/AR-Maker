@@ -241,27 +241,18 @@ export function ARUserInterface() {
                     
                     {/* MENU VIEW */}
                     {activeView === 'menu' && (
-                      <div className="flex flex-col gap-2">
-                        <button onClick={() => setActiveView('objects')} className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-xl text-left transition-colors">
-                          <div className="flex items-center gap-3">
-                            <Box size={20} className="text-white/70" />
-                            <span className="text-white font-medium text-sm">Object</span>
-                          </div>
-                          <ChevronRight size={16} className="text-white/30" />
+                      <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 snap-x">
+                        <button onClick={() => setActiveView('objects')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
+                          <Box size={24} className="text-white/70" />
+                          <span className="text-white font-medium text-xs">Object</span>
                         </button>
-                        <button onClick={() => setActiveView('module')} className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-xl text-left transition-colors">
-                          <div className="flex items-center gap-3">
-                            <GraduationCap size={20} className="text-pln-blue" />
-                            <span className="text-white font-medium text-sm">Modul Edukasi</span>
-                          </div>
-                          <ChevronRight size={16} className="text-white/30" />
+                        <button onClick={() => setActiveView('module')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
+                          <GraduationCap size={24} className="text-pln-blue" />
+                          <span className="text-white font-medium text-xs text-center leading-tight">Modul<br/>Edukasi</span>
                         </button>
-                        <button onClick={() => setActiveView('scenes')} className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-xl text-left transition-colors">
-                          <div className="flex items-center gap-3">
-                            <ImageIcon size={20} className="text-white/70" />
-                            <span className="text-white font-medium text-sm">Scene</span>
-                          </div>
-                          <ChevronRight size={16} className="text-white/30" />
+                        <button onClick={() => setActiveView('scenes')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
+                          <ImageIcon size={24} className="text-white/70" />
+                          <span className="text-white font-medium text-xs">Scene</span>
                         </button>
                       </div>
                     )}
