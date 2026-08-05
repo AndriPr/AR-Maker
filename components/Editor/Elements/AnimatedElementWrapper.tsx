@@ -134,7 +134,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           let progress = 0;
           if (kf2.time > kf1.time) {
              progress = (tTime - kf1.time) / (kf2.time - kf1.time);
-             const easing = kf1.easing || 'linear';
+             const easing = kf1.easing || 'ease-in-out';
              if (easing === 'ease-in') {
                progress = progress * progress;
              } else if (easing === 'ease-out') {
