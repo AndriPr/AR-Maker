@@ -35,7 +35,11 @@ export function ARUserInterface() {
     }
     return true;
   });
-  const validSceneElements = validElements.filter(el => el.sceneId === (currentSceneId || ''));
+  const validSceneElements = validElements.filter(el => 
+    el.sceneId === (currentSceneId || '') && 
+    el.data?.showInARMenu !== false &&
+    !['edu_panel', 'ambient_light', 'directional_light'].includes(el.type)
+  );
 
   const eduPanel = elements.find(el => el.type === 'edu_panel' && el.sceneId === currentSceneId);
   const modules = (eduPanel as any)?.eduMaintenanceTasks || [];

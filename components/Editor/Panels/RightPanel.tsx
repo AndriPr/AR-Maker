@@ -392,6 +392,24 @@ export function RightPanel({
                     />
                   </div>
 
+                  <div className="flex items-center justify-between mt-3 bg-[#1a1b1e] p-2 rounded border border-[#2b2d31]">
+                    <div className="flex items-center gap-2">
+                      <Eye size={14} className="text-gray-400" />
+                      <span className="text-xs text-gray-300">Tampilkan di Menu AR</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer"
+                        checked={selectedElement.data?.showInARMenu !== false}
+                        onChange={(e) => updateElement(selectedElement.id, { 
+                          data: { ...selectedElement.data, showInARMenu: e.target.checked }
+                        })}
+                      />
+                      <div className="w-7 h-4 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-pln-blue"></div>
+                    </label>
+                  </div>
+
                   <div className="flex flex-col gap-1 mt-3">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Deskripsi (Edu Panel)</label>
                     <textarea 
