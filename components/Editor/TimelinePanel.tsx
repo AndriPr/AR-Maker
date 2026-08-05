@@ -486,19 +486,6 @@ export default function TimelinePanel() {
               ></div>
             )}
             
-            {/* Box Selection Overlay */}
-            {selectionBox && (
-              <div 
-                className="absolute bg-pln-blue/30 border border-pln-blue z-40 pointer-events-none"
-                style={{
-                  left: Math.min(selectionBox.startX, selectionBox.currentX),
-                  top: Math.min(selectionBox.startY, selectionBox.currentY),
-                  width: Math.abs(selectionBox.currentX - selectionBox.startX),
-                  height: Math.abs(selectionBox.currentY - selectionBox.startY)
-                }}
-              ></div>
-            )}
-
             {/* Grid lines */}
             {Array.from({ length: duration + 1 }).map((_, i) => (
               <div key={`grid-${i}`} className="absolute top-0 bottom-0 border-l border-[#36393f]/30 pointer-events-none" style={{ left: `${(i / duration) * 100}%` }}></div>
