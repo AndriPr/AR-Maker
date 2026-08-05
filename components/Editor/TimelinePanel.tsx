@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Plus, Clock, Circle, SkipBack, SkipForward, ScanLine, Activity } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import { GraphEditorPanel } from './Panels/GraphEditorPanel';
@@ -26,7 +26,6 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
     setIsDragging(true);
     setLocalTime(kf.time);
     if (onSelect) onSelect(e.shiftKey);
-    useEditorStore.getState().setTimelineTime(kf.time);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -128,6 +127,7 @@ function TimelineScrubber({ duration }: { duration: number }) {
 }
 
 export default function TimelinePanel() {
+  const leftPanelRef = useRef<HTMLDivElement>(null);
   const elements = useEditorStore(state => state.elements);
   const selectedId = useEditorStore(state => state.selectedId);
   const updateElement = useEditorStore(state => state.updateElement);
@@ -140,7 +140,6 @@ export default function TimelinePanel() {
 
   const [duration, setDuration] = useState(10); // 10 seconds default
   const [panelHeight, setPanelHeight] = useState(192); // 48rem * 4 = 192px default
-  const [selectionBox, setSelectionBox] = useState<{ startX: number, startY: number, currentX: number, currentY: number } | null>(null);
   const [showGraphEditor, setShowGraphEditor] = useState(false);
   const playbackRange = useEditorStore(state => state.playbackRange);
   const setPlaybackRange = useEditorStore(state => state.setPlaybackRange);
@@ -403,9 +402,9 @@ export default function TimelinePanel() {
       )}
       
       {/* Timeline Tracks */}
-        <div className="flex-1 flex overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+        <div className="flex-1 flex overflow-hidden relative">
           {/* Track Headers */}
-          <div className="w-48 shrink-0 bg-[#1a1b1e] border-r border-[#2b2d31]">
+          <div ref={leftPanelRef} className="w-48 shrink-0 bg-[#1a1b1e] border-r border-[#2b2d31] overflow-hidden">
             <div className="sticky top-0 h-5 bg-[#1a1b1e]/90 border-b border-[#36393f] z-30 backdrop-blur-sm"></div>
             {elements.map(el => (
             <div key={`header-${el.id}`}>
@@ -436,33 +435,15 @@ export default function TimelinePanel() {
         </div>
         
         {/* Track Grid */}
-        <div className="flex-1 bg-[#1e1e1e] relative overflow-x-auto custom-scrollbar">
-          <div 
-            className="relative w-full min-w-[800px] h-full select-none"
-            onPointerDown={(e) => {
-              if ((e.target as HTMLElement).closest('.cursor-grab')) return;
-              if (e.clientY < e.currentTarget.getBoundingClientRect().top + 20) return; // Ignore ruler clicks
-              
-              const rect = e.currentTarget.getBoundingClientRect();
-              const startX = e.clientX - rect.left;
-              const startY = e.clientY - rect.top;
-              setSelectionBox({ startX, startY, currentX: startX, currentY: startY });
-              
-              const onMove = (evt: PointerEvent) => {
-                setSelectionBox(prev => prev ? { ...prev, currentX: evt.clientX - rect.left, currentY: evt.clientY - rect.top } : null);
-              };
-              
-              const onUp = () => {
-                // Here we would ideally calculate intersections, but for now we just clear the box
-                setSelectionBox(null);
-                window.removeEventListener('pointermove', onMove);
-                window.removeEventListener('pointerup', onUp);
-              };
-              
-              window.addEventListener('pointermove', onMove);
-              window.addEventListener('pointerup', onUp);
-            }}
-          >
+        <div 
+          className="flex-1 bg-[#1e1e1e] relative overflow-auto custom-scrollbar"
+          onScroll={(e) => {
+            if (leftPanelRef.current) {
+              leftPanelRef.current.scrollTop = e.currentTarget.scrollTop;
+            }
+          }}
+        >
+          <div className="relative w-full min-w-[800px] min-h-max select-none">
             {/* Ruler for Scrubbing */}
             <div 
               className="sticky top-0 left-0 right-0 h-5 bg-[#1a1b1e]/90 border-b border-[#36393f] z-40 cursor-ew-resize select-none backdrop-blur-sm"

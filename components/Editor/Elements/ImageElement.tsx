@@ -58,7 +58,7 @@ export function ImageElement({ element, mode }: { element: any, mode: 'translate
   const imageObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); }}
         onPointerMissed={() => {}}
       >
         <mesh>
@@ -99,4 +99,5 @@ export function ImageElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
+
 

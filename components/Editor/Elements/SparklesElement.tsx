@@ -48,7 +48,7 @@ export function SparklesElement({ element, mode }: { element: any, mode: 'transl
   const sparklesObj = (
     <AnimatedElementWrapper element={element}>
       <group 
-        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
+        onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); }}
         onPointerMissed={() => {}}
       >
         <Sparkles 
@@ -98,4 +98,5 @@ export function SparklesElement({ element, mode }: { element: any, mode: 'transl
     </group>
   );
 }
+
 

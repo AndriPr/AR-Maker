@@ -109,7 +109,7 @@ export function TextElement({ element, mode }: { element: any, mode: 'translate'
       <group
         onClick={(e: any) => {
           e.stopPropagation();
-          handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false);
+          handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true);
         }}
         onPointerMissed={() => {}}
       >
@@ -180,4 +180,5 @@ export function TextElement({ element, mode }: { element: any, mode: 'translate'
     </group>
   );
 }
+
 

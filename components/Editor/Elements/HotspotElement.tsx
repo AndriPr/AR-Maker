@@ -53,7 +53,7 @@ export function HotspotElement({ element, mode }: { element: any, mode: 'transla
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); 
+            handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); 
           }
         }}
         onPointerMissed={() => {}}
@@ -104,5 +104,6 @@ export function HotspotElement({ element, mode }: { element: any, mode: 'transla
     </group>
   );
 }
+
 
 

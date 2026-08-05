@@ -248,6 +248,7 @@ interface EditorState {
   // Undo/Redo
   setIsSnapping: (val: boolean) => void;
   isTransforming: boolean;
+  lastTransformEndTime?: number;
   setIsTransforming: (val: boolean) => void;
   isOrthographic: boolean;
   setIsOrthographic: (val: boolean) => void;
@@ -792,7 +793,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   }),
   setIsSnapping: (val) => set({ isSnapping: val }),
   isTransforming: false,
-  setIsTransforming: (val: boolean) => set({ isTransforming: val }),
+  setIsTransforming: (val: boolean) => set(state => { if (!val) return { isTransforming: val, lastTransformEndTime: performance.now() }; return { isTransforming: val }; }),
   setIsOrthographic: (val) => set({ isOrthographic: val }),
   
   setIsSimulating: (val) => set({ 

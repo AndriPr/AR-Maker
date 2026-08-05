@@ -351,7 +351,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
             <primitive dispose={null} object={clonedScene} 
             onClick={(e: any) => {
               e.stopPropagation();
-              handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false);
+              handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true);
             }}
             onPointerMissed={() => {}}
           />
@@ -385,4 +385,5 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
     </group>
   );
 }
+
 

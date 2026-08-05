@@ -53,7 +53,7 @@ export function UIButtonElement({ element, mode }: { element: any, mode: 'transl
         onClick={(e: any) => { 
           e.stopPropagation(); 
           if (!handleAction(element)) {
-            handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); 
+            handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, true); 
           }
         }}
         onPointerMissed={() => {}}
@@ -95,4 +95,5 @@ export function UIButtonElement({ element, mode }: { element: any, mode: 'transl
     </group>
   );
 }
+
 
