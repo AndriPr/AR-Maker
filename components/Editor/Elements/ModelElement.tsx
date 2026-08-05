@@ -158,44 +158,46 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   const clonedScene = useMemo(() => {
     if (!scene) return null;
     
-    try {
-      // PERF OPTIMIZATION: If we are extracting a specific sub-mesh, DON'T clone the entire scene!
-      if (element.targetMeshName && !element.meshPositionOffset) {
-          let targetNode: any = null;
-          scene.traverse((node: any) => { // traverse original scene!
-             if (isLogicalObject(node) && node.name === element.targetMeshName) {
-               targetNode = node;
-             }
-          });
-          
-          if (targetNode) {
-             const newObj = targetNode.clone(false); // Only clone the targeted object
-             if (targetNode.isGroup && targetNode.children.length > 0 && targetNode.children.every((c: any) => c.isMesh && c.name.startsWith(targetNode.name + '_'))) {
-                targetNode.children.forEach((c: any) => {
-                   newObj.add(c.clone(false));
-                });
-             }
-             
-             newObj.position.set(0, 0, 0);
-             newObj.quaternion.identity();
-             newObj.scale.set(1, 1, 1);
-             
-             newObj.traverse((child: any) => {
-               if (child.isMesh && child.material && child.material.name) {
-                 if (element.customMaterials && element.customMaterials[child.material.name]) {
-                   child.material = child.material.clone();
-                   child.material.color.set(element.customMaterials[child.material.name]);
-                 }
-               }
-             });
-             
-             const newGroup = new THREE.Group();
-             newGroup.add(newObj);
-             return newGroup;
-          }
-      }
       
-      const clone = scene.clone();
+      let clone = null;
+      try {
+        // PERF OPTIMIZATION: If we are extracting a specific sub-mesh, DON'T clone the entire scene!
+        if (element.targetMeshName && !element.meshPositionOffset) {
+            let targetNode: any = null;
+            scene.traverse((node: any) => { // traverse original scene!
+               if (isLogicalObject(node) && node.name === element.targetMeshName) {
+                 targetNode = node;
+               }
+            });
+            
+            if (targetNode) {
+               const newObj = targetNode.clone(false); // Only clone the targeted object
+               if (targetNode.isGroup && targetNode.children.length > 0 && targetNode.children.every((c: any) => c.isMesh && c.name.startsWith(targetNode.name + '_'))) {
+                  targetNode.children.forEach((c: any) => {
+                     newObj.add(c.clone(false));
+                  });
+               }
+               
+               newObj.position.set(0, 0, 0);
+               newObj.quaternion.identity();
+               newObj.scale.set(1, 1, 1);
+               
+               newObj.traverse((child: any) => {
+                 if (child.isMesh && child.material && child.material.name) {
+                   if (element.customMaterials && element.customMaterials[child.material.name]) {
+                     child.material = child.material.clone();
+                     child.material.color.set(element.customMaterials[child.material.name]);
+                   }
+                 }
+               });
+               
+               const newGroup = new THREE.Group();
+               newGroup.add(newObj);
+               return newGroup;
+            }
+        }
+        
+        clone = scene.clone();
       if (element.targetMeshName && element.meshPositionOffset) {
           const toRemove: any[] = [];
           clone.traverse((node: any) => {

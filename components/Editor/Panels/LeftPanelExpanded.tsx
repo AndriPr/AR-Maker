@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { 
   ImageIcon, FolderOpen, Box, Type, MousePointerClick, 
   LayoutDashboard, Volume2, Video, Sparkles, MapPin, 
@@ -41,8 +41,8 @@ export function LeftPanelExpanded({
     selectedId, 
     setSelectedId, 
     multiSelectedIds, 
-    setMultiSelectedIds,
-    setHoveredId, 
+    setMultiSelectedIds, 
+    setHoveredId,
     addElement, 
     removeElement, 
     reparentElement,
@@ -79,12 +79,10 @@ export function LeftPanelExpanded({
               const combined = new Set([...multiSelectedIds, (selectedId ? selectedId : ''), ...newSelection]);
               combined.delete('');
               setSelectedId(null);
-              setMultiSelectedIds,
-    setHoveredId(Array.from(combined));
+              setMultiSelectedIds(Array.from(combined));
            } else {
               setSelectedId(null);
-              setMultiSelectedIds,
-    setHoveredId(newSelection);
+              setMultiSelectedIds(newSelection);
            }
            return;
         }
@@ -93,21 +91,18 @@ export function LeftPanelExpanded({
     
     if (ctrlKey) {
       if (multiSelectedIds.includes(id)) {
-        setMultiSelectedIds,
-    setHoveredId(multiSelectedIds.filter(selId => selId !== id));
+        setMultiSelectedIds(multiSelectedIds.filter(selId => selId !== id));
       } else {
         const newIds = [...multiSelectedIds, id];
         if (selectedId && !multiSelectedIds.includes(selectedId)) {
            newIds.push(selectedId);
         }
         setSelectedId(null);
-        setMultiSelectedIds,
-    setHoveredId(newIds);
+        setMultiSelectedIds(newIds);
       }
     } else {
       setSelectedId(id);
-      setMultiSelectedIds,
-    setHoveredId([]);
+      setMultiSelectedIds([]);
     }
   };
 
@@ -222,8 +217,7 @@ export function LeftPanelExpanded({
                 className={`flex items-center justify-between px-2 py-1.5 mt-1 rounded-sm text-xs cursor-pointer transition-colors ${
                   (selectedId === null && multiSelectedIds.length === 0) ? 'bg-[#ff7f00] text-white font-medium' : 'text-gray-300 hover:bg-[#2b2d31]'
                 }`}
-                onClick={() => { setSelectedId(null); setMultiSelectedIds,
-    setHoveredId([]); }}
+                onClick={() => { setSelectedId(null); setMultiSelectedIds([]); }}
               >
                 <div className="flex items-center gap-2">
                   <ImageIcon size={12} className="shrink-0" />
