@@ -121,13 +121,13 @@ const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: 
 const isLogicalObject = (node: any) => {
   if (node.isMesh) {
     const parent = node.parent;
-    if (parent && parent.isGroup && parent.children.length > 0 && parent.children.every((c: any) => c.isMesh && c.name.startsWith(parent.name + '_'))) {
+    if (parent && parent.isGroup && parent.children.length > 0 && parent.children.every((c: any) => c.isMesh && c.name.startsWith(parent.name))) {
       return false;
     }
     return true;
   }
   if (node.isGroup) {
-    if (node.children.length > 0 && node.children.every((c: any) => c.isMesh && c.name.startsWith(node.name + '_'))) {
+    if (node.children.length > 0 && node.children.every((c: any) => c.isMesh && c.name.startsWith(node.name))) {
       return true;
     }
   }
@@ -161,8 +161,8 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
       
       let clone = null;
       try {
-        // PERF OPTIMIZATION: If we are extracting a specific sub-mesh, DON'T clone the entire scene!
-        if (element.targetMeshName && !element.meshPositionOffset) {
+        // Extract specific sub-mesh and discard the rest of the scene hierarchy
+        if (element.targetMeshName) {
             let targetNode: any = null;
             scene.traverse((node: any) => { // traverse original scene!
                if (isLogicalObject(node) && node.name === element.targetMeshName) {
@@ -172,7 +172,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
             
             if (targetNode) {
                const newObj = targetNode.clone(false); // Only clone the targeted object
-               if (targetNode.isGroup && targetNode.children.length > 0 && targetNode.children.every((c: any) => c.isMesh && c.name.startsWith(targetNode.name + '_'))) {
+               if (targetNode.isGroup && targetNode.children.length > 0 && targetNode.children.every((c: any) => c.isMesh && c.name.startsWith(targetNode.name))) {
                   targetNode.children.forEach((c: any) => {
                      newObj.add(c.clone(false));
                   });
@@ -198,17 +198,6 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
         }
         
         clone = scene.clone();
-      if (element.targetMeshName && element.meshPositionOffset) {
-          const toRemove: any[] = [];
-          clone.traverse((node: any) => {
-             if (node.isMesh && node.name !== element.targetMeshName) {
-               toRemove.push(node);
-             }
-          });
-          toRemove.forEach((node: any) => {
-             if (node.parent) node.parent.remove(node);
-          });
-      }
 
       // Auto-centering and auto-scaling have been removed.
       // This ensures that meshes exported from Blender (especially when exploded)
