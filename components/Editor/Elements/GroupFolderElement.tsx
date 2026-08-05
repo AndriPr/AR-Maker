@@ -53,10 +53,7 @@ export function GroupFolderElement({ element, mode, children }: { element: any, 
           onClick={(e: any) => { e.stopPropagation(); handleElementClick(element.id, e.ctrlKey || e.metaKey || e.shiftKey, false); }}
           onPointerMissed={() => {}}
         >
-          {/* Visible bounding box helper for the group when selected, otherwise invisible */}
-          <DreiBox args={[1, 1, 1]} visible={isSelected}>
-            <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.3} />
-          </DreiBox>
+
           {children}
         </group>
       </AnimatedElementWrapper>
