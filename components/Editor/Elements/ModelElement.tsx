@@ -143,6 +143,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   const selectedId = useEditorStore(state => state.selectedId);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
   const handleElementClick = useEditorStore(state => state.handleElementClick);
+  const hoveredId = useEditorStore(state => state.hoveredId);
   const previewAnim = useEditorStore(state => state.previewAnimationData);
   const isSnapping = useEditorStore(state => state.isSnapping);
   const axisLock = useEditorStore(state => state.axisLock);
@@ -156,30 +157,19 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   
   const clonedScene = useMemo(() => {
     if (!scene) return null;
-    const clone = scene.clone();
+    
     try {
-      // Phase 7: Exploded Mesh separation - optimized to REMOVE unused meshes from graph
-      if (element.targetMeshName) {
-        if (element.meshPositionOffset) {
-          const toRemove: any[] = [];
-          clone.traverse((node: any) => {
-             if (node.isMesh && node.name !== element.targetMeshName) {
-               toRemove.push(node);
-             }
-          });
-          toRemove.forEach(node => {
-             node.parent?.remove(node);
-          });
-        } else {
+      // PERF OPTIMIZATION: If we are extracting a specific sub-mesh, DON'T clone the entire scene!
+      if (element.targetMeshName && !element.meshPositionOffset) {
           let targetNode: any = null;
-          clone.traverse((node: any) => {
+          scene.traverse((node: any) => { // traverse original scene!
              if (isLogicalObject(node) && node.name === element.targetMeshName) {
                targetNode = node;
              }
           });
           
           if (targetNode) {
-             const newObj = targetNode.clone(false);
+             const newObj = targetNode.clone(false); // Only clone the targeted object
              if (targetNode.isGroup && targetNode.children.length > 0 && targetNode.children.every((c: any) => c.isMesh && c.name.startsWith(targetNode.name + '_'))) {
                 targetNode.children.forEach((c: any) => {
                    newObj.add(c.clone(false));
@@ -203,7 +193,19 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
              newGroup.add(newObj);
              return newGroup;
           }
-        }
+      }
+      
+      const clone = scene.clone();
+      if (element.targetMeshName && element.meshPositionOffset) {
+          const toRemove: any[] = [];
+          clone.traverse((node: any) => {
+             if (node.isMesh && node.name !== element.targetMeshName) {
+               toRemove.push(node);
+             }
+          });
+          toRemove.forEach((node: any) => {
+             if (node.parent) node.parent.remove(node);
+          });
       }
 
       // Auto-centering and auto-scaling have been removed.
@@ -351,7 +353,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   if (!clonedScene) return null;
 
   const primitiveObj = (
-    <group ref={groupRef as any}>
+    <group ref={groupRef as any} userData={{ elementId: element.id }}>
       <AnimatedElementWrapper element={element}>
         <group position={element.meshPositionOffset || [0, 0, 0]}>
           {!element.targetMeshName && <SubMeshAnimator scene={clonedScene as any} elementId={element.id} />}
@@ -388,6 +390,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
     <group position={element.position} rotation={element.rotation} scale={element.scale}>
       {primitiveObj}
       {isSelectedInAR && <SelectionPointer targetRef={groupRef} />}
+      {hoveredId === element.id && <SelectionPointer targetRef={groupRef} />}
     </group>
   );
 }

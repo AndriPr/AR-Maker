@@ -41,7 +41,8 @@ export function LeftPanelExpanded({
     selectedId, 
     setSelectedId, 
     multiSelectedIds, 
-    setMultiSelectedIds, 
+    setMultiSelectedIds,
+    setHoveredId, 
     addElement, 
     removeElement, 
     reparentElement,
@@ -78,10 +79,12 @@ export function LeftPanelExpanded({
               const combined = new Set([...multiSelectedIds, (selectedId ? selectedId : ''), ...newSelection]);
               combined.delete('');
               setSelectedId(null);
-              setMultiSelectedIds(Array.from(combined));
+              setMultiSelectedIds,
+    setHoveredId(Array.from(combined));
            } else {
               setSelectedId(null);
-              setMultiSelectedIds(newSelection);
+              setMultiSelectedIds,
+    setHoveredId(newSelection);
            }
            return;
         }
@@ -90,18 +93,21 @@ export function LeftPanelExpanded({
     
     if (ctrlKey) {
       if (multiSelectedIds.includes(id)) {
-        setMultiSelectedIds(multiSelectedIds.filter(selId => selId !== id));
+        setMultiSelectedIds,
+    setHoveredId(multiSelectedIds.filter(selId => selId !== id));
       } else {
         const newIds = [...multiSelectedIds, id];
         if (selectedId && !multiSelectedIds.includes(selectedId)) {
            newIds.push(selectedId);
         }
         setSelectedId(null);
-        setMultiSelectedIds(newIds);
+        setMultiSelectedIds,
+    setHoveredId(newIds);
       }
     } else {
       setSelectedId(id);
-      setMultiSelectedIds([]);
+      setMultiSelectedIds,
+    setHoveredId([]);
     }
   };
 
@@ -216,7 +222,8 @@ export function LeftPanelExpanded({
                 className={`flex items-center justify-between px-2 py-1.5 mt-1 rounded-sm text-xs cursor-pointer transition-colors ${
                   (selectedId === null && multiSelectedIds.length === 0) ? 'bg-[#ff7f00] text-white font-medium' : 'text-gray-300 hover:bg-[#2b2d31]'
                 }`}
-                onClick={() => { setSelectedId(null); setMultiSelectedIds([]); }}
+                onClick={() => { setSelectedId(null); setMultiSelectedIds,
+    setHoveredId([]); }}
               >
                 <div className="flex items-center gap-2">
                   <ImageIcon size={12} className="shrink-0" />
@@ -287,6 +294,8 @@ export function LeftPanelExpanded({
                           e.stopPropagation();
                           handleElementClick(el.id, e.ctrlKey || e.metaKey, e.shiftKey);
                         }}
+                        onMouseEnter={() => setHoveredId(el.id)}
+                        onMouseLeave={() => setHoveredId(null)}
                         className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors select-none ${bgClass}`}
                         style={{ paddingLeft: `${0.5 + (depth * 1.0)}rem` }}
                       >
