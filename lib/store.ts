@@ -178,8 +178,6 @@ interface EditorState {
 
   elements: SceneElement[];
   selectedId: string | null;
-  selectedKeyframes: { elementId: string, time: number }[];
-  setSelectedKeyframes: (kfs: { elementId: string, time: number }[]) => void;
   targetImageUrl: string | null;
   previewAnimationData: { targetId: string, animationName: string } | null;
   isSnapping: boolean;
@@ -324,8 +322,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   })),
 
   selectedId: null,
-  selectedKeyframes: [],
-  setSelectedKeyframes: (kfs) => set({ selectedKeyframes: kfs }),
   multiSelectedIds: [],
   hoveredId: null,
   targetImageUrl: null,
