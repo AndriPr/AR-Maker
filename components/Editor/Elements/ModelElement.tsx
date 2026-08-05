@@ -143,15 +143,37 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
     try {
       // Phase 7: Exploded Mesh separation - optimized to REMOVE unused meshes from graph
       if (element.targetMeshName) {
-        const toRemove: any[] = [];
-        clone.traverse((node: any) => {
-           if (node.isMesh && node.name !== element.targetMeshName) {
-             toRemove.push(node);
-           }
-        });
-        toRemove.forEach(node => {
-           node.parent?.remove(node);
-        });
+        if (element.meshPositionOffset) {
+          const toRemove: any[] = [];
+          clone.traverse((node: any) => {
+             if (node.isMesh && node.name !== element.targetMeshName) {
+               toRemove.push(node);
+             }
+          });
+          toRemove.forEach(node => {
+             node.parent?.remove(node);
+          });
+        } else {
+          let targetNode: any = null;
+          clone.traverse((node: any) => {
+             if (node.isMesh && node.name === element.targetMeshName) {
+               targetNode = node;
+             }
+          });
+          
+          if (targetNode) {
+             const newMesh = new THREE.Mesh(targetNode.geometry, targetNode.material);
+             if (newMesh.material && newMesh.material.name) {
+               if (element.customMaterials && element.customMaterials[newMesh.material.name]) {
+                 newMesh.material = newMesh.material.clone();
+                 newMesh.material.color.set(element.customMaterials[newMesh.material.name]);
+               }
+             }
+             const newGroup = new THREE.Group();
+             newGroup.add(newMesh);
+             return newGroup;
+          }
+        }
       }
 
       // Auto-centering and auto-scaling have been removed.
@@ -179,15 +201,25 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
 
   useEffect(() => {
     if (clonedScene && !element.targetMeshName) {
-      const subMeshes: {name: string, position: [number, number, number], offset: [number, number, number]}[] = [];
+      const subMeshes: {name: string, position: [number, number, number], offset: [number, number, number], quaternion: [number, number, number, number], scale: [number, number, number]}[] = [];
       clonedScene.updateMatrixWorld(true);
       clonedScene.traverse((node: any) => {
         if (node.isMesh && node.geometry) {
+           const pos = new THREE.Vector3();
+           const quat = new THREE.Quaternion();
+           const scale = new THREE.Vector3();
+           node.getWorldPosition(pos);
+           node.getWorldQuaternion(quat);
+           node.getWorldScale(scale);
+           
            const box = new THREE.Box3().setFromObject(node);
            const center = box.getCenter(new THREE.Vector3());
+           
            subMeshes.push({
               name: node.name,
-              position: [center.x, center.y, center.z],
+              position: [pos.x, pos.y, pos.z],
+              quaternion: [quat.x, quat.y, quat.z, quat.w],
+              scale: [scale.x, scale.y, scale.z],
               offset: [-center.x, -center.y, -center.z]
            });
         }

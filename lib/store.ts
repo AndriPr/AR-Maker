@@ -136,6 +136,8 @@ export interface SceneElement {
     name: string;
     position: [number, number, number];
     offset: [number, number, number];
+    quaternion?: [number, number, number, number];
+    scale?: [number, number, number];
   }[];
   
   // Phase 8: Grouping
@@ -504,26 +506,62 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!el || el.type !== '3d_model' || !el.availableSubMeshes || el.availableSubMeshes.length === 0) return state;
 
     const newElements = el.availableSubMeshes.map(subMesh => {
-      const parentPos = new THREE.Vector3(...el.position);
-      const parentRot = new THREE.Euler(...el.rotation);
-      const parentScale = new THREE.Vector3(...el.scale);
-      
-      const localCenter = new THREE.Vector3(...subMesh.position);
-      localCenter.multiply(parentScale);
-      localCenter.applyEuler(parentRot);
-      
-      const newPos = parentPos.add(localCenter);
+      if (subMesh.quaternion && subMesh.scale) {
+        const parentMatrix = new THREE.Matrix4().compose(
+          new THREE.Vector3(...el.position),
+          new THREE.Quaternion().setFromEuler(new THREE.Euler(...el.rotation)),
+          new THREE.Vector3(...el.scale)
+        );
 
-      return {
-        ...el,
-        id: Math.random().toString(36).substring(2, 9),
-        name: subMesh.name,
-        targetMeshName: subMesh.name,
-        meshPositionOffset: subMesh.offset,
-        position: [newPos.x, newPos.y, newPos.z] as [number, number, number],
-        availableSubMeshes: undefined,
-        keyframes: []
-      };
+        const localMatrix = new THREE.Matrix4().compose(
+          new THREE.Vector3(...subMesh.position),
+          new THREE.Quaternion(...subMesh.quaternion),
+          new THREE.Vector3(...subMesh.scale)
+        );
+
+        const worldMatrix = parentMatrix.multiply(localMatrix);
+
+        const newPos = new THREE.Vector3();
+        const newQuat = new THREE.Quaternion();
+        const newScale = new THREE.Vector3();
+        worldMatrix.decompose(newPos, newQuat, newScale);
+        
+        const newEuler = new THREE.Euler().setFromQuaternion(newQuat);
+
+        return {
+          ...el,
+          id: Math.random().toString(36).substring(2, 9),
+          name: subMesh.name,
+          targetMeshName: subMesh.name,
+          meshPositionOffset: undefined,
+          position: [newPos.x, newPos.y, newPos.z] as [number, number, number],
+          rotation: [newEuler.x, newEuler.y, newEuler.z] as [number, number, number],
+          scale: [newScale.x, newScale.y, newScale.z] as [number, number, number],
+          availableSubMeshes: undefined,
+          keyframes: []
+        };
+      } else {
+        const parentPos = new THREE.Vector3(...el.position);
+        const parentRot = new THREE.Euler(...el.rotation);
+        const parentScale = new THREE.Vector3(...el.scale);
+        
+        const localCenter = new THREE.Vector3(...subMesh.position);
+        localCenter.multiply(parentScale);
+        localCenter.applyEuler(parentRot);
+        
+        const newPos = parentPos.add(localCenter);
+
+        return {
+          ...el,
+          id: Math.random().toString(36).substring(2, 9),
+          name: subMesh.name,
+          targetMeshName: subMesh.name,
+          meshPositionOffset: subMesh.offset,
+          position: [newPos.x, newPos.y, newPos.z] as [number, number, number],
+          availableSubMeshes: undefined,
+          keyframes: []
+        };
+      }
     });
 
     return {
