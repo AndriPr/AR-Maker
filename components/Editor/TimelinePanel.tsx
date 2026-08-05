@@ -26,6 +26,7 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
     setIsDragging(true);
     setLocalTime(kf.time);
     if (onSelect) onSelect(e.shiftKey);
+    useEditorStore.getState().setTimelineTime(kf.time);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -121,7 +122,7 @@ function TimelineScrubber({ duration }: { duration: number }) {
   const timelineTime = useEditorStore(state => state.timelineTime);
   return (
     <div className="absolute top-0 bottom-0 border-l-2 border-blue-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
-      <div className="w-3 h-3 bg-blue-500 rounded-sm absolute top-1 -translate-x-1/2 shadow-lg shadow-blue-500/50"></div>
+      <div className="w-3 h-3 bg-blue-500 rounded-sm sticky top-1 -translate-x-1/2 shadow-lg shadow-blue-500/50"></div>
     </div>
   );
 }
@@ -402,10 +403,11 @@ export default function TimelinePanel() {
       )}
       
       {/* Timeline Tracks */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Track Headers */}
-        <div className="w-48 bg-[#1a1b1e] border-r border-[#2b2d31] overflow-y-auto">
-          {elements.map(el => (
+        <div className="flex-1 flex overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+          {/* Track Headers */}
+          <div className="w-48 shrink-0 bg-[#1a1b1e] border-r border-[#2b2d31]">
+            <div className="sticky top-0 h-5 bg-[#1a1b1e]/90 border-b border-[#36393f] z-30 backdrop-blur-sm"></div>
+            {elements.map(el => (
             <div key={`header-${el.id}`}>
               <div 
                 className={`group h-8 border-b border-[#2b2d31] flex items-center px-2 text-[10px] cursor-pointer hover:bg-[#2b2d31]/50 ${selectedId === el.id ? 'bg-[#2b2d31] text-white font-bold' : 'text-gray-400'}`}
@@ -434,7 +436,7 @@ export default function TimelinePanel() {
         </div>
         
         {/* Track Grid */}
-        <div className="flex-1 bg-[#1e1e1e] relative overflow-x-auto overflow-y-auto custom-scrollbar">
+        <div className="flex-1 bg-[#1e1e1e] relative overflow-x-auto custom-scrollbar">
           <div 
             className="relative w-full min-w-[800px] h-full select-none"
             onPointerDown={(e) => {
@@ -463,7 +465,7 @@ export default function TimelinePanel() {
           >
             {/* Ruler for Scrubbing */}
             <div 
-              className="absolute top-0 left-0 right-0 h-5 bg-[#1a1b1e]/80 border-b border-[#36393f] z-20 cursor-ew-resize select-none"
+              className="sticky top-0 left-0 right-0 h-5 bg-[#1a1b1e]/90 border-b border-[#36393f] z-40 cursor-ew-resize select-none backdrop-blur-sm"
               onPointerDown={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const updateTime = (evt: React.PointerEvent | PointerEvent) => {

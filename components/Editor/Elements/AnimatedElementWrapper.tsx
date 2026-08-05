@@ -178,7 +178,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           let progress = 0;
           if (kf2.time > kf1.time) {
              progress = (tTime - kf1.time) / (kf2.time - kf1.time);
-             const easing = kf1.easing || 'ease-in-out';
+             const easing = kf1.easing || 'linear';
              if (easing === 'ease-in') {
                progress = progress * progress;
              } else if (easing === 'ease-out') {
@@ -234,7 +234,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
   useEffect(() => {
     if (!groupRef.current) return;
     const group = groupRef.current;
-    const shouldOutline = isPrimarySelected || isMultiSelected || isHovered;
+    const shouldOutline = isPrimarySelected || isMultiSelected;
     const color = isPrimarySelected ? '#ff7f00' : isMultiSelected ? '#cc4400' : 'white';
     
     let outlines: any[] = [];
@@ -265,8 +265,8 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
     <group 
       ref={groupRef}
       userData={{ elementId: element.id }}
-      onPointerOver={(e: any) => { e.stopPropagation(); if (!isTransforming) setHoveredId(element.id); }}
-      onPointerOut={(e: any) => { setHoveredId(null); }}
+      
+      
       onDoubleClick={(e: any) => {
         e.stopPropagation();
         const setCameraFocusTarget = useEditorStore.getState().setCameraFocusTarget;
