@@ -36,6 +36,8 @@ export function LeftPanelExpanded({
   setTargetImageUrl
 }: LeftPanelExpandedProps) {
   
+  const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const { 
     elements, 
     selectedId, 
@@ -288,8 +290,14 @@ export function LeftPanelExpanded({
                           e.stopPropagation();
                           handleElementClick(el.id, e.ctrlKey || e.metaKey, e.shiftKey);
                         }}
-                        onMouseEnter={() => setHoveredId(el.id)}
-                        onMouseLeave={() => setHoveredId(null)}
+                        onMouseEnter={() => {
+                          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                          hoverTimeoutRef.current = setTimeout(() => setHoveredId(el.id), 150);
+                        }}
+                        onMouseLeave={() => {
+                          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                          setHoveredId(null);
+                        }}
                         className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors select-none ${bgClass}`}
                         style={{ paddingLeft: `${0.5 + (depth * 1.0)}rem` }}
                       >
