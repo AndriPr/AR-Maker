@@ -140,6 +140,8 @@ export interface SceneElement {
     scale?: [number, number, number];
   }[];
   
+  data?: any; // For dynamic data properties like Edu Panel description
+  
   // Phase 8: Grouping
   parentId?: string; // If set, this element renders relative to its parent group
 

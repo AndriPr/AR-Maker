@@ -132,7 +132,8 @@ export function RightPanel({
     reparentElement, 
     currentSceneId, 
     addElement,
-    timelineTime
+    timelineTime,
+    multiSelectedIds
   } = useEditorStore();
 
   const selectedElement = elements.find(el => el.id === selectedId);
