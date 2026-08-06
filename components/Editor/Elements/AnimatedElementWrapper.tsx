@@ -97,29 +97,36 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
       const activeTriggers = stateStore.activeTriggers;
       const elements = stateStore.elements;
 
-      // Determine if this element is targeted by an active trigger
+      // Determine if this element is targeted by an active trigger. Only
+      // relevant during AR simulation/playback - while editing in the Scene
+      // tab, the object must keep following the global Timeline scrubber
+      // (the Properties panel's own "Tombol Aksi" UI tells users to build
+      // this animation from the Timeline), otherwise it looks frozen since
+      // no trigger is ever "active" outside of a live simulation.
       let isTargeted = false;
       let isActive = false;
 
-      const eduPanels = getEduPanels(elements);
-      for (const panel of eduPanels) {
-        if (panel.eduCustomTriggers) {
-          for (const trigger of panel.eduCustomTriggers) {
-            if (trigger.targetElementId === element.id) {
-              isTargeted = true;
-              if (activeTriggers.includes(trigger.id)) {
-                isActive = true;
-                break;
+      if (stateStore.isSimulating) {
+        const eduPanels = getEduPanels(elements);
+        for (const panel of eduPanels) {
+          if (panel.eduCustomTriggers) {
+            for (const trigger of panel.eduCustomTriggers) {
+              if (trigger.targetElementId === element.id) {
+                isTargeted = true;
+                if (activeTriggers.includes(trigger.id)) {
+                  isActive = true;
+                  break;
+                }
               }
             }
           }
+          if (isActive) break;
         }
-        if (isActive) break;
       }
-      
+
       // Calculate local time for trigger animation
       let tTime = tTimeGlobal;
-      
+
       if (isTargeted) {
         if (group.userData.localAnimTime === undefined) {
           group.userData.localAnimTime = 0;
