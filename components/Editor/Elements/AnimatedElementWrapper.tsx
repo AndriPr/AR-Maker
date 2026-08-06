@@ -30,7 +30,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     const group = groupRef.current;
-    
+
     // Initialize entrance animation
     if (element.entranceAnimation && element.entranceAnimation !== 'none' && group.userData.entranceProgress === undefined) {
       group.userData.entranceProgress = 0;
@@ -144,9 +144,13 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
             const pos = keyframes[0].position || [0,0,0];
             const rot = keyframes[0].rotation || [0,0,0];
             const scl = keyframes[0].scale || [1,1,1];
-            group.position.set(pos[0], pos[1], pos[2]);
-            group.rotation.set(rot[0], rot[1], rot[2]);
-            group.scale.set(scl[0], scl[1], scl[2]);
+            // Keyframe values are absolute (captured from element.position at
+            // record time), but this group is nested inside the outer wrapper
+            // that already applies element.position/rotation/scale. Cancel
+            // that base out here so the two don't compound into double the offset.
+            group.position.set(pos[0] - element.position[0], pos[1] - element.position[1], pos[2] - element.position[2]);
+            group.rotation.set(rot[0] - element.rotation[0], rot[1] - element.rotation[1], rot[2] - element.rotation[2]);
+            group.scale.set(scl[0] / (element.scale[0] || 1), scl[1] / (element.scale[1] || 1), scl[2] / (element.scale[2] || 1));
          }
       } else {
         // Reuse the arrays already memoized above (per element.keyframes change)
@@ -190,28 +194,32 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           return progress;
         };
 
+        // Keyframe values are absolute, but this group sits inside the outer
+        // wrapper that already applies element.position/rotation/scale - so the
+        // base is subtracted (divided out for scale) here to avoid compounding
+        // into double the offset (see the single-keyframe branch above).
         const posBounds = getBoundingKeyframes(posKfs);
         if (posBounds && posBounds.kf1.position && posBounds.kf2.position) {
           const progress = calculateProgress(posBounds.kf1, posBounds.kf2);
-          group.position.x = THREE.MathUtils.lerp(posBounds.kf1.position[0], posBounds.kf2.position[0], progress);
-          group.position.y = THREE.MathUtils.lerp(posBounds.kf1.position[1], posBounds.kf2.position[1], progress);
-          group.position.z = THREE.MathUtils.lerp(posBounds.kf1.position[2], posBounds.kf2.position[2], progress);
+          group.position.x = THREE.MathUtils.lerp(posBounds.kf1.position[0], posBounds.kf2.position[0], progress) - element.position[0];
+          group.position.y = THREE.MathUtils.lerp(posBounds.kf1.position[1], posBounds.kf2.position[1], progress) - element.position[1];
+          group.position.z = THREE.MathUtils.lerp(posBounds.kf1.position[2], posBounds.kf2.position[2], progress) - element.position[2];
         }
 
         const rotBounds = getBoundingKeyframes(rotKfs);
         if (rotBounds && rotBounds.kf1.rotation && rotBounds.kf2.rotation) {
           const progress = calculateProgress(rotBounds.kf1, rotBounds.kf2);
-          group.rotation.x = THREE.MathUtils.lerp(rotBounds.kf1.rotation[0], rotBounds.kf2.rotation[0], progress);
-          group.rotation.y = THREE.MathUtils.lerp(rotBounds.kf1.rotation[1], rotBounds.kf2.rotation[1], progress);
-          group.rotation.z = THREE.MathUtils.lerp(rotBounds.kf1.rotation[2], rotBounds.kf2.rotation[2], progress);
+          group.rotation.x = THREE.MathUtils.lerp(rotBounds.kf1.rotation[0], rotBounds.kf2.rotation[0], progress) - element.rotation[0];
+          group.rotation.y = THREE.MathUtils.lerp(rotBounds.kf1.rotation[1], rotBounds.kf2.rotation[1], progress) - element.rotation[1];
+          group.rotation.z = THREE.MathUtils.lerp(rotBounds.kf1.rotation[2], rotBounds.kf2.rotation[2], progress) - element.rotation[2];
         }
 
         const sclBounds = getBoundingKeyframes(sclKfs);
         if (sclBounds && sclBounds.kf1.scale && sclBounds.kf2.scale) {
           const progress = calculateProgress(sclBounds.kf1, sclBounds.kf2);
-          group.scale.x = THREE.MathUtils.lerp(sclBounds.kf1.scale[0], sclBounds.kf2.scale[0], progress);
-          group.scale.y = THREE.MathUtils.lerp(sclBounds.kf1.scale[1], sclBounds.kf2.scale[1], progress);
-          group.scale.z = THREE.MathUtils.lerp(sclBounds.kf1.scale[2], sclBounds.kf2.scale[2], progress);
+          group.scale.x = THREE.MathUtils.lerp(sclBounds.kf1.scale[0], sclBounds.kf2.scale[0], progress) / (element.scale[0] || 1);
+          group.scale.y = THREE.MathUtils.lerp(sclBounds.kf1.scale[1], sclBounds.kf2.scale[1], progress) / (element.scale[1] || 1);
+          group.scale.z = THREE.MathUtils.lerp(sclBounds.kf1.scale[2], sclBounds.kf2.scale[2], progress) / (element.scale[2] || 1);
         }
       }
     }
