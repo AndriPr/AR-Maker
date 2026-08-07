@@ -347,6 +347,24 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     setPublishProgressPercent(0);
 
     try {
+      // The AI marker compiler (TensorFlow.js) requires WebGL. When it's
+      // unavailable, mind-ar-js's internal backend init fails and throws
+      // inside a promise that never properly rejects back to us - so instead
+      // of a fast, clear error, compileImageTargets just hangs until our
+      // hard timeout. Check for WebGL upfront and fail immediately with an
+      // actionable message rather than making the user wait 90s for that.
+      const hasWebGL = (() => {
+        try {
+          const canvas = document.createElement('canvas');
+          return !!(canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+        } catch {
+          return false;
+        }
+      })();
+      if (!hasWebGL) {
+        throw new Error('Browser/device ini tidak mendukung WebGL, yang dibutuhkan untuk kompilasi AI Marker. Coba aktifkan "Hardware acceleration" di pengaturan browser (chrome://settings/system lalu restart Chrome), atau pastikan Anda tidak sedang mengakses lewat remote desktop/VM tanpa GPU.');
+      }
+
       setPublishProgress("Memuat AR Compiler...");
       setPublishProgressPercent(5);
 
@@ -403,24 +421,37 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgressPercent(20);
 
       // 3. Compile the image
-      // The compiler can genuinely hang (e.g. its Web Worker fails to load,
-      // or TensorFlow.js never finishes its first-run WebGL warmup) with no
-      // error thrown - it just sits at the last percent reported forever.
-      // Race it against a hard timeout so a stuck compile fails loudly
-      // instead of leaving the user staring at a frozen progress bar.
+      // The compiler can genuinely hang with no error surfaced to us - e.g.
+      // when WebGL init fails inside mind-ar-js, it throws inside an
+      // internal promise that never rejects back to compileImageTargets(),
+      // so it just sits at the last percent reported forever. Catch that as
+      // a global unhandledrejection during this step (in addition to the
+      // WebGL preflight check above, which covers the common case) and race
+      // everything against a hard timeout as the last-resort fallback.
       const compiler = new (window as any).MINDAR.IMAGE.Compiler();
       const compileTimeoutMs = 90000;
-      await Promise.race([
-        compiler.compileImageTargets([compileImage], (progress: number) => {
-           setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
-           // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
-           setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
-        }),
-        new Promise((_, reject) => setTimeout(
-          () => reject(new Error(`Kompilasi marker timeout setelah ${compileTimeoutMs / 1000} detik. Coba gunakan gambar target dengan resolusi lebih kecil, atau reload halaman dan coba lagi.`)),
-          compileTimeoutMs
-        )),
-      ]);
+      let rejectFromUnhandled: ((err: Error) => void) | null = null;
+      const unhandledHandler = (event: PromiseRejectionEvent) => {
+        const reason = event.reason?.message || String(event.reason);
+        rejectFromUnhandled?.(new Error(`Kompilasi marker gagal: ${reason}`));
+      };
+      window.addEventListener('unhandledrejection', unhandledHandler);
+      try {
+        await Promise.race([
+          compiler.compileImageTargets([compileImage], (progress: number) => {
+             setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
+             // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
+             setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
+          }),
+          new Promise((_, reject) => setTimeout(
+            () => reject(new Error(`Kompilasi marker timeout setelah ${compileTimeoutMs / 1000} detik. Coba gunakan gambar target dengan resolusi lebih kecil, atau reload halaman dan coba lagi.`)),
+            compileTimeoutMs
+          )),
+          new Promise((_, reject) => { rejectFromUnhandled = reject; }),
+        ]);
+      } finally {
+        window.removeEventListener('unhandledrejection', unhandledHandler);
+      }
       const exportedBuffer = await compiler.exportData();
 
       setPublishProgress("Mengunggah file AR ke server...");
