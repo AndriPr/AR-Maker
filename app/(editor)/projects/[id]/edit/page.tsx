@@ -15,6 +15,7 @@ import LogicEditor from '@/components/Editor/LogicEditor';
 import TimelinePanel from '@/components/Editor/TimelinePanel';
 
 import { PublishModal } from '@/components/Editor/Modals/PublishModal';
+import { PublishProgressModal } from '@/components/Editor/Modals/PublishProgressModal';
 import { PreviewModal } from '@/components/Editor/Modals/PreviewModal';
 import { WebcamTestModal } from '@/components/Editor/Modals/WebcamTestModal';
 import { SimulatorModal } from '@/components/Editor/Modals/SimulatorModal';
@@ -304,6 +305,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   }, [elements, targetImageUrl, scenes, nodes, edges]);
 
   const [publishProgress, setPublishProgress] = useState<string | null>(null);
+  const [publishProgressPercent, setPublishProgressPercent] = useState(0);
+  const [publishStartedAt, setPublishStartedAt] = useState<number | null>(null);
 
   const handlePreview = async () => {
     if (!project) return;
@@ -339,10 +342,14 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     }
     
     setSaving(true);
-    
+    setShowPublishModal(false);
+    setPublishStartedAt(Date.now());
+    setPublishProgressPercent(0);
+
     try {
       setPublishProgress("Memuat AR Compiler...");
-      
+      setPublishProgressPercent(5);
+
       // 1. Load MindAR Compiler Script
       await new Promise<void>((resolve, reject) => {
         if ((window as any).MINDAR?.IMAGE?.Compiler) {
@@ -357,7 +364,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       });
 
       setPublishProgress("Mengunduh gambar marker...");
-      
+      setPublishProgressPercent(15);
+
       // 2. Fetch image as Blob to bypass canvas CORS
       const res = await fetch(targetImageUrl);
       const blob = await res.blob();
@@ -368,15 +376,19 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       await new Promise((resolve) => { image.onload = resolve; });
 
       setPublishProgress("Kompilasi AI Marker (Bisa memakan waktu 5-15 detik)...");
+      setPublishProgressPercent(20);
 
       // 3. Compile the image
       const compiler = new (window as any).MINDAR.IMAGE.Compiler();
       await compiler.compileImageTargets([image], (progress: number) => {
          setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
+         // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
+         setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
       });
       const exportedBuffer = await compiler.exportData();
 
       setPublishProgress("Mengunggah file AR ke server...");
+      setPublishProgressPercent(85);
 
       // 4. Upload to Supabase Storage
       const fileName = `mind_targets/target-${project.id}-${Date.now()}.mind`;
@@ -399,6 +411,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       }
 
       setPublishProgress("Menyimpan proyek...");
+      setPublishProgressPercent(95);
 
       // 5. Update Database
       const sceneData = { elements, scenes, nodes, edges, multiset_map_id: multisetMapId };
@@ -427,12 +440,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       });
       
       setPublishProgress("Selesai!");
+      setPublishProgressPercent(100);
       setShowPublishModal(true);
+      setSaving(false);
       setTimeout(() => setPublishProgress(null), 1000);
     } catch (err: any) {
       alert('Gagal mem-publish: ' + err.message);
       setSaving(false);
       setPublishProgress(null);
+      setPublishProgressPercent(0);
+      setPublishStartedAt(null);
     }
   };
 
@@ -713,8 +730,16 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
       </div>
 
+            {publishProgress && !showPublishModal && (
+        <PublishProgressModal
+          step={publishProgress}
+          percent={publishProgressPercent}
+          startedAt={publishStartedAt}
+        />
+      )}
+
             {showPublishModal && (
-        <PublishModal 
+        <PublishModal
           onClose={() => setShowPublishModal(false)}
           project={project}
           brandColor={brandColor}
