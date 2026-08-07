@@ -47,8 +47,8 @@ function VPSManager({
 
     const initVPS = async () => {
       try {
-        const clientId = process.env.NEXT_PUBLIC_MULTISET_CLIENT_ID || 'dummy';
-        const clientSecret = process.env.NEXT_PUBLIC_MULTISET_CLIENT_SECRET || 'dummy';
+        const clientId = process.env.NEXT_PUBLIC_MULTISET_CLIENT_ID || '6f4edfb2-1e41-4976-8226-905e36a9efc1';
+        const clientSecret = process.env.NEXT_PUBLIC_MULTISET_CLIENT_SECRET || '751c2cfb79160c9add42555d7e3e6992d86d87679626d6b06a51bf391fd3d603';
 
         const client = new MultisetClient({
           clientId,
