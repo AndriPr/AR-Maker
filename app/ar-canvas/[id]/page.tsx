@@ -105,6 +105,7 @@ function VPSManager({
 
       } catch (err: any) {
         console.error("Failed to init VPS:", err);
+        alert(`Gagal terhubung ke server MultiSet:\n\nError: ${err.message || err}\n\nKemungkinan Penyebab:\n1. Kunci API (Client ID/Secret) di Vercel berbeda dengan akun MultiSet Anda.\n2. Domain website ini belum ditambahkan ke daftar CORS di dashboard MultiSet.\n3. Object ID belum sepenuhnya siap (walau tertulis Selesai).`);
       }
     };
 
