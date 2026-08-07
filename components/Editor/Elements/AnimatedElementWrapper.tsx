@@ -294,12 +294,23 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
     }
   }, [isPrimarySelected, isMultiSelected, isHovered, children]);
 
+  // userData used to be passed as a declarative prop ({ elementId: element.id }).
+  // Every re-render created a new object literal, and R3F applies that by
+  // replacing group.userData wholesale - wiping out localAnimTime and
+  // entranceProgress that the animation logic above stores there imperatively.
+  // Any unrelated click elsewhere in the scene re-renders this whole tree
+  // (this component isn't memoized), so that reset was firing constantly,
+  // making trigger-driven animations restart from scratch on every click.
+  // Set elementId imperatively once instead, merging into the existing object.
+  useEffect(() => {
+    if (groupRef.current) {
+      groupRef.current.userData.elementId = element.id;
+    }
+  }, [element.id]);
+
   return (
-    <group 
+    <group
       ref={groupRef}
-      userData={{ elementId: element.id }}
-      
-      
       onDoubleClick={(e: any) => {
         e.stopPropagation();
         const setCameraFocusTarget = useEditorStore.getState().setCameraFocusTarget;

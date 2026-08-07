@@ -209,6 +209,15 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
 
   useTransformLogic(element, isSelected, transformRef);
 
+  // Set imperatively (not as a declarative userData prop) so an unrelated
+  // re-render elsewhere in the scene can't wipe this group's userData - see
+  // the same fix in AnimatedElementWrapper.tsx for why that mattered there.
+  useEffect(() => {
+    if (groupRef.current) {
+      groupRef.current.userData.elementId = element.id;
+    }
+  }, [element.id]);
+
   useEffect(() => {
     if (clonedScene && !element.targetMeshName) {
       const subMeshes: {name: string, position: [number, number, number], offset: [number, number, number], quaternion: [number, number, number, number], scale: [number, number, number]}[] = [];
@@ -368,7 +377,7 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   if (!clonedScene) return null;
 
   const primitiveObj = (
-    <group ref={groupRef as any} userData={{ elementId: element.id }}>
+    <group ref={groupRef as any}>
       <AnimatedElementWrapper element={element}>
         <group position={element.meshPositionOffset || [0, 0, 0]}>
           {!element.targetMeshName && <SubMeshAnimator scene={clonedScene as any} elementId={element.id} />}
