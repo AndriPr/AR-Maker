@@ -61,9 +61,11 @@ function VPSManager({
 
         if (!isMounted) return;
 
+        const overlayElement = document.getElementById('ar-ui-overlay') || document.body;
+        
         const session = new XRSessionManager(gl.getContext() as WebGL2RenderingContext, {
           client,
-          overlayRoot: document.body,
+          overlayRoot: overlayElement,
           autoTracking: true,
           confidenceCheck: true,
           confidenceThreshold: 0.5,
@@ -81,7 +83,10 @@ function VPSManager({
           onObjectTrackingFailure: (reason: any) => {
             console.warn('Tracking failed:', reason);
           },
-          onError: (err: any) => console.error('VPS Error:', err)
+          onError: (err: any) => {
+            console.error('VPS Error:', err);
+            alert(`Gagal memulai sesi AR. Kemungkinan besar karena: \n1. Map ID sedang dalam proses "Uploading" (0 MB) di MultiSet. Harap tunggu sampai selesai. \n2. Error: ${err.message || err}`);
+          }
         });
 
         adapter = new ThreeAdapter({
@@ -95,8 +100,9 @@ function VPSManager({
         // Render tombol "START AR" bawaan MultiSet
         adapter.initialize(); 
 
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to init VPS:", err);
+        alert(`Koneksi ke MultiSet gagal: ${err.message || err}. Pastikan Map ID sudah selesai diproses (tidak Uploading).`);
       }
     };
 
@@ -281,7 +287,9 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
       )}
 
       {/* AR Simulator UI Overlay - Only show when AR is active */}
-      {isArActive && <ARUserInterface />}
+      <div id="ar-ui-overlay" className="absolute inset-0 pointer-events-none z-[50]">
+        {isArActive && <ARUserInterface />}
+      </div>
 
       <Canvas>
         <Bvh firstHitOnly>
