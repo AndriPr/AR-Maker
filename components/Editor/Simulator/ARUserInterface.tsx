@@ -26,6 +26,23 @@ export function ARUserInterface() {
 
   const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
 
+  // Temporary: mark object clicks in the on-screen debug panel so it's clear
+  // which animation log lines happened before/after a click on a DIFFERENT object.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    let dbg = document.getElementById('__ardebug');
+    if (!dbg) {
+      dbg = document.createElement('div');
+      dbg.id = '__ardebug';
+      dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(0,0,0,0.85);color:#0f0;font-size:9px;padding:4px;white-space:pre-wrap;font-family:monospace;max-height:40vh;overflow:auto;';
+      document.body.appendChild(dbg);
+    }
+    const name = selectedElement ? selectedElement.name : '(none)';
+    const line = `[${new Date().toLocaleTimeString()}] ### OBJECT CLICKED -> ${name} ###\n`;
+    dbg.style.color = '#ff0';
+    dbg.textContent = (line + (dbg.textContent || '')).split('\n').slice(0, 20).join('\n');
+  }, [selectedId]);
+
   // Filter out orphaned (ghost) elements
   const validElements = elements.filter(el => {
     if (!el.parentId) return true;

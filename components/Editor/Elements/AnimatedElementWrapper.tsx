@@ -135,11 +135,18 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
           if (!dbg) {
             dbg = document.createElement('div');
             dbg.id = '__ardebug';
-            dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(0,0,0,0.85);color:#0f0;font-size:9px;padding:4px;white-space:pre-wrap;font-family:monospace;max-height:35vh;overflow:auto;';
+            dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(0,0,0,0.85);color:#0f0;font-size:9px;padding:4px;white-space:pre-wrap;font-family:monospace;max-height:40vh;overflow:auto;';
             document.body.appendChild(dbg);
           }
-          const line = `[${new Date().toLocaleTimeString()}] KF el=${element.name}(${element.id.slice(0,6)}) isTargeted=${isTargeted} isActive=${isActive} localAnimTime=${localT !== undefined ? localT.toFixed(2) : 'undef'} activeTriggers=${JSON.stringify(activeTriggers)}\n`;
-          dbg.textContent = (line + (dbg.textContent || '')).split('\n').slice(0, 15).join('\n');
+          const w = window as any;
+          w.__maxLocalAnim = w.__maxLocalAnim || {};
+          const prevMax = w.__maxLocalAnim[element.id] || 0;
+          if (localT !== undefined && localT > prevMax) w.__maxLocalAnim[element.id] = localT;
+          const regressed = localT !== undefined && prevMax > 0.5 && localT < prevMax - 0.3;
+          const marker = regressed ? '>>> REGRESSION (dropped from ' + prevMax.toFixed(2) + ') <<< ' : '';
+          const line = `[${new Date().toLocaleTimeString()}] ${marker}KF el=${element.name}(${element.id.slice(0,6)}) isTargeted=${isTargeted} isActive=${isActive} localAnimTime=${localT !== undefined ? localT.toFixed(2) : 'undef'} maxSeen=${(w.__maxLocalAnim[element.id]||0).toFixed(2)}\n`;
+          dbg.style.color = regressed ? '#f55' : '#0f0';
+          dbg.textContent = (line + (dbg.textContent || '')).split('\n').slice(0, 20).join('\n');
         }
       }
 
