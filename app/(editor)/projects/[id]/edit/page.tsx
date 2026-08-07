@@ -375,6 +375,30 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       image.src = imgUrl;
       await new Promise((resolve) => { image.onload = resolve; });
 
+      // The compiler's TensorFlow.js feature extraction cost scales with
+      // pixel count, not file size - a "light" (small KB) but high-resolution
+      // photo can still stall for a very long time. Tracking quality doesn't
+      // meaningfully improve past ~1024px on the longest side, so downscale
+      // before compiling for a much faster compile with no visible loss.
+      const MAX_MARKER_DIMENSION = 1024;
+      let compileImage: HTMLImageElement = image;
+      if (image.width > MAX_MARKER_DIMENSION || image.height > MAX_MARKER_DIMENSION) {
+        setPublishProgress(`Mengoptimalkan resolusi gambar (${image.width}x${image.height} terlalu besar)...`);
+        setPublishProgressPercent(18);
+
+        const scale = MAX_MARKER_DIMENSION / Math.max(image.width, image.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        const resized = new Image();
+        resized.src = canvas.toDataURL('image/jpeg', 0.92);
+        await new Promise((resolve) => { resized.onload = resolve; });
+        compileImage = resized;
+      }
+
       setPublishProgress("Kompilasi AI Marker (Bisa memakan waktu 5-15 detik)...");
       setPublishProgressPercent(20);
 
@@ -387,7 +411,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       const compiler = new (window as any).MINDAR.IMAGE.Compiler();
       const compileTimeoutMs = 90000;
       await Promise.race([
-        compiler.compileImageTargets([image], (progress: number) => {
+        compiler.compileImageTargets([compileImage], (progress: number) => {
            setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
            // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
            setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
