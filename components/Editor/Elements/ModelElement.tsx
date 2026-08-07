@@ -277,11 +277,24 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   useEffect(() => {
     if (!actions) return;
 
+    // previewAnimationData is one global value shared by every model in the
+    // scene - any "Mainkan Animasi Model 3D" action anywhere that happens to
+    // (still) target this element can hijack it, even from an unrelated
+    // object's click. During simulation, an element already under exclusive
+    // control of a Sakelar Aksi (edu-panel custom trigger) should only be
+    // movable via that trigger - so ignore previewAnimationData requests for
+    // it entirely, regardless of who fired them.
+    const storeState = useEditorStore.getState();
+    const isClaimedBySakelarAksi = storeState.isSimulating && storeState.elements.some(el =>
+      el.type === 'edu_panel' && el.eduCustomTriggers?.some((t: any) => t.targetElementId === element.id)
+    );
+
     // Determine which animation to play
     let animToPlay = null;
 
-    // Priority 1: previewAnim (from clicking Play in panel or Logic Node)
-    if (previewAnim && previewAnim.targetId === element.id) {
+    // Priority 1: previewAnim (from clicking Play in panel or Logic Node) -
+    // skipped when a Sakelar Aksi trigger already owns this element's motion.
+    if (!isClaimedBySakelarAksi && previewAnim && previewAnim.targetId === element.id) {
       animToPlay = previewAnim.animationName;
     }
     // Priority 2: Autoplay animation set by user
