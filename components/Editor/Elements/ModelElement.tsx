@@ -302,6 +302,18 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
       animToPlay = element.autoplayAnimation;
     }
 
+    if (typeof document !== 'undefined' && storeState.isSimulating) {
+      let dbg = document.getElementById('__ardebug');
+      if (!dbg) {
+        dbg = document.createElement('div');
+        dbg.id = '__ardebug';
+        dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(0,0,0,0.85);color:#0f0;font-size:9px;padding:4px;white-space:pre-wrap;font-family:monospace;max-height:35vh;overflow:auto;';
+        document.body.appendChild(dbg);
+      }
+      const line = `[${new Date().toLocaleTimeString()}] el=${element.name}(${element.id.slice(0,6)}) previewAnim.targetId=${previewAnim?.targetId?.slice(0,6) ?? 'null'} previewAnim.anim=${previewAnim?.animationName ?? 'null'} isClaimed=${isClaimedBySakelarAksi} autoplayAnim=${element.autoplayAnimation ?? 'null'} animToPlay=${animToPlay ?? 'null'}\n`;
+      dbg.textContent = (line + (dbg.textContent || '')).split('\n').slice(0, 15).join('\n');
+    }
+
     // previewAnimationData is a single global value shared by every model in
     // the scene, so any click that (re-)requests the exact same clip on this
     // same element - e.g. a stray "Mainkan Animasi Model 3D" action left on an
