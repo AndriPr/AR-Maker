@@ -131,10 +131,10 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
         if (group.userData.localAnimTime === undefined) {
           group.userData.localAnimTime = 0;
         }
-        
+
         const maxTime = Math.max(...element.keyframes.map((k: any) => k.time));
         const animSpeed = 1.0; // Frames per second equivalent
-        
+
         if (isActive && group.userData.localAnimTime < maxTime) {
           group.userData.localAnimTime = Math.min(maxTime, group.userData.localAnimTime + delta * animSpeed * 10); // scale speed to timeline format (fps)
         } else if (!isActive && group.userData.localAnimTime > 0) {

@@ -272,9 +272,33 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
   }, [scene, element.id, element.availableMaterials, updateElement]);
 
   const { actions, mixer } = useAnimations(animations, groupRef);
+  const lastAppliedAnimRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!actions) return;
+
+    // Determine which animation to play
+    let animToPlay = null;
+
+    // Priority 1: previewAnim (from clicking Play in panel or Logic Node)
+    if (previewAnim && previewAnim.targetId === element.id) {
+      animToPlay = previewAnim.animationName;
+    }
+    // Priority 2: Autoplay animation set by user
+    else if (element.autoplayAnimation) {
+      animToPlay = element.autoplayAnimation;
+    }
+
+    // previewAnimationData is a single global value shared by every model in
+    // the scene, so any click that (re-)requests the exact same clip on this
+    // same element - e.g. a stray "Mainkan Animasi Model 3D" action left on an
+    // unrelated hotspot, still targeting this model - would otherwise restart
+    // this clip from frame 0 every time, fighting whatever else controls this
+    // model's pose (like a keyframe/trigger-driven toggle). Skip the reset if
+    // nothing about the request actually changed.
+    const signature = animToPlay ? `${animToPlay}|${element.animationLoopMode}|${element.animationSpeed}` : null;
+    if (signature === lastAppliedAnimRef.current) return;
+    lastAppliedAnimRef.current = signature;
 
     // Reset all actions first
     Object.values(actions).forEach(action => {
@@ -283,18 +307,6 @@ export function ModelElement({ element, mode }: { element: any, mode: 'translate
         action.reset();
       }
     });
-
-    // Determine which animation to play
-    let animToPlay = null;
-    
-    // Priority 1: previewAnim (from clicking Play in panel or Logic Node)
-    if (previewAnim && previewAnim.targetId === element.id) {
-      animToPlay = previewAnim.animationName;
-    } 
-    // Priority 2: Autoplay animation set by user
-    else if (element.autoplayAnimation) {
-      animToPlay = element.autoplayAnimation;
-    }
 
     if (animToPlay) {
       const applySettings = (action: THREE.AnimationAction) => {
