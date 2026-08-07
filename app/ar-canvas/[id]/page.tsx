@@ -264,6 +264,18 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
           <p className="text-gray-400 text-sm max-w-xs mb-8">
             Tekan tombol Start AR di bawah untuk mengaktifkan kamera dan memulai pengalaman WebXR.
           </p>
+          
+          {!mapId && (
+            <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl text-xs max-w-xs mb-4">
+              <strong>Peringatan:</strong> Map ID belum disetel. Tombol Start AR tidak akan muncul. Silakan atur Map ID (VPS) di Editor.
+            </div>
+          )}
+
+          {/* Pastikan tombol bawaan MultiSet selalu di atas segalanya */}
+          <style dangerouslySetInnerHTML={{__html: `
+            button, #ARButton { z-index: 99999 !important; }
+          `}} />
+          
           {/* Note: MultiSet automatically injects the Start AR button here with absolute positioning */}
         </div>
       )}
