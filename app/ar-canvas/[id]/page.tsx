@@ -19,9 +19,9 @@ import { ARUserInterface } from '@/components/Editor/Simulator/ARUserInterface';
 if (typeof navigator !== 'undefined' && navigator.xr) {
   const originalAdd = (navigator.xr as any).addEventListener;
   if (originalAdd) {
-    (navigator.xr as any).addEventListener = function() {
+    (navigator.xr as any).addEventListener = function(...args: any[]) {
       try {
-        originalAdd.apply(this, arguments);
+        originalAdd.apply(navigator.xr, args);
       } catch (e) {
         console.warn("Ignored WebXR Viewer event listener error:", e);
       }
@@ -70,11 +70,9 @@ function VPSManager({
           confidenceCheck: true,
           confidenceThreshold: 0.5,
           onSessionStart: () => {
-            gl.domElement.style.display = 'none';
             setIsArActive(true);
           },
           onSessionEnd: () => {
-            gl.domElement.style.display = 'block';
             setIsArActive(false);
           },
           onObjectTrackingSuccess: (result: any) => {
@@ -281,6 +279,23 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
           <style dangerouslySetInnerHTML={{__html: `
             button, #ARButton { z-index: 99999 !important; }
           `}} />
+          
+          {/* Custom Force Start Button to Debug Silent Failures */}
+          <button 
+            onClick={async () => {
+              try {
+                if (!navigator.xr) throw new Error("WebXR tidak tersedia");
+                const session = await navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local'] });
+                alert("Sesi berhasil dipaksa mulai! Jika 3D belum muncul, berarti MultiSet belum mengikat sesi ini.");
+                session.end();
+              } catch(e: any) {
+                alert("WebXR Asli Error (Browser Menolak): " + (e.message || e));
+              }
+            }}
+            className="mt-6 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg z-[99999]"
+          >
+            Diagnosa WebXR Browser (Klik Ini)
+          </button>
           
           {/* Note: MultiSet automatically injects the Start AR button here with absolute positioning */}
         </div>
