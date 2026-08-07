@@ -44,6 +44,7 @@ function VPSManager({
 
     let isMounted = true;
     let adapter: any = null;
+    let currentSessionManager: any = null;
 
     const initVPS = async () => {
       try {
@@ -83,24 +84,27 @@ function VPSManager({
           },
           onError: (err: any) => {
             console.error('VPS Error:', err);
-            alert(`Gagal memulai sesi AR. Kemungkinan besar karena: \n1. Map ID sedang dalam proses "Uploading" (0 MB) di MultiSet. Harap tunggu sampai selesai. \n2. Error: ${err.message || err}`);
           }
         });
+        
+        currentSessionManager = session;
 
         adapter = new ThreeAdapter({
           session,
           renderer: gl,
           scene,
           camera: camera as THREE.PerspectiveCamera,
-          showObjectMeshes: false, // Dimatikan karena mesh VPS seringkali terlalu berat dan menyebabkan WebGL crash (layar hitam) di HP
+          showObjectMeshes: false,
+          useDefaultButton: false, // MATIKAN TOMBOL BAWAAN MULTISET
         });
         
-        // Render tombol "START AR" bawaan MultiSet
-        adapter.initialize(); 
+        adapter.initialize();
+        
+        // Simpan adapter ke state global agar bisa dipanggil oleh tombol kustom kita
+        (window as any).multisetAdapter = adapter; 
 
       } catch (err: any) {
         console.error("Failed to init VPS:", err);
-        alert(`Koneksi ke MultiSet gagal: ${err.message || err}. Pastikan Map ID sudah selesai diproses (tidak Uploading).`);
       }
     };
 
@@ -275,29 +279,30 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
             </div>
           )}
 
-          {/* Pastikan tombol bawaan MultiSet selalu di atas segalanya */}
-          <style dangerouslySetInnerHTML={{__html: `
-            button, #ARButton { z-index: 99999 !important; }
-          `}} />
-          
-          {/* Custom Force Start Button to Debug Silent Failures */}
+          {/* Custom Centered Start AR Button */}
           <button 
             onClick={async () => {
               try {
-                if (!navigator.xr) throw new Error("WebXR tidak tersedia");
-                const session = await navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local'] });
-                alert("Sesi berhasil dipaksa mulai! Jika 3D belum muncul, berarti MultiSet belum mengikat sesi ini.");
-                session.end();
+                const adapter = (window as any).multisetAdapter;
+                if (!adapter) {
+                  alert("Sistem AR sedang dimuat atau Map ID Anda masih 'Uploading' di server MultiSet. Harap tunggu sebentar.");
+                  return;
+                }
+                
+                // Gunakan fungsi bawaan adapter untuk memulai sesi
+                await adapter.startSession();
               } catch(e: any) {
-                alert("WebXR Asli Error (Browser Menolak): " + (e.message || e));
+                alert("Gagal masuk ke kamera AR: " + (e.message || e) + "\n\nPastikan Anda memakai WebXR Viewer, dan Map ID Anda bukan 0 MB.");
               }
             }}
-            className="mt-6 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg z-[99999]"
+            className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-full text-lg font-bold shadow-[0_0_20px_rgba(0,162,233,0.5)] z-[99999] transform transition-transform hover:scale-105 active:scale-95"
           >
-            Diagnosa WebXR Browser (Klik Ini)
+            MULAI KAMERA AR
           </button>
           
-          {/* Note: MultiSet automatically injects the Start AR button here with absolute positioning */}
+          <p className="mt-4 text-xs text-gray-500 max-w-xs">
+            Pastikan Object Tracking Anda di dashboard MultiSet sudah selesai diproses (bukan "Uploading" / 0 MB).
+          </p>
         </div>
       )}
 
