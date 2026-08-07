@@ -12,6 +12,8 @@ import * as THREE from 'three';
 import { MultisetClient, XRSessionManager } from '@multisetai/vps/core';
 import { ThreeAdapter } from '@multisetai/vps/three';
 
+import { ARUserInterface } from '@/components/Editor/Simulator/ARUserInterface';
+
 // HACK: WebXR Viewer di iOS melempar error jika addEventListener dipanggil sebelum session dimulai.
 if (typeof navigator !== 'undefined' && navigator.xr) {
   const originalAdd = (navigator.xr as any).addEventListener;
@@ -86,7 +88,7 @@ function VPSManager({
           renderer: gl,
           scene,
           camera: camera as THREE.PerspectiveCamera,
-          showObjectMeshes: true, // Tampilkan mesh outline agar user tahu object mana yg dilacak
+          showObjectMeshes: false, // Dimatikan karena mesh VPS seringkali terlalu berat dan menyebabkan WebGL crash (layar hitam) di HP
         });
         
         // Render tombol "START AR" bawaan MultiSet
@@ -247,17 +249,8 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         </div>
       )}
       
-      {/* UI React Murni untuk Edu Panel */}
-      <div className="absolute top-4 left-4 z-50 text-white p-4 bg-black/50 rounded-xl pointer-events-none border border-white/10">
-        <h2 className="font-bold text-xl mb-1">{project.title}</h2>
-        {isArActive ? (
-          <p className="text-xs text-green-400 font-medium">MultiSet AR Active</p>
-        ) : (
-          <p className="text-xs text-yellow-400 font-medium">MultiSet AR Idle</p>
-        )}
-        <p className="text-[10px] text-gray-400 mt-2">Client ID: {clientId?.substring(0, 8)}...</p>
-        <p className="text-[10px] text-gray-400">Map ID: {mapId || 'Belum disetel'}</p>
-      </div>
+      {/* AR Simulator UI Overlay */}
+      <ARUserInterface />
 
       <Canvas>
         <Bvh firstHitOnly>
