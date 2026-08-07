@@ -62,7 +62,7 @@ function VPSManager({
 
         if (!isMounted) return;
 
-        const overlayElement = document.getElementById('ar-ui-overlay') || document.body;
+        const overlayElement = document.getElementById('webxr-root') || document.body;
         
         const session = new XRSessionManager(gl.getContext() as WebGL2RenderingContext, {
           client,
@@ -216,7 +216,7 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
   };
 
   return (
-    <div className="w-full h-screen bg-gray-900 relative">
+    <div id="webxr-root" className="w-full h-screen bg-gray-900 relative">
       {!isXrSupported && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-[60] w-11/12 max-w-sm pointer-events-auto">
           <div className="bg-red-500/90 backdrop-blur-md text-white text-xs text-center p-3 rounded-lg border border-red-400 shadow-lg">
@@ -306,9 +306,9 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         </div>
       )}
 
-      {/* AR Simulator UI Overlay - Only show when AR is active */}
-      <div id="ar-ui-overlay" className="absolute inset-0 pointer-events-none z-[50]">
-        {isArActive && <ARUserInterface />}
+      {/* AR Simulator UI Overlay - Selalu di-render agar terbaca DOM Overlay, tapi disembunyikan via CSS jika belum aktif */}
+      <div id="ar-ui-overlay" className={`absolute inset-0 pointer-events-none z-[50] ${isArActive ? 'opacity-100 visible' : 'opacity-0 invisible'} transition-opacity duration-300`}>
+        <ARUserInterface />
       </div>
 
       <Canvas>
