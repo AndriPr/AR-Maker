@@ -2,10 +2,11 @@
 
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { RecursiveNode } from '@/components/Editor/Elements/RecursiveNode';
 import { useEditorStore } from '@/lib/store';
-import { Bvh } from '@react-three/drei';
+import { Bvh, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Import MultiSet AI SDK
@@ -249,8 +250,26 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         </div>
       )}
       
-      {/* AR Simulator UI Overlay */}
-      <ARUserInterface />
+      {/* Landing Page UI before AR starts */}
+      {!isArActive && isXrSupported && (
+        <div className="absolute inset-0 bg-[#0a0a0c] z-[40] flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-20 h-20 mb-6 bg-gradient-to-br from-pln-blue to-purple-600 rounded-3xl shadow-[0_0_40px_rgba(0,162,233,0.3)] flex items-center justify-center animate-pulse">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2">{project.title}</h1>
+          <p className="text-gray-400 text-sm max-w-xs mb-8">
+            Tekan tombol Start AR di bawah untuk mengaktifkan kamera dan memulai pengalaman WebXR.
+          </p>
+          {/* Note: MultiSet automatically injects the Start AR button here with absolute positioning */}
+        </div>
+      )}
+
+      {/* AR Simulator UI Overlay - Only show when AR is active */}
+      {isArActive && <ARUserInterface />}
 
       <Canvas>
         <Bvh firstHitOnly>
@@ -258,8 +277,13 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
           <VPSManager mapId={mapId} setIsArActive={setIsArActive} />
         )}
         
-        <ambientLight intensity={1} />
-        <directionalLight position={[1, 2, 1]} intensity={1.5} />
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[2, 5, 2]} intensity={2} castShadow />
+        <directionalLight position={[-2, 3, -2]} intensity={0.5} />
+        
+        <Suspense fallback={null}>
+          <Environment preset="city" />
+        </Suspense>
         
         {/* Konten 3D - ThreeAdapter dari MultiSet akan otomatis menyesuaikan ruang origin (0,0,0) agar pas dengan objek di dunia nyata */}
         <group position={[0, 0, 0]}> 
