@@ -1,98 +1,20 @@
 "use client";
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 
 export default function ARViewer({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const router = useRouter();
-  const [project, setProject] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('ar_projects')
-          .select('*')
-          .eq('id', unwrappedParams.id)
-          .single();
-
-        if (error) throw error;
-        if (!data) throw new Error("Proyek tidak ditemukan.");
-        
-        setProject(data);
-        
-        // Redirect to WebXR VPS (MultiSet Engine) if NOT image tracking
-        if (data.tracking_type !== 'image_tracking') {
-          router.replace(`/ar-canvas/${unwrappedParams.id}`);
-        }
-      } catch (err: any) {
-        setError(err.message);
-      }
-    };
-
-    fetchProject();
+    router.replace(`/ar-canvas/${unwrappedParams.id}`);
   }, [unwrappedParams.id, router]);
 
-  if (error) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4 text-center">
-        <p className="text-red-400 mb-4">{error}</p>
-        <Link href="/" className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Kembali ke Dashboard</Link>
-      </div>
-    );
-  }
-
-  if (!project) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p>Memuat Pengalaman AR...</p>
-      </div>
-    );
-  }
-  
-  // If not image_tracking, we are already redirecting, so just show a loading state
-  if (project.tracking_type !== 'image_tracking') {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p>Mengalihkan ke AR Canvas murni...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-[100dvh] w-screen overflow-hidden bg-black relative flex flex-col">
-      {/* UI Overlay */}
-      <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none pt-[env(safe-area-inset-top)]">
-        <div className="flex gap-2 items-center pointer-events-auto">
-           <Link href={`/projects/${project.id}/edit`} className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-colors border border-gray-700">
-             <ArrowLeft size={16} />
-           </Link>
-           <div className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-full font-medium text-sm border border-gray-700 line-clamp-1 max-w-[150px]">
-             {project.title}
-           </div>
-        </div>
-        <div className="bg-blue-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-blue-900/50 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-          AR Active
-        </div>
-      </div>
-
-      {/* AR Container using real URL iframe to fix iOS Camera Permissions */}
-      <div className="w-full flex-1">
-         <iframe 
-           src={`/api/ar/${project.id}`} 
-           allow="camera; gyroscope; accelerometer; magnetometer; display-capture; xr-spatial-tracking"
-           className="w-full h-full border-none"
-           title="AR Experience"
-         />
-      </div>
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p>Mengalihkan ke AR Canvas WebXR...</p>
     </div>
   );
 }
