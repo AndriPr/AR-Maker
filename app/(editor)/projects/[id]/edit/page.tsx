@@ -379,12 +379,24 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgressPercent(20);
 
       // 3. Compile the image
+      // The compiler can genuinely hang (e.g. its Web Worker fails to load,
+      // or TensorFlow.js never finishes its first-run WebGL warmup) with no
+      // error thrown - it just sits at the last percent reported forever.
+      // Race it against a hard timeout so a stuck compile fails loudly
+      // instead of leaving the user staring at a frozen progress bar.
       const compiler = new (window as any).MINDAR.IMAGE.Compiler();
-      await compiler.compileImageTargets([image], (progress: number) => {
-         setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
-         // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
-         setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
-      });
+      const compileTimeoutMs = 90000;
+      await Promise.race([
+        compiler.compileImageTargets([image], (progress: number) => {
+           setPublishProgress(`Kompilasi Marker: ${Math.round(progress)}%`);
+           // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
+           setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
+        }),
+        new Promise((_, reject) => setTimeout(
+          () => reject(new Error(`Kompilasi marker timeout setelah ${compileTimeoutMs / 1000} detik. Coba gunakan gambar target dengan resolusi lebih kecil, atau reload halaman dan coba lagi.`)),
+          compileTimeoutMs
+        )),
+      ]);
       const exportedBuffer = await compiler.exportData();
 
       setPublishProgress("Mengunggah file AR ke server...");

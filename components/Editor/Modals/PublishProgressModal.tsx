@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Rocket } from 'lucide-react';
 
 interface PublishProgressModalProps {
@@ -8,6 +8,8 @@ interface PublishProgressModalProps {
   percent: number;
   startedAt: number | null;
 }
+
+const STALL_THRESHOLD_MS = 8000;
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
@@ -27,11 +29,25 @@ export function PublishProgressModal({ step, percent, startedAt }: PublishProgre
     return () => clearInterval(id);
   }, []);
 
+  // Track when percent last actually moved. The AI marker compile step can
+  // sit at the same percent for a long stretch (e.g. TensorFlow.js "cold
+  // start" on first run, or a slow device) - an ETA derived from average
+  // pace-so-far balloons upward the whole time it's stuck, which reads as
+  // broken rather than "still working". Detect the stall and say so instead.
+  const lastPercentRef = useRef(percent);
+  const lastChangeAtRef = useRef(Date.now());
+  if (percent !== lastPercentRef.current) {
+    lastPercentRef.current = percent;
+    lastChangeAtRef.current = Date.now();
+  }
+  const stalledMs = now - lastChangeAtRef.current;
+  const isStalled = percent < 100 && stalledMs > STALL_THRESHOLD_MS;
+
   const elapsedMs = startedAt ? now - startedAt : 0;
   const clampedPercent = Math.min(100, Math.max(0, percent));
   // Estimate remaining time from the average pace so far. Too noisy to trust
-  // in the first couple of percent, so show "Menghitung..." until then.
-  const etaMs = clampedPercent > 3 ? (elapsedMs / clampedPercent) * (100 - clampedPercent) : null;
+  // in the first couple of percent, and misleading once stalled.
+  const etaMs = !isStalled && clampedPercent > 3 ? (elapsedMs / clampedPercent) * (100 - clampedPercent) : null;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
@@ -57,9 +73,11 @@ export function PublishProgressModal({ step, percent, startedAt }: PublishProgre
           </div>
 
           <p className="text-xs text-gray-500 text-center">
-            {etaMs !== null
-              ? <>Estimasi selesai dalam <span className="text-gray-300 font-medium">{formatDuration(etaMs)}</span></>
-              : 'Menghitung estimasi waktu...'}
+            {isStalled
+              ? <span className="text-amber-400">Proses berjalan lebih lama dari perkiraan, masih memproses - mohon tunggu...</span>
+              : etaMs !== null
+                ? <>Estimasi selesai dalam <span className="text-gray-300 font-medium">{formatDuration(etaMs)}</span></>
+                : 'Menghitung estimasi waktu...'}
           </p>
           <p className="text-[10px] text-gray-600 text-center mt-3">
             Jangan tutup atau refresh halaman ini sampai proses selesai.
