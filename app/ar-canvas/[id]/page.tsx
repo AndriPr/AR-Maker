@@ -161,6 +161,8 @@ export default function ARCanvas({ params }: { params: Promise<{ id: string }> }
         .single();
       if (data) {
         setProject(data);
+        console.log("MENGIRIM TRACK VIEW UNTUK ID:", unwrappedParams.id);
+        fetch(`/api/ar/${unwrappedParams.id}/track-view`, { method: 'POST' });
         if (data.scene_data && data.scene_data.multiset_map_id) {
           setMapId(data.scene_data.multiset_map_id);
         }

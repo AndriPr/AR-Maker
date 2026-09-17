@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Store, DownloadCloud, Loader2, CheckCircle2, Box } from 'lucide-react';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 
 const MOCK_MARKET_ASSETS = [
   {
@@ -136,6 +137,7 @@ const MOCK_MARKET_ASSETS = [
 ];
 
 export default function MarketPage() {
+  const { activeWorkspace } = useWorkspace();
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importedIds, setImportedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -149,6 +151,7 @@ export default function MarketPage() {
       // Insert ke asset library
       const { error } = await supabase.from('assets').insert({
         user_id: session.user.id,
+        workspace_id: activeWorkspace?.id ?? null,
         name: asset.name,
         type: '3d_model',
         file_url: asset.url,
