@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Image, Box, Eye, Edit3, Trash2, QrCode, Link as LinkIcon, Copy, Folder, Check, FolderInput, MoreVertical } from 'lucide-react';
+import { Eye, Edit3, Trash2, QrCode, Link as LinkIcon, Copy, Folder, Check, FolderInput, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
+
+const cardClass = "h-full bg-white border border-blue-100/60 rounded-3xl overflow-hidden shadow-[0_0_20px_1px_rgba(0,92,154,0.10)] hover:shadow-[0_0_25px_2px_rgba(0,92,154,0.18)] transition-shadow group flex flex-col min-h-[250px] relative";
 
 export function ProjectCard({ id, title, type, date, status, views, icon, targetImageUrl, folderName, onRename, onDuplicate, onDelete, onShowQR, isSelected, onToggleSelect, onMove, activeRole }: any) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isPublished = status === 'Published';
 
   const handleCopyLink = (e: any) => {
     e.preventDefault();
@@ -17,17 +20,16 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
 
   const CardInner = (
     <>
-      <div 
-        className="h-32 bg-gray-100 relative group-hover:bg-gray-200 transition-colors flex items-center justify-center bg-cover bg-center"
+      <div
+        className="h-36 bg-gray-100 relative transition-colors flex items-center justify-center bg-cover bg-center"
         style={targetImageUrl ? { backgroundImage: `url(${targetImageUrl})` } : {}}
       >
-        {targetImageUrl && <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>}
-        
         <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm ${status === 'Published' ? 'bg-pln-blue text-white' : 'bg-black/50 text-white backdrop-blur-sm'}`}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-sm text-[9px] font-bold uppercase tracking-wide text-gray-700 shadow-sm">
+            {isPublished && <span className="w-1.5 h-1.5 rounded-full bg-pln-yellow" />}
             {status}
           </span>
-          <div 
+          <div
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(); }}
             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-pln-blue border-pln-blue text-white shadow-md scale-110' : 'bg-white/90 border-gray-300 text-transparent hover:border-pln-blue opacity-0 group-hover:opacity-100 shadow-sm'}`}
           >
@@ -35,58 +37,56 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
           </div>
         </div>
 
-        <div className="absolute top-3 right-3 z-20">
-          <button 
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} 
-            className={`p-1.5 rounded-lg shadow-sm transition-colors ${isMenuOpen || targetImageUrl ? 'bg-white/90 text-gray-700 hover:text-pln-blue' : 'bg-white/90 text-gray-400 hover:text-pln-blue opacity-0 group-hover:opacity-100'}`}
-            title="Menu Opsi"
-          >
-            <MoreVertical size={18} />
-          </button>
-        </div>
-        
         {!targetImageUrl && icon}
       </div>
-    
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-bold text-gray-900 line-clamp-1 mb-1">{title}</h3>
+
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="text-lg font-bold text-gray-900 leading-snug line-clamp-2">{title}</h3>
 
         {folderName && folderName !== 'Personal' && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md line-clamp-1 border border-gray-100 w-fit mb-2">
+          <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100 w-fit mt-1.5">
             <Folder size={10} /> {folderName}
           </span>
         )}
 
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-xs text-gray-400">Dibuat: {date}</span>
-          <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
+        <p className="text-[11px] text-gray-500 mt-1.5">Dibuat {date}</p>
+
+        <div className="mt-auto pt-4 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
             <Eye size={14} />
             {views || 0} views
           </div>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
+            className={`p-1.5 -mr-1.5 rounded-lg transition-colors ${isMenuOpen ? 'bg-gray-100 text-pln-blue' : 'text-gray-400 hover:text-pln-blue hover:bg-gray-50'}`}
+            title="Menu Opsi"
+          >
+            <MoreVertical size={16} />
+          </button>
         </div>
       </div>
     </>
   );
 
   return (
-    <motion.div 
-      className="relative group"
+    <motion.div
+      className="relative group h-full"
       whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {activeRole === 'viewer' ? (
-        <div className="bg-white border border-blue-100/60 rounded-3xl overflow-hidden shadow-[0_0_20px_1px_rgba(0,92,154,0.10)] hover:shadow-[0_0_25px_2px_rgba(0,92,154,0.18)] transition-shadow group flex flex-col min-h-[250px] relative">
+        <div className={cardClass}>
           {CardInner}
         </div>
       ) : (
-        <Link href={`/projects/${id}/edit`} className="bg-white border border-blue-100/60 rounded-3xl overflow-hidden shadow-[0_0_20px_1px_rgba(0,92,154,0.10)] hover:shadow-[0_0_25px_2px_rgba(0,92,154,0.18)] transition-shadow group flex flex-col min-h-[250px] cursor-pointer relative">
+        <Link href={`/projects/${id}/edit`} className={`${cardClass} cursor-pointer`}>
           {CardInner}
         </Link>
       )}
 
       {/* Dropdown Menu */}
       {isMenuOpen && (
-        <div className="absolute top-12 right-3 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-30 transform origin-top-right transition-all">
+        <div className="absolute bottom-12 right-3 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-30 transform origin-bottom-right transition-all">
           {activeRole !== 'viewer' && (
             <>
               <button
@@ -109,7 +109,7 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
               </button>
             </>
           )}
-          {status === 'Published' && (
+          {isPublished && (
             <>
               <button
                 onClick={handleCopyLink}
@@ -138,10 +138,10 @@ export function ProjectCard({ id, title, type, date, status, views, icon, target
           )}
         </div>
       )}
-      
+
       {/* Invisible overlay to close menu when clicking outside */}
       {isMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-20"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMenuOpen(false); }}
         ></div>

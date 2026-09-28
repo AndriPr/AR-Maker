@@ -1,11 +1,12 @@
 "use client";
 
-import { Bell, Menu, X, Check, Moon, Sun, User as UserIcon, Shield, Key, Settings2, LogOut, ChevronRight, Building2, UserCircle } from 'lucide-react';
+import { Bell, Menu, X, Check, Moon, Sun, Search, User as UserIcon, Shield, Key, Settings2, LogOut, ChevronRight, Building2, UserCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from 'next-themes';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useDashboardStore } from '@/lib/dashboardStore';
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -20,6 +21,9 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [mounted, setMounted] = useState(false);
   const { activeWorkspace, activeRole } = useWorkspace();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchQuery = useDashboardStore((s) => s.searchQuery);
+  const setSearchQuery = useDashboardStore((s) => s.setSearchQuery);
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +103,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
   return (
-    <header className="flex items-center justify-between bg-white px-4 sm:px-8 py-4 mb-4 sm:mb-6 sticky top-0 z-30 border-b border-gray-50 shadow-sm">
+    <header className="flex items-center justify-between gap-4 bg-gray-50/80 backdrop-blur-md px-4 sm:px-8 py-4 mb-2 sm:mb-4 sticky top-0 z-30">
       <div className="flex items-center flex-1 gap-2 sm:gap-4 max-w-2xl">
         <button 
           onClick={onMenuClick}
@@ -107,20 +111,22 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu size={24} />
         </button>
-        {/* Global search removed as requested */}
+        {pathname === '/' && (
+          <div className="relative w-full max-w-sm">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search ..."
+              className="w-full bg-gray-200/70 focus:bg-white rounded-full pl-11 pr-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-pln-blue/20 transition-colors"
+            />
+          </div>
+        )}
       </div>
       
-      <div className="flex items-center gap-2 sm:gap-6">
+      <div className="flex items-center gap-1 sm:gap-3">
         
-        {mounted && (
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hidden sm:block"
-          >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-        )}
-
         <div className="relative">
           <button 
             onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
@@ -160,17 +166,23 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         )}
         </div>
         
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hidden sm:block"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+        )}
+
         <div className="relative">
           <div 
             onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
-            className={`flex items-center gap-3 sm:border-l sm:border-gray-100 sm:pl-6 cursor-pointer group p-1.5 pr-3 rounded-full transition-colors ${isProfileOpen ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+            className="cursor-pointer"
+            title={`${profileName} · ${displayRole}`}
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 group-hover:bg-pln-blue transition-colors text-pln-yellow flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 shadow-sm">
+            <div className={`w-9 h-9 rounded-full border-[1.5px] border-pln-blue text-pln-blue flex items-center justify-center font-semibold text-xs shrink-0 transition-colors ${isProfileOpen ? 'bg-blue-50' : 'bg-white hover:bg-blue-50'}`}>
               {profileName.substring(0,2).toUpperCase()}
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-bold text-gray-900 leading-tight">{profileName}</p>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">{displayRole}</p>
             </div>
           </div>
 
