@@ -205,46 +205,38 @@ export function LeftPanelExpanded({
           animate={{ x: 0 }}
           exit={{ x: '-100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="pointer-events-auto absolute top-14 bottom-0 left-12 z-20 w-64 bg-[#202227] border-r border-[#2b2d31] flex flex-col shrink-0 shadow-2xl overflow-hidden"
+          className="pointer-events-auto absolute top-14 bottom-0 left-12 z-20 w-64 bg-[#0B132B] border-r border-[#1A223A] flex flex-col shrink-0 shadow-2xl overflow-hidden"
         >
       
       {leftPanelTab === 'hierarchy' && (
         <>
           {/* Hierarchy View */}
-          <div className="flex border-b border-[#2b2d31] bg-[#1a1b1e]">
-            <button className="flex-1 py-3 text-[10px] font-bold text-white border-b-2 border-pln-blue bg-[#202227]">SCENE HIERARCHY</button>
+          <div className="flex border-b border-[#1A223A] bg-transparent px-4 py-3 justify-between items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PROJECT</span>
+            <button className="text-gray-400 hover:text-white" title="Add Element"><Plus size={14} /></button>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 bg-[#202227]">
-            <div className="p-2 space-y-0.5">
+          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 bg-transparent">
+            <div className="p-4 space-y-2">
               <div 
-                className={`flex items-center justify-between px-2 py-1.5 mt-1 rounded-sm text-xs cursor-pointer transition-colors ${
-                  (selectedId === null && multiSelectedIds.length === 0) ? 'bg-[#ff7f00] text-white font-medium' : 'text-gray-300 hover:bg-[#2b2d31]'
+                className={`flex items-center justify-between px-3 py-2 rounded-md text-xs cursor-pointer transition-colors border ${
+                  (selectedId === null && multiSelectedIds.length === 0) ? 'border-[#62E5FF] bg-[#1A223A] text-[#62E5FF]' : 'border-transparent text-gray-300 hover:bg-[#1A223A]'
                 }`}
                 onClick={() => { setSelectedId(null); setMultiSelectedIds([]); }}
               >
                 <div className="flex items-center gap-2">
-                  <ImageIcon size={12} className="shrink-0" />
+                  <ImageIcon size={14} className="shrink-0" />
                   <span className="truncate">Marker Image</span>
                 </div>
+                {(selectedId === null && multiSelectedIds.length === 0) && <Eye size={14} className="text-[#62E5FF]" />}
               </div>
               
               {/* Add Group Button */}
-              <button 
-                onClick={() => {
-                  addElement({
-                    type: 'group_folder',
-                    name: 'New Group',
-                    position: [0, 0, 0],
-                    rotation: [0, 0, 0],
-                    scale: [1, 1, 1],
-                    sceneId: currentSceneId
-                  });
-                }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-1.5 mb-2 rounded text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors"
+              <div 
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 transition-colors"
               >
-                <FolderOpen size={12} />
+                <FolderOpen size={14} className="text-gray-400" />
                 Buat Grup Baru
-              </button>
+              </div>
 
               {/* Recursive Hierarchy */}
               {(() => {
@@ -254,10 +246,10 @@ export function LeftPanelExpanded({
                   const isPrimarySelected = selectedId === el.id;
                   const isSelected = isPrimarySelected || isMultiSelected;
                   const bgClass = isPrimarySelected 
-                    ? 'bg-[#ff7f00] text-white font-medium' 
+                    ? 'border border-[#62E5FF] bg-[#1A223A] text-[#62E5FF]' 
                     : isMultiSelected 
-                      ? 'bg-[#cc4400] text-white font-medium' 
-                      : 'text-gray-300 hover:bg-[#2b2d31]';
+                      ? 'bg-[#1A223A] text-white' 
+                      : 'border-transparent text-gray-300 hover:bg-[#1A223A]';
 
                   return (
                     <div key={el.id} className="space-y-0.5 mt-0.5">
@@ -268,15 +260,15 @@ export function LeftPanelExpanded({
                         }}
                         onDragOver={(e) => {
                           e.preventDefault();
-                          e.currentTarget.classList.add('bg-[#2b2d31]');
+                          e.currentTarget.classList.add('bg-[#1A223A]');
                         }}
                         onDragLeave={(e) => {
-                          e.currentTarget.classList.remove('bg-[#2b2d31]');
+                          e.currentTarget.classList.remove('bg-[#1A223A]');
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          e.currentTarget.classList.remove('bg-[#2b2d31]');
+                          e.currentTarget.classList.remove('bg-[#1A223A]');
                           const draggedId = e.dataTransfer.getData('text/plain');
                           if (draggedId && draggedId !== el.id) {
                             if (el.type === 'group_folder') {
@@ -299,14 +291,14 @@ export function LeftPanelExpanded({
                           if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
                           setHoveredId(null);
                         }}
-                        className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-colors select-none ${bgClass}`}
-                        style={{ paddingLeft: `${0.5 + (depth * 1.0)}rem` }}
+                        className={`flex items-center justify-between px-3 py-2 mt-1 rounded-md text-xs cursor-pointer transition-colors select-none ${bgClass}`}
+                        style={{ paddingLeft: `${1 + (depth * 1.5)}rem` }}
                       >
                         <div className="flex items-center gap-2 overflow-hidden pointer-events-none">
                           {el.type === 'group_folder' ? (
-                            el.isJoint ? <Link2 size={12} className={isSelected ? "text-pln-blue" : "text-green-400"} /> : <FolderOpen size={12} className={isSelected ? "text-pln-blue" : "text-gray-400"} />
+                            el.isJoint ? <Link2 size={12} className={isSelected ? "text-[#62E5FF]" : "text-green-400"} /> : <FolderOpen size={12} className={isSelected ? "text-[#62E5FF]" : "text-gray-400"} />
                           ) : el.type === '3d_model' ? (
-                            <Box size={12} className="shrink-0" />
+                            <Box size={12} className={`shrink-0 ${isSelected ? "text-[#62E5FF]" : "text-gray-400"}`} />
                           ) : el.type === '3d_text' ? (
                             <Type size={12} className="shrink-0" />
                           ) : el.type === 'ui_button' ? (

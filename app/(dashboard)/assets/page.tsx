@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import { useDashboardStore } from '@/lib/dashboardStore';
 
 export default function AssetLibraryPage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function AssetLibraryPage() {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewModal, setPreviewModal] = useState<{ url: string, name: string, type: string } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = useDashboardStore((s) => s.searchQuery);
   const [activeCategory, setActiveCategory] = useState<'all' | '3d_model' | 'image'>('all');
   const [sortOrder, setSortOrder] = useState<'recent' | 'name' | 'size'>('recent');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -229,18 +230,7 @@ export default function AssetLibraryPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl p-4 border border-blue-100/60 shadow-[0_0_25px_2px_rgba(0,92,154,0.12)]">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari nama aset..." 
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-pln-blue outline-none"
-          />
-        </div>
-      </div>
+
 
       {loading ? (
         <div className="flex justify-center p-10 text-gray-500 font-bold">Memuat aset...</div>

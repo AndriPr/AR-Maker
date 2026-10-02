@@ -111,7 +111,6 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu size={24} />
         </button>
-        {pathname === '/' && (
           <div className="relative w-full max-w-sm">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             <input
@@ -122,7 +121,6 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               className="w-full bg-gray-200/70 focus:bg-white rounded-full pl-11 pr-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-pln-blue/20 transition-colors"
             />
           </div>
-        )}
       </div>
       
       <div className="flex items-center gap-1 sm:gap-3">
@@ -210,40 +208,14 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
                   {/* Menu Items */}
                   <div className="p-2 space-y-1">
-                    <button onClick={() => { setActiveMenu('personal'); setTempName(profileName); }} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
+                    <button onClick={() => { setIsProfileOpen(false); router.push('/account'); }} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
                       <div className="flex items-center gap-3">
                         <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
                           <UserCircle size={18} className="text-gray-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900">Personal Information</p>
-                          <p className="text-[11px] text-gray-500">Ubah nama dan info kontak</p>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
-                    </button>
-
-                    <button onClick={() => setActiveMenu('security')} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
-                          <Key size={18} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">Security & Password</p>
-                          <p className="text-[11px] text-gray-500">Ganti password (Keamanan)</p>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />
-                    </button>
-
-                    <button onClick={() => setActiveMenu('preferences')} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 text-left transition-colors group">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-lg group-hover:bg-white transition-colors">
-                          <Settings2 size={18} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">Preferences</p>
-                          <p className="text-[11px] text-gray-500">Tema dan tampilan UI</p>
+                          <p className="text-sm font-bold text-gray-900">Account Settings</p>
+                          <p className="text-[11px] text-gray-500">Manage profile, security & preferences</p>
                         </div>
                       </div>
                       <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500" />

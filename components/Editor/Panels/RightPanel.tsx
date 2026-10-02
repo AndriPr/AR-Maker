@@ -31,6 +31,8 @@ interface RightPanelProps {
   handleSave: (silent: boolean) => void;
 }
 
+export type RightPanelTab = 'properties' | 'tracking' | 'lighting';
+
 function DragInput({ label, value, onChange, status }: { label: string, value: number, onChange: (v: number) => void, status?: 'none'|'keyed'|'interpolated' }) {
   const handleDrag = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -138,6 +140,8 @@ export function RightPanel({
     setShowTimeline
   } = useEditorStore();
 
+  const [activeTab, setActiveTab] = React.useState<RightPanelTab>('properties');
+
   const selectedElement = elements.find(el => el.id === selectedId);
 
   const getKfStatus = (propName: 'position' | 'rotation' | 'scale'): ('none' | 'keyed' | 'interpolated')[] => {
@@ -174,30 +178,56 @@ export function RightPanel({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="pointer-events-auto absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#1a1b1e] border-l border-[#2b2d31] flex flex-col shrink-0 shadow-2xl overflow-hidden"
+            className="pointer-events-auto absolute top-14 bottom-0 right-0 z-20 w-[280px] bg-[#0B132B] border-l border-[#1A223A] flex flex-col shrink-0 shadow-2xl overflow-hidden"
           >
-            <div className="bg-[#202227] p-3 border-b border-[#2b2d31] text-[10px] font-bold text-gray-400 uppercase flex items-center justify-between tracking-wider">
-            PROPERTIES
-            {/* Properties Toggle */}
-            <button className="p-2 text-gray-400 hover:text-white" onClick={() => setRightPanelOpen(false)}>
-              <X size={18} />
-            </button>
-          </div>
+            <div className="bg-transparent p-3 border-b border-[#1A223A] flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-200">Inspector</span>
+              <button className="p-1 text-gray-400 hover:text-white transition-colors" onClick={() => setRightPanelOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="flex border-b border-[#1A223A] px-2 text-xs">
+              <button 
+                onClick={() => setActiveTab('properties')}
+                className={`flex-1 py-2 text-center transition-colors border-b-2 ${activeTab === 'properties' ? 'border-[#62E5FF] text-[#62E5FF]' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+              >
+                Properties
+              </button>
+              <button 
+                onClick={() => setActiveTab('tracking')}
+                className={`flex-1 py-2 text-center transition-colors border-b-2 ${activeTab === 'tracking' ? 'border-[#62E5FF] text-[#62E5FF]' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+              >
+                Tracking
+              </button>
+              <button 
+                onClick={() => setActiveTab('lighting')}
+                className={`flex-1 py-2 text-center transition-colors border-b-2 ${activeTab === 'lighting' ? 'border-[#62E5FF] text-[#62E5FF]' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+              >
+                Lighting
+              </button>
+            </div>
           
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             
             {/* Target Image Info (Shown when no element is selected) */}
-            {selectedId === null && (
-              <div className="divide-y divide-[#2b2d31]">
+            {selectedId === null && activeTab === 'properties' && (
+              <div className="divide-y divide-[#1A223A]">
                 {/* Accordion 1: Marker */}
                 <div className="p-4">
                   <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center justify-between">
-                    Target Image (Marker)
-                    <button className="text-red-400 hover:text-red-300" onClick={() => setTargetImageUrl(null)}>Clear</button>
+                    TARGET IMAGE (MARKER)
+                    <button className="text-red-400 hover:text-red-300" onClick={() => setTargetImageUrl(null)}>CLEAR</button>
                   </h3>
-                  <div className="aspect-video bg-[#0f1013] rounded border border-[#2b2d31] flex items-center justify-center overflow-hidden">
+                  <div className="aspect-video bg-[#0B132B] rounded border border-[#1A223A] flex items-center justify-center overflow-hidden relative group">
                     {targetImageUrl ? (
-                      <img src={targetImageUrl} className="w-full h-full object-cover opacity-80" />
+                      <>
+                        <img src={targetImageUrl} className="w-full h-full object-cover opacity-60" />
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-[#1A223A]/80 backdrop-blur-sm px-2 py-1 rounded border border-[#62E5FF]/30">
+                          <div className="w-2 h-2 rounded-full bg-[#62E5FF] shadow-[0_0_8px_#62E5FF]"></div>
+                          <span className="text-[10px] text-[#62E5FF] font-medium">Active Marker</span>
+                        </div>
+                      </>
                     ) : (
                       <ImageIcon size={24} className="text-gray-600" />
                     )}
@@ -205,8 +235,8 @@ export function RightPanel({
                 </div>
 
                 {/* Accordion 2: Project Settings */}
-                <div className="p-4 bg-[#202227]">
-                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">Pengaturan Proyek</h3>
+                <div className="p-4">
+                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">PROJECT SETTINGS</h3>
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] text-gray-400">Nama Folder</label>
@@ -249,12 +279,37 @@ export function RightPanel({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+            
+            {/* Tracking Tab (When no element is selected) */}
+            {selectedId === null && activeTab === 'tracking' && (
+              <div className="p-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-[10px] text-gray-400">MultiSet Map ID / Object Code</label>
+                      <input 
+                        type="text" 
+                        value={multisetMapId}
+                        onChange={(e) => {
+                          setMultisetMapId(e.target.value);
+                          handleSave(true);
+                        }}
+                        className="w-full bg-transparent border border-[#1A223A] rounded p-2 text-xs text-gray-200 outline-none focus:border-[#62E5FF] transition-colors font-mono"
+                        placeholder="c4b1a..."
+                      />
+                      <p className="text-[9px] text-gray-500">Dapatkan Map ID dari dashboard akun MultiSet AI Anda.</p>
+                    </div>
+                  </div>
+              </div>
+            )}
 
+            {/* Lighting Tab (When no element is selected) */}
+            {selectedId === null && activeTab === 'lighting' && (
+              <div className="divide-y divide-[#1A223A]">
                 {/* Accordion 3: Lighting & Environment */}
-                <div className="p-4 bg-[#202227]">
-                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <Globe size={12} className="text-pink-400" /> World Properties
-                  </h3>
+                <div className="p-4">
+                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">LIGHTING</h3>
                   <div className="space-y-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] text-gray-400 flex justify-between">
@@ -302,8 +357,8 @@ export function RightPanel({
                 </div>
 
                 {/* Accordion 4: Branding */}
-                <div className="p-4 bg-[#202227]">
-                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">White-Label Branding</h3>
+                <div className="p-4">
+                  <h3 className="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider">BRANDING</h3>
                   <div className="space-y-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] text-gray-400 flex justify-between">
@@ -360,8 +415,8 @@ export function RightPanel({
             )}
 
             {/* Element Properties */}
-            {selectedElement && (
-              <div className="divide-y divide-[#2b2d31]">
+            {selectedElement && activeTab === 'properties' && (
+              <div className="divide-y divide-[#1A223A]">
                 {/* Header and Name */}
                 <div className="p-4">
                   <h3 className="text-xs font-bold text-gray-300 mb-3 flex items-center justify-between">
@@ -369,8 +424,8 @@ export function RightPanel({
                      selectedElement.type === '3d_text' ? '3D Text' : 
                      selectedElement.type === 'edu_panel' ? 'Edu Dashboard' : 'UI Button'}
                     <div className="flex gap-2">
-                      <button className="text-blue-400 text-[10px] hover:text-blue-300 flex items-center gap-1 bg-[#1a1b1e] px-2 py-1 rounded border border-[#2b2d31]" onClick={() => duplicateElement(selectedElement.id)}><Copy size={10}/> Duplikat</button>
-                      <button className="text-red-400 text-[10px] hover:text-red-300 flex items-center gap-1 bg-[#1a1b1e] px-2 py-1 rounded border border-[#2b2d31]" onClick={() => {
+                      <button className="text-blue-400 text-[10px] hover:text-blue-300 flex items-center gap-1 bg-transparent px-2 py-1 rounded border border-[#1A223A]" onClick={() => duplicateElement(selectedElement.id)}><Copy size={10}/> Duplikat</button>
+                      <button className="text-red-400 text-[10px] hover:text-red-300 flex items-center gap-1 bg-transparent px-2 py-1 rounded border border-[#1A223A]" onClick={() => {
                         const toDelete = [...multiSelectedIds];
                         if (selectedElement.id && !toDelete.includes(selectedElement.id)) {
                           toDelete.push(selectedElement.id);

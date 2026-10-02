@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Layers, Loader2, Save, QrCode, Play, Rocket, Settings, Download, Globe, Box, Magnet } from 'lucide-react';
+import { ArrowLeft, Layers, Loader2, Save, QrCode, Play, Rocket, Settings, Download, Globe, Box, Magnet, Undo2, Redo2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEditorStore } from '@/lib/store';
 
@@ -50,16 +50,16 @@ export function EditorHeader({
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-      className="absolute top-0 left-0 right-0 bg-[#1a1b1e] border-b border-[#2b2d31] flex items-center justify-between px-4 shrink-0 z-50 h-14 shadow-md"
+      className="absolute top-0 left-0 right-0 bg-[#0B132B] border-b border-[#1A223A] flex items-center justify-between px-4 shrink-0 z-50 h-14 shadow-md"
     >
       <div className="flex items-center gap-4">
-        <Link href="/" className="text-gray-400 hover:text-white transition-colors bg-[#2b2d31] hover:bg-[#36393f] p-1.5 rounded-md">
+        <Link href="/" className="text-gray-400 hover:text-white transition-colors hover:bg-[#1A223A] p-1.5 rounded-md">
           <ArrowLeft size={18} />
         </Link>
         
         <button 
           onClick={() => setLeftPanelOpen(!isLeftPanelOpen)} 
-          className="md:hidden p-1.5 text-gray-400 hover:text-white bg-[#2b2d31] rounded-md transition-colors"
+          className="md:hidden p-1.5 text-gray-400 hover:text-white bg-[#1A223A] rounded-md transition-colors"
         >
           <Layers size={18} />
         </button>
@@ -74,16 +74,7 @@ export function EditorHeader({
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
-        {/* Undo/Redo */}
-        <div className="hidden sm:flex bg-[#2b2d31] rounded-md overflow-hidden border border-[#36393f]">
-          <button onClick={() => undo()} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Undo"><ArrowLeft size={16} /></button>
-          <div className="w-px bg-[#36393f]"></div>
-          <button onClick={() => redo()} className="p-1.5 text-gray-400 hover:text-white hover:bg-[#36393f] transition-colors" title="Redo"><ArrowLeft size={16} className="rotate-180" /></button>
-        </div>
-        
-        <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-1"></div>
-
+      <div className="flex items-center gap-3">
         {/* Global/Local Space Toggle */}
         <div className="hidden sm:flex items-center bg-[#2b2d31] rounded-md overflow-hidden border border-[#36393f] mr-1">
           <button 
@@ -120,38 +111,36 @@ export function EditorHeader({
 
         <div className="hidden sm:block h-6 w-px bg-[#36393f] mx-1"></div>
 
-        <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white hover:bg-[#2b2d31] border border-transparent hover:border-[#36393f] rounded-md transition-all disabled:opacity-50">
+        <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white hover:bg-[#1A223A] border border-transparent rounded-md transition-all disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin sm:mr-2" /> : <Save size={14} className="sm:mr-2" />}
           <span className="hidden sm:inline">Save</span>
         </button>
         
-        <button onClick={handlePreview} disabled={saving} className="hidden sm:flex items-center px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-md transition-all">
-          <QrCode size={14} className="mr-2 text-indigo-400" />
-          <span>Scan Preview</span>
-        </button>
-        
-        <button onClick={() => setIsSimulating(true)} className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-green-500 hover:bg-green-600 rounded-md shadow-sm transition-all">
-          <Play size={14} className="mr-2" />
-          <span>Simulate AR</span>
+        <button onClick={handlePreview} disabled={saving} className="hidden sm:flex items-center justify-center p-2 text-gray-400 hover:text-white bg-transparent hover:bg-[#1A223A] border border-transparent rounded-md transition-all" title="Scan Preview (QR Code)">
+          <QrCode size={18} />
         </button>
 
         <button 
           onClick={() => window.dispatchEvent(new CustomEvent('export-glb'))} 
-          className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 rounded-md shadow-sm transition-all"
-          title="Export as .glb for Native WebXR (AR)"
+          className="hidden sm:flex items-center justify-center p-2 text-gray-400 hover:text-white bg-transparent hover:bg-[#1A223A] border border-transparent rounded-md transition-all"
+          title="Export WebXR (.glb)"
         >
-          <Download size={14} className="mr-2" />
-          <span>Export WebXR</span>
+          <Download size={18} />
         </button>
 
-        <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center px-4 py-1.5 text-xs font-bold text-white rounded-md shadow-sm transition-all disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-pln-blue hover:bg-pln-blue-dark'}`}>
-          {saving ? <Loader2 size={14} className="animate-spin mr-2" /> : <Rocket size={14} className="mr-2" />}
+        <button onClick={() => setIsSimulating(true)} className="flex items-center px-4 py-1.5 text-xs font-bold text-[#62E5FF] bg-transparent border border-[#62E5FF] hover:bg-[#62E5FF]/10 rounded-md shadow-sm transition-all ml-2">
+          <Play size={14} className="mr-2" />
+          <span>Simulate AR</span>
+        </button>
+
+        <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center px-5 py-1.5 text-xs font-extrabold text-black rounded-md shadow-sm transition-all disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#FFC107] hover:bg-[#FFB300]'}`}>
+          {saving ? <Loader2 size={14} className="animate-spin mr-1" /> : <Rocket size={14} className="mr-1" />}
           <span>{(activeRole === 'editor') ? 'Request Publish' : 'Publish'}</span>
         </button>
 
         <button 
           onClick={() => setRightPanelOpen(!isRightPanelOpen)} 
-          className="p-1.5 text-gray-400 hover:text-white bg-[#2b2d31] rounded-md transition-colors ml-1 hidden sm:block"
+          className="p-1.5 text-gray-400 hover:text-white bg-transparent hover:bg-[#1A223A] rounded-md transition-colors ml-1 hidden sm:block"
           title="Toggle Properties"
         >
           <Settings size={18} />
@@ -159,7 +148,7 @@ export function EditorHeader({
         
         <button 
           onClick={() => setRightPanelOpen(!isRightPanelOpen)} 
-          className="sm:hidden p-1.5 text-gray-400 hover:text-white bg-[#2b2d31] rounded-md transition-colors ml-1"
+          className="sm:hidden p-1.5 text-gray-400 hover:text-white bg-transparent hover:bg-[#1A223A] rounded-md transition-colors ml-1"
         >
           <Settings size={18} />
         </button>

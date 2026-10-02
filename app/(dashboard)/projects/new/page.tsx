@@ -37,10 +37,10 @@ export default function NewProjectPage() {
   const { activeWorkspace, isLoading: workspaceLoading } = useWorkspace();
 
   const templates = [
-    { id: 'blank', name: 'Blank Project', icon: File, type: 'image_tracking', desc: 'Mulai dari kanvas kosong.' },
-    { id: 'business_card', name: 'Kartu Nama AR', icon: Contact2, type: 'image_tracking', desc: 'Munculkan info kontak 3D di atas kartu.' },
-    { id: 'catalog', name: 'Katalog Produk', icon: BookOpen, type: 'image_tracking', desc: 'Tampilkan produk 3D dari brosur.' },
-    { id: 'wedding', name: 'Undangan Interaktif', icon: PartyPopper, type: 'image_tracking', desc: 'Galeri foto melayang di undangan.' }
+    { id: 'blank', name: 'Blank Project', icon: File, type: 'image_tracking', desc: 'Start from scratch' },
+    { id: 'business_card', name: 'AR Business Card', icon: Contact2, type: 'image_tracking', desc: 'Interactive personal branding' },
+    { id: 'catalog', name: 'Product Catalog', icon: BookOpen, type: 'image_tracking', desc: '3D visualization for retail' },
+    { id: 'wedding', name: 'Interactive Invitation', icon: PartyPopper, type: 'image_tracking', desc: 'Engagement for events' }
   ];
 
   const {
@@ -189,10 +189,12 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 mt-10">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Buat Proyek AR Baru</h1>
-        <p className="text-gray-500 mt-2">Pilih jenis pelacakan (tracking) dan beri nama proyek Anda.</p>
+    <div className="max-w-4xl mx-auto space-y-6 mt-4 pb-12">
+      
+      {/* Hero Banner */}
+      <div className="bg-white border-2 border-pln-blue/20 rounded-3xl p-6 sm:p-8 mb-10 shadow-sm relative overflow-hidden">
+        <h1 className="text-[26px] font-black text-gray-900 tracking-tight">Memulai Membuat AR</h1>
+        <p className="text-gray-600 mt-2 text-sm max-w-2xl font-medium">Pilih template untuk mempermudah pembuatan proyek augmented reality (AR), atau mulai dari awal dengan proyek kosong</p>
       </div>
 
       {error && (
@@ -201,132 +203,165 @@ export default function NewProjectPage() {
         </div>
       )}
 
-      {/* Template Selection */}
-      <div className="mb-8">
-        <h2 className="text-sm font-bold text-gray-700 mb-3">Mulai dari Template (Opsional)</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* 1. Pilih Template */}
+      <div className="mb-10">
+        <h2 className="text-lg font-extrabold text-gray-900 mb-5">1. Pilih Template</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {templates.map(tmpl => {
-            const Icon = tmpl.icon;
             const isSelected = selectedTemplate === tmpl.id;
+            const isBlank = tmpl.id === 'blank';
+            
             return (
               <div 
                 key={tmpl.id}
                 onClick={() => handleSelectTemplate(tmpl)}
-                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${isSelected ? 'border-pln-blue bg-blue-50' : 'border-gray-100 bg-white hover:border-blue-200'}`}
+                className={`cursor-pointer group flex flex-col`}
               >
-                <Icon size={24} className={`mb-2 ${isSelected ? 'text-pln-blue' : 'text-gray-400'}`} />
-                <h3 className={`font-bold text-sm ${isSelected ? 'text-pln-blue-dark' : 'text-gray-900'}`}>{tmpl.name}</h3>
+                {isBlank ? (
+                  <div className={`h-40 rounded-[24px] border-[2px] border-dashed flex flex-col items-center justify-center transition-all ${isSelected ? 'border-pln-blue bg-blue-50/50 shadow-sm' : 'border-gray-300 bg-[#F1F2F4] hover:border-gray-400'}`}>
+                    <div className="w-10 h-10 rounded-full border-[1.5px] border-gray-400 flex items-center justify-center text-gray-500 mb-2 bg-transparent">
+                      <span className="text-xl leading-none -mt-0.5">+</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-gray-500">Create Empty</span>
+                  </div>
+                ) : (
+                  <div className={`h-40 rounded-[24px] flex items-center justify-center transition-all ${isSelected ? 'bg-[#EAEBFF] border-[2px] border-pln-blue shadow-sm' : 'bg-[#EDEEFF] border-[2px] border-transparent hover:border-blue-200'}`}>
+                    <Image size={24} className="text-[#8B93FF]" />
+                  </div>
+                )}
+                
+                <div className="mt-3 px-1">
+                  <h3 className={`font-bold text-[13px] leading-tight ${isSelected ? 'text-gray-900' : 'text-gray-800'}`}>{tmpl.name}</h3>
+                  <p className="text-[10px] text-gray-500 mt-1 leading-tight">{tmpl.desc}</p>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-8">
+      {/* 2. Detail Project */}
+      <div>
+        <h2 className="text-lg font-extrabold text-gray-900 mb-5">2. Detail Project</h2>
         
-        {/* Nama Proyek */}
-        <div className="mb-8">
-          <Label className="block font-bold text-gray-700 mb-2">Nama Proyek</Label>
-          <Input 
-            {...register("title")}
-            placeholder="Misal: Brosur Interaktif V1" 
-            className={`w-full py-6 px-4 text-lg font-medium ${errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-            autoFocus
-          />
-          {errors.title && <p className="text-red-500 text-xs font-medium mt-1">{errors.title.message}</p>}
-        </div>
-
-        {/* Folder Penyimpanan */}
-        <div className="mb-8">
-          <Label className="block font-bold text-gray-700 mb-2">Simpan di Folder</Label>
-          <div className="flex flex-col gap-3">
-            <select
-              {...register("folderId")}
-              className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-pln-blue outline-none transition-shadow text-sm"
-            >
-              <option value="PERSONAL">Personal (Tanpa Folder)</option>
-              {existingFolders.map(folder => (
-                <option key={folder.id} value={folder.id}>{folder.name}</option>
-              ))}
-              <option value="NEW" className="font-bold text-pln-blue">+ Buat Folder Baru</option>
-            </select>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            {isCreatingNewFolder && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                <Input 
-                  {...register("newFolderInput")}
-                  placeholder="Ketik nama folder baru (Misal: Client X)..." 
-                  className={`w-full py-3 px-4 text-sm ${errors.newFolderInput ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+            {/* Project Name */}
+            <div>
+              <Label className="block font-bold text-xs text-gray-800 mb-2">Project Name</Label>
+              <Input 
+                {...register("title")}
+                placeholder="My New AR Experience" 
+                className={`w-full py-5 px-4 text-sm bg-[#FAFAFA] rounded-2xl border-gray-200 focus-visible:ring-1 focus-visible:ring-pln-blue shadow-none ${errors.title ? 'border-red-500' : ''}`}
+                autoFocus
+              />
+              {errors.title && <p className="text-red-500 text-xs font-medium mt-1">{errors.title.message}</p>}
+            </div>
+
+            {/* Save to Folder */}
+            <div>
+              <Label className="block font-bold text-xs text-gray-800 mb-2">Save to Folder</Label>
+              <div className="flex flex-col gap-2 relative">
+                <select
+                  {...register("folderId")}
+                  className="w-full bg-[#FAFAFA] border border-gray-200 rounded-2xl py-3 px-4 focus:ring-1 focus:ring-pln-blue outline-none text-sm appearance-none font-medium text-gray-700"
+                >
+                  <option value="PERSONAL">Main Workspace</option>
+                  {existingFolders.map(folder => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                  <option value="NEW" className="font-bold text-pln-blue">+ Buat Folder Baru</option>
+                </select>
+                <div className="absolute right-4 top-3.5 pointer-events-none text-gray-400">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-1.22-1.8A2 2 0 0 0 7.53 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                </div>
+                
+                {isCreatingNewFolder && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Input 
+                      {...register("newFolderInput")}
+                      placeholder="Ketik nama folder baru..." 
+                      className={`w-full py-2.5 px-4 text-sm rounded-xl ${errors.newFolderInput ? 'border-red-500' : ''}`}
+                    />
+                    {errors.newFolderInput && <p className="text-red-500 text-xs font-medium mt-1">{errors.newFolderInput.message}</p>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Tracking Type */}
+          <div>
+            <Label className="block font-bold text-xs text-gray-800 mb-3">Tracking Type</Label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className={`cursor-pointer border-2 rounded-2xl p-4 flex items-center justify-between transition-all ${trackingType === 'image_tracking' ? 'border-pln-blue bg-white shadow-[0_2px_10px_rgba(0,92,154,0.08)]' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${trackingType === 'image_tracking' ? 'bg-[#F0F7FF] text-pln-blue' : 'bg-gray-100 text-gray-500'}`}>
+                    <Image size={20} />
+                  </div>
+                  <div>
+                    <h3 className={`font-bold text-[13px] ${trackingType === 'image_tracking' ? 'text-gray-900' : 'text-gray-700'}`}>Image Tracking</h3>
+                    <p className="text-[10px] text-gray-500">Triggers when a specific image is recognized</p>
+                  </div>
+                </div>
+                <div className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center ${trackingType === 'image_tracking' ? 'border-pln-blue' : 'border-gray-300'}`}>
+                  {trackingType === 'image_tracking' && <div className="w-[10px] h-[10px] rounded-full bg-pln-blue" />}
+                </div>
+                <input 
+                  type="radio" 
+                  value="image_tracking" 
+                  checked={trackingType === 'image_tracking'}
+                  onChange={() => setTrackingType('image_tracking')}
+                  className="hidden"
                 />
-                {errors.newFolderInput && <p className="text-red-500 text-xs font-medium mt-1">{errors.newFolderInput.message}</p>}
-              </div>
-            )}
+              </label>
+
+              <label className={`cursor-not-allowed border-[1.5px] rounded-2xl p-4 flex items-center justify-between transition-all border-gray-100 bg-[#FAFAFA] opacity-70`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl bg-[#F0F0F0] text-[#B0B0B0]`}>
+                    <Box size={20} />
+                  </div>
+                  <div>
+                    <h3 className={`font-bold text-[13px] text-gray-500`}>Surface Tracking</h3>
+                    <p className="text-[10px] text-gray-400">Places content on floors, tables, or walls</p>
+                  </div>
+                </div>
+                <div className={`w-[18px] h-[18px] rounded-full border-2 border-gray-200 flex items-center justify-center`}>
+                </div>
+                <input 
+                  type="radio" 
+                  value="surface_tracking" 
+                  disabled
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Folder akan otomatis dibuat berserta proyek ini.</p>
-        </div>
 
-        {/* Tipe Tracking */}
-        <div className="mb-8">
-          <Label className="block font-bold text-gray-700 mb-4">Pilih Tipe Tracking</Label>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Image Tracking Option */}
-            <label className={`cursor-pointer border-2 rounded-2xl p-6 flex items-start gap-4 transition-all ${trackingType === 'image_tracking' ? 'border-pln-blue bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'}`}>
-              <input 
-                type="radio" 
-                value="image_tracking" 
-                checked={trackingType === 'image_tracking'}
-                onChange={() => setTrackingType('image_tracking')}
-                className="hidden"
-              />
-              <div className={`p-3 rounded-xl ${trackingType === 'image_tracking' ? 'bg-pln-blue text-white' : 'bg-gray-100 text-gray-500'}`}>
-                <Image size={24} />
-              </div>
-              <div>
-                <h3 className={`font-bold text-lg mb-1 ${trackingType === 'image_tracking' ? 'text-pln-blue-dark' : 'text-gray-900'}`}>Image Tracking</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  Objek 3D akan muncul di atas gambar spesifik (marker) seperti kartu nama, brosur, atau poster.
-                </p>
-              </div>
-            </label>
-
-            {/* Surface Tracking Option */}
-            <label className={`cursor-pointer border-2 rounded-2xl p-6 flex items-start gap-4 transition-all opacity-50 bg-gray-50`}>
-              <input 
-                type="radio" 
-                value="surface_tracking" 
-                disabled
-                className="hidden"
-              />
-              <div className={`p-3 rounded-xl bg-gray-200 text-gray-400`}>
-                <Box size={24} />
-              </div>
-              <div>
-                <h3 className={`font-bold text-lg mb-1 text-gray-500`}>Surface Tracking <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full ml-2">Segera Hadir</span></h3>
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  Letakkan objek 3D di permukaan datar dunia nyata seperti lantai atau meja (WebXR).
-                </p>
-              </div>
-            </label>
+          <div className="flex items-center justify-end gap-6 pt-6 mt-10">
+            <button 
+              type="button"
+              onClick={() => router.back()}
+              className="text-[13px] font-bold text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-[#365A82] hover:bg-[#254261] text-white font-bold rounded-[14px] transition-colors shadow-sm disabled:opacity-50 text-[13px]"
+            >
+              {loading ? <Loader2 className="animate-spin" size={16} /> : (
+                <>
+                  Create Project <span className="text-yellow-400">🚀</span>
+                </>
+              )}
+            </button>
           </div>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-gray-100">
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="flex items-center gap-2 px-8 py-3 bg-pln-yellow hover:bg-pln-yellow-hover text-gray-900 font-bold rounded-xl transition-colors disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : (
-              <>
-                Lanjutkan ke Editor
-                <ArrowRight size={20} />
-              </>
-            )}
-          </button>
-        </div>
-
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

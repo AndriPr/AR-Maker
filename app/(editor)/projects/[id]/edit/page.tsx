@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search, LayoutTemplate, Palette, Focus, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Play, Settings, Image as ImageIcon, Box, Square, Move, RotateCw, Maximize, Layers, Loader2, Type, Trash2, X, PanelLeftClose, PanelRightClose, QrCode, Download, ExternalLink, Copy, MousePointerClick, LayoutDashboard, Plus, ChevronDown, ChevronRight, ChevronLeft, ListChecks, Wrench, Eye, Rocket, Magnet, Volume2, Music, Sparkles, Video, MapPin, Bot, Send, MessageSquare, FolderOpen, Database, Shapes, Triangle, Hexagon, Cone, Cylinder, Circle, Search, LayoutTemplate, Palette, Focus, Clock, Undo2, Redo2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -630,15 +630,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         setIsSimulating={setIsSimulating}
       />
 
-      {/* Fullscreen 3D Viewport Area */}
-      <main className="absolute inset-0 z-0">
-        <div className="w-full h-full relative">
-          <EditorViewport transformMode={transformMode} />
-        </div>
-      </main>
-
-      {/* Editor Body Overlay */}
-      <div className="flex-1 flex overflow-hidden absolute inset-0 z-10 pointer-events-none mt-14">
+      {/* Editor Body */}
+      <div className="flex-1 flex overflow-hidden bg-black pt-14">
         
         {/* Mobile Overlays */}
         {(isLeftPanelOpen || isRightPanelOpen) && (
@@ -648,8 +641,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           />
         )}
 
-        {/* Ultra-slim Toolbar (Blippar Style) */}
-        
         <LeftToolbar 
           isLeftPanelOpen={isLeftPanelOpen}
           setLeftPanelOpen={setLeftPanelOpen}
@@ -674,66 +665,121 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           setTargetImageUrl={setTargetImageUrl}
         />
 
-        {/* Toolbar Transform (Floating Center) */}
-        <div className="pointer-events-auto absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1.5 items-center">
-          <button 
-            onClick={() => setTransformMode('translate')} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'translate' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-            title="Geser (Translate)"
-          >
-            <Move size={18} />
-          </button>
-          <button 
-            onClick={() => setTransformMode('rotate')} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'rotate' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-            title="Putar (Rotate)"
-          >
-            <RotateCw size={18} />
-          </button>
-          <button 
-            onClick={() => setTransformMode('scale')} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'scale' ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-            title="Perbesar/Kecil (Scale)"
-          >
-            <Maximize size={18} />
-          </button>
+        {/* Viewport Area */}
+        <main className="flex-1 relative flex flex-col min-w-0">
+          <div className="absolute inset-0">
+            <EditorViewport transformMode={transformMode} />
+          </div>
           
-          <div className="w-px h-6 bg-gray-700 mx-1"></div>
-          
-          <button 
-            onClick={() => setIsSnapping(!isSnapping)} 
-            className={`p-2 sm:p-2.5 rounded-full transition-all ${isSnapping ? 'bg-pln-yellow/20 text-pln-yellow shadow-lg' : 'text-gray-400 hover:text-white hover:bg-[#1a1b1e]'}`}
-            title={isSnapping ? "Matikan Snapping" : "Hidupkan Snapping"}
-          >
-            <Magnet size={14} />
-          </button>
-          
-          <div className="w-px h-6 bg-gray-700 mx-1"></div>
-          
-          <button 
-            onClick={() => triggerCameraReset()} 
-            className="p-2 sm:p-2.5 rounded-full transition-all text-gray-400 hover:text-white hover:bg-gray-800"
-            title="Reset Posisi Kamera (View Default)"
-          >
-            <Focus size={16} />
-          </button>
+          <div className="pointer-events-none absolute inset-0">
+            <div className="pointer-events-auto absolute top-4 left-1/2 -translate-x-1/2 bg-[#0B132B] border border-[#1A223A] rounded-full flex p-1.5 shadow-2xl z-40 gap-1.5 items-center">
+              <button 
+                onClick={() => undo()} 
+                className="p-2 sm:p-2.5 rounded-full transition-all text-gray-400 hover:text-white hover:bg-[#1A223A]"
+                title="Undo"
+              >
+                <Undo2 size={16} />
+              </button>
+              <button 
+                onClick={() => redo()} 
+                className="p-2 sm:p-2.5 rounded-full transition-all text-gray-400 hover:text-white hover:bg-[#1A223A]"
+                title="Redo"
+              >
+                <Redo2 size={16} />
+              </button>
 
-          <div className="w-px h-6 bg-gray-700 mx-1"></div>
+              <div className="w-px h-6 bg-[#1A223A] mx-1"></div>
 
-          <button 
-            onClick={() => setIsOrthographic(!isOrthographic)}
-            className={`p-2 sm:p-2.5 rounded-full transition-all ${isOrthographic ? 'bg-pln-blue text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-[#1a1b1e]'}`}
-            title={isOrthographic ? "Mode 2D (Orthographic)" : "Mode 3D (Perspective)"}
-          >
-            {isOrthographic ? <Square size={14} /> : <Box size={14} />}
-          </button>
-          
-        </div>
+              <button 
+                onClick={() => setTransformMode('translate')} 
+                className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'translate' ? 'bg-[#62E5FF] text-[#0B132B] shadow-lg font-bold' : 'text-gray-400 hover:text-white hover:bg-[#1A223A]'}`}
+                title="Geser (Translate)"
+              >
+                <Move size={18} />
+              </button>
+              <button 
+                onClick={() => setTransformMode('rotate')} 
+                className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'rotate' ? 'bg-[#62E5FF] text-[#0B132B] shadow-lg font-bold' : 'text-gray-400 hover:text-white hover:bg-[#1A223A]'}`}
+                title="Putar (Rotate)"
+              >
+                <RotateCw size={18} />
+              </button>
+              <button 
+                onClick={() => setTransformMode('scale')} 
+                className={`p-2 sm:p-2.5 rounded-full transition-all ${transformMode === 'scale' ? 'bg-[#62E5FF] text-[#0B132B] shadow-lg font-bold' : 'text-gray-400 hover:text-white hover:bg-[#1A223A]'}`}
+                title="Perbesar/Kecil (Scale)"
+              >
+                <Maximize size={18} />
+              </button>
+              
+              <div className="w-px h-6 bg-[#1A223A] mx-1"></div>
+              
+              <button 
+                onClick={() => setIsSnapping(!isSnapping)} 
+                className={`p-2 sm:p-2.5 rounded-full transition-all ${isSnapping ? 'bg-pln-yellow/20 text-pln-yellow shadow-lg' : 'text-gray-400 hover:text-white hover:bg-[#1a1b1e]'}`}
+                title={isSnapping ? "Matikan Snapping" : "Hidupkan Snapping"}
+              >
+                <Magnet size={14} />
+              </button>
+              
+              <div className="w-px h-6 bg-[#1A223A] mx-1"></div>
+              
+              <button 
+                onClick={() => triggerCameraReset()} 
+                className="p-2 sm:p-2.5 rounded-full transition-all text-gray-400 hover:text-white hover:bg-[#1A223A]"
+                title="Reset Posisi Kamera (View Default)"
+              >
+                <Focus size={16} />
+              </button>
 
-        {/* Right Sidebar (Properties - Blippar Style) */}
-        
-        {/* Properties Pull-out Tab (Visible when closed) */}
-        
+              <div className="w-px h-6 bg-[#1A223A] mx-1"></div>
+
+              <button 
+                onClick={() => setIsOrthographic(!isOrthographic)}
+                className={`p-2 sm:p-2.5 rounded-full transition-all ${isOrthographic ? 'bg-[#62E5FF] text-[#0B132B] shadow-lg font-bold' : 'text-gray-400 hover:text-white hover:bg-[#1A223A]'}`}
+                title={isOrthographic ? "Mode 2D (Orthographic)" : "Mode 3D (Perspective)"}
+              >
+                {isOrthographic ? <Square size={14} /> : <Box size={14} />}
+              </button>
+            </div>
+
+            {/* Bottom Scene Manager */}
+            <motion.div 
+              initial={{ y: 50, opacity: 0, x: '-50%' }}
+              animate={{ y: 0, opacity: 1, x: '-50%' }}
+              transition={{ type: 'spring', damping: 20, stiffness: 200, delay: 0.1 }}
+              className="absolute bottom-4 left-1/2 pointer-events-auto bg-[#0B132B] border border-[#1A223A] rounded-full flex p-1.5 shadow-2xl z-40 gap-1 items-center max-w-[90vw] overflow-x-auto custom-scrollbar"
+            >
+              {scenes.map(sc => (
+                <div key={sc.id} className="relative group flex items-center">
+                  <button
+                    onClick={() => setCurrentSceneId(sc.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${currentSceneId === sc.id ? 'bg-[#62E5FF] text-[#0B132B] shadow-md' : 'text-gray-400 hover:text-white hover:bg-[#1A223A]'}`}
+                  >
+                    {sc.name}
+                  </button>
+                  {scenes.length > 1 && currentSceneId !== sc.id && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); removeScene(sc.id); }}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    >
+                      <X size={10} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="w-px h-5 bg-[#1A223A] mx-1"></div>
+              <button
+                onClick={() => addScene(`Scene ${scenes.length + 1}`)}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-[#1A223A] rounded-full transition-colors flex items-center justify-center shrink-0"
+                title="Tambah Scene Baru"
+              >
+                <Plus size={16} />
+              </button>
+            </motion.div>
+          </div>
+        </main>
+
         <RightPanel 
           isRightPanelOpen={isRightPanelOpen}
           setRightPanelOpen={setRightPanelOpen}
@@ -757,44 +803,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           setBrandLogoUrl={setBrandLogoUrl}
           handleSave={handleSave}
         />
-
-        {/* Bottom Scene Manager */}
-        <motion.div 
-          initial={{ y: 50, opacity: 0, x: '-50%' }}
-          animate={{ y: 0, opacity: 1, x: '-50%' }}
-          transition={{ type: 'spring', damping: 20, stiffness: 200, delay: 0.1 }}
-          className="absolute bottom-4 left-1/2 pointer-events-auto bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 rounded-full flex p-1.5 shadow-2xl z-40 gap-1 items-center max-w-[90vw] overflow-x-auto custom-scrollbar"
-        >
-          {scenes.map(sc => (
-            <div key={sc.id} className="relative group flex items-center">
-              <button
-                onClick={() => setCurrentSceneId(sc.id)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${currentSceneId === sc.id ? 'bg-pln-blue text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
-              >
-                {sc.name}
-              </button>
-              {scenes.length > 1 && currentSceneId !== sc.id && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); removeScene(sc.id); }}
-                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                >
-                  <X size={10} />
-                </button>
-              )}
-            </div>
-          ))}
-          <div className="w-px h-5 bg-gray-700 mx-1"></div>
-          <button
-            onClick={() => addScene(`Scene ${scenes.length + 1}`)}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-colors flex items-center justify-center shrink-0"
-            title="Tambah Scene Baru"
-          >
-            <Plus size={16} />
-          </button>
-        </motion.div>
-
-
-
       </div>
 
             {publishProgress && !showPublishModal && (

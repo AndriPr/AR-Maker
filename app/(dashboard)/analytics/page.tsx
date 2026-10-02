@@ -5,16 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { BarChart3, Eye, Wifi, FileText, MoreHorizontal } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import { useDashboardStore } from '@/lib/dashboardStore';
 
 export default function AnalyticsPage() {
   const { activeWorkspace, user, isLoading: workspaceLoading } = useWorkspace();
-  const [stats, setStats] = useState({
-    totalProjects: 0,
-    totalViews: 0,
-    published: 0,
-    drafts: 0,
-  });
-  const [topProjects, setTopProjects] = useState<any[]>([]);
+  const [allProjects, setAllProjects] = useState<any[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const searchQuery = useDashboardStore((s) => s.searchQuery);
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [period, setPeriod] = useState<'monthly' | 'weekly'>('monthly');
@@ -42,16 +39,7 @@ export default function AnalyticsPage() {
     const { data: projects, error } = await query;
 
     if (projects && !error) {
-      setStats({
-        totalProjects: projects.length,
-        totalViews: projects.reduce((sum, p) => sum + (p.views || 0), 0),
-        published: projects.filter(p => p.is_published).length,
-        drafts: projects.filter(p => !p.is_published).length,
-      });
-
-      // Ambil 5 proyek dengan views tertinggi
-      const sorted = [...projects].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
-      setTopProjects(sorted);
+      setAllProjects(projects);
     }
 
     // Hitung data tren 7 hari terakhir (mingguan)
@@ -146,8 +134,22 @@ export default function AnalyticsPage() {
     return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat statistik...</div>;
   }
 
+  const filteredProjects = allProjects.filter(p => 
+    (p.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const stats = {
+    totalProjects: filteredProjects.length,
+    totalViews: filteredProjects.reduce((sum, p) => sum + (p.views || 0), 0),
+    published: filteredProjects.filter(p => p.is_published).length,
+    drafts: filteredProjects.filter(p => !p.is_published).length,
+  };
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const displayProjects = showAll ? sortedProjects : sortedProjects.slice(0, 5);
+  const maxTopViews = sortedProjects[0]?.views || 1;
+
   const chartData = period === 'monthly' ? monthlyData : weeklyData;
-  const maxTopViews = topProjects[0]?.views || 1;
 
   return (
     <div className="space-y-6">
@@ -250,11 +252,11 @@ export default function AnalyticsPage() {
             </button>
           </div>
 
-          <div className="space-y-5 flex-1">
-            {topProjects.length === 0 ? (
-              <div className="text-gray-400 font-medium text-sm">Belum ada proyek</div>
+          <div className={`space-y-5 flex-1 ${showAll ? 'max-h-80 overflow-y-auto pr-2' : ''}`}>
+            {displayProjects.length === 0 ? (
+              <div className="text-gray-400 font-medium text-sm">Belum ada proyek yang cocok</div>
             ) : (
-              topProjects.map((p, i) => {
+              displayProjects.map((p, i) => {
                 const pct = Math.round(((p.views || 0) / maxTopViews) * 100);
                 return (
                   <div key={i}>
@@ -271,9 +273,14 @@ export default function AnalyticsPage() {
             )}
           </div>
 
-          <button className="mt-6 w-full border-2 border-pln-blue text-pln-blue font-bold py-2.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
-            View All Reports
-          </button>
+          {sortedProjects.length > 5 && (
+            <button 
+              onClick={() => setShowAll(!showAll)}
+              className="mt-6 w-full border-2 border-pln-blue text-pln-blue font-bold py-2.5 rounded-xl hover:bg-blue-50 transition-colors text-sm"
+            >
+              {showAll ? 'Show Less' : 'View All Reports'}
+            </button>
+          )}
         </div>
 
       </div>

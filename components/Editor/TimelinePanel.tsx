@@ -111,7 +111,7 @@ function KeyframeNode({ elementId, kf, duration, onUpdate, onRemove, isSelected,
 function TimelineTimeDisplay() {
   const timelineTime = useEditorStore(state => state.timelineTime);
   return (
-    <div className="text-white text-xs font-mono w-16 text-center bg-[#1a1b1e] px-2 py-1 rounded border border-[#36393f] mx-2">
+    <div className="text-white text-xs font-mono w-16 text-center bg-[#1A223A] px-2 py-1 rounded border border-[#1A223A] mx-2">
       {timelineTime.toFixed(1)}s
     </div>
   );
@@ -120,8 +120,8 @@ function TimelineTimeDisplay() {
 function TimelineScrubber({ duration }: { duration: number }) {
   const timelineTime = useEditorStore(state => state.timelineTime);
   return (
-    <div className="absolute top-0 bottom-0 border-l-2 border-blue-500 z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
-      <div className="w-3 h-3 bg-blue-500 rounded-sm sticky top-1 -translate-x-1/2 shadow-lg shadow-blue-500/50"></div>
+    <div className="absolute top-0 bottom-0 border-l-2 border-[#62E5FF] z-30 pointer-events-none" style={{ left: `${(timelineTime / duration) * 100}%` }}>
+      <div className="w-3 h-3 bg-[#62E5FF] rounded-sm sticky top-1 -translate-x-1/2 shadow-lg shadow-[#62E5FF]/50"></div>
     </div>
   );
 }
@@ -325,7 +325,7 @@ export default function TimelinePanel() {
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-[#1a1b1e] border-t border-[#2b2d31] flex flex-col z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]" style={{ height: panelHeight }}>
+    <div className="absolute bottom-0 left-0 right-0 bg-[#0B132B] border-t border-[#1A223A] flex flex-col z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]" style={{ height: panelHeight }}>
       {/* Drag Handle to Resize */}
       <div 
         className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-50 hover:bg-pln-blue/50"
@@ -333,7 +333,7 @@ export default function TimelinePanel() {
       ></div>
       
       {/* Header / Controls */}
-      <div className="h-10 bg-[#202227] border-b border-[#2b2d31] flex items-center px-4 gap-2">
+      <div className="h-10 bg-transparent border-b border-[#1A223A] flex items-center px-4 gap-2">
         <button 
           onClick={() => setTimelineTime(playbackRange ? playbackRange[0] : 0)}
           className="p-1.5 rounded-md text-gray-400 hover:bg-[#36393f] transition-colors"
@@ -343,9 +343,9 @@ export default function TimelinePanel() {
         </button>
         <button 
           onClick={() => setTimelinePlaying(!timelinePlaying)}
-          className={`p-1.5 rounded-md ${timelinePlaying ? 'bg-red-500 text-white' : 'bg-pln-blue text-white'} hover:opacity-80 transition-opacity`}
+          className={`p-1.5 rounded-full ${timelinePlaying ? 'bg-red-500 text-white' : 'bg-[#1A223A] border border-[#62E5FF] text-[#62E5FF]'} hover:opacity-80 transition-opacity`}
         >
-          {timelinePlaying ? <Pause size={14} /> : <Play size={14} />}
+          {timelinePlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
         </button>
         <button 
           onClick={() => setTimelineTime(playbackRange ? playbackRange[1] : duration)}
@@ -371,11 +371,11 @@ export default function TimelinePanel() {
         <button 
           onClick={() => addKeyframe()}
           disabled={!selectedId}
-          className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 ${!selectedId ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors border border-gray-600'}`}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 ${!selectedId ? 'bg-transparent border border-[#1A223A] text-gray-600 cursor-not-allowed' : 'bg-transparent border border-gray-500 text-gray-300 hover:text-white transition-colors'}`}
           title="Insert Keyframe (I)"
         >
           <Plus size={12} />
-          Keyframe (I)
+          Keyframe
         </button>
           
           {selectedKeyframes && selectedKeyframes.length > 0 && (
@@ -408,14 +408,13 @@ export default function TimelinePanel() {
         </button>
         
         <div className="flex-1"></div>
-        <div className="flex items-center gap-2 text-[10px] text-gray-400">
+        <div className="flex items-center gap-2 text-[10px] text-gray-500">
           <Clock size={12} />
-          <span>Duration: </span>
           <input 
             type="number" 
             value={duration} 
             onChange={(e) => setDuration(Number(e.target.value) || 10)} 
-            className="w-12 bg-[#1a1b1e] border border-[#36393f] rounded px-1 py-0.5 text-white"
+            className="w-12 bg-transparent text-right border-none outline-none font-bold text-gray-400"
           />
           <span>s</span>
         </div>
@@ -429,16 +428,16 @@ export default function TimelinePanel() {
       {/* Timeline Tracks */}
         <div className="flex-1 flex overflow-hidden relative">
           {/* Track Headers */}
-          <div ref={leftPanelRef} className="w-48 shrink-0 bg-[#1a1b1e] border-r border-[#2b2d31] overflow-hidden">
-            <div className="sticky top-0 h-5 bg-[#1a1b1e]/90 border-b border-[#36393f] z-30 backdrop-blur-sm"></div>
+          <div ref={leftPanelRef} className="w-48 shrink-0 bg-transparent border-r border-[#1A223A] overflow-hidden">
+            <div className="sticky top-0 h-5 bg-[#0B132B]/90 border-b border-[#1A223A] z-30 backdrop-blur-sm"></div>
             {elements.map(el => (
             <div key={`header-${el.id}`}>
               <div 
-                className={`group h-8 border-b border-[#2b2d31] flex items-center px-2 text-[10px] cursor-pointer hover:bg-[#2b2d31]/50 ${selectedId === el.id ? 'bg-[#2b2d31] text-white font-bold' : 'text-gray-400'}`}
+                className={`group h-8 border-b border-[#1A223A] flex items-center px-2 text-[10px] cursor-pointer hover:bg-[#1A223A]/50 ${selectedId === el.id ? 'bg-[#1A223A] text-white font-bold' : 'text-gray-400'}`}
                 onClick={() => updateElement(el.id, { isTimelineExpanded: !el.isTimelineExpanded })}
               >
                 <div className="mr-1 w-3 text-center">{el.isTimelineExpanded ? '▼' : '▶'}</div>
-                <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: el.keyframes?.length ? '#f59e0b' : '#36393f' }}></div>
+                <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: el.keyframes?.length ? '#62E5FF' : 'transparent', border: el.keyframes?.length ? 'none' : '1px solid #1A223A' }}></div>
                 <span className="flex-1 truncate">{el.name}</span>
                 <button 
                   onClick={(e) => { e.stopPropagation(); addKeyframe(el.id); }}
@@ -461,7 +460,7 @@ export default function TimelinePanel() {
         
         {/* Track Grid */}
         <div 
-          className="flex-1 bg-[#1e1e1e] relative overflow-auto custom-scrollbar"
+          className="flex-1 bg-transparent relative overflow-auto custom-scrollbar"
           onScroll={(e) => {
             if (leftPanelRef.current) {
               leftPanelRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -471,7 +470,7 @@ export default function TimelinePanel() {
           <div className="relative w-full min-w-[800px] min-h-max select-none">
             {/* Ruler for Scrubbing */}
             <div 
-              className="sticky top-0 left-0 right-0 h-5 bg-[#1a1b1e]/90 border-b border-[#36393f] z-40 cursor-ew-resize select-none backdrop-blur-sm"
+              className="sticky top-0 left-0 right-0 h-5 bg-[#0B132B]/90 border-b border-[#1A223A] z-40 cursor-ew-resize select-none backdrop-blur-sm"
               onPointerDown={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const updateTime = (evt: React.PointerEvent | PointerEvent) => {
@@ -491,8 +490,8 @@ export default function TimelinePanel() {
               }}
             >
               {Array.from({ length: duration + 1 }).map((_, i) => (
-                <div key={`tick-${i}`} className="absolute top-0 bottom-0 border-l border-[#36393f]" style={{ left: `${(i / duration) * 100}%` }}>
-                  <span className="absolute top-0 left-1 text-[8px] text-gray-400 font-mono">{i}s</span>
+                <div key={`tick-${i}`} className="absolute top-0 bottom-0 border-l border-[#1A223A]" style={{ left: `${(i / duration) * 100}%` }}>
+                  <span className="absolute top-0 left-1 text-[8px] text-gray-500 font-mono">{i}s</span>
                 </div>
               ))}
             </div>
@@ -513,7 +512,7 @@ export default function TimelinePanel() {
             
             {/* Grid lines */}
             {Array.from({ length: duration + 1 }).map((_, i) => (
-              <div key={`grid-${i}`} className="absolute top-0 bottom-0 border-l border-[#36393f]/30 pointer-events-none" style={{ left: `${(i / duration) * 100}%` }}></div>
+              <div key={`grid-${i}`} className="absolute top-0 bottom-0 border-l border-[#1A223A] pointer-events-none" style={{ left: `${(i / duration) * 100}%` }}></div>
             ))}
             
             {/* Tracks */}
@@ -521,7 +520,7 @@ export default function TimelinePanel() {
               {elements.map((el) => (
                 <div key={`track-${el.id}`}>
                   {/* Main Summary Track */}
-                  <div className="relative h-8 border-b border-[#2b2d31]">
+                  <div className="relative h-8 border-b border-[#1A223A]">
                     {el.keyframes?.map(kf => (
                       <KeyframeNode
                         key={`kf-${el.id}-${kf.id}`}
