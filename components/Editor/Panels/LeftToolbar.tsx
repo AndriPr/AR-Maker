@@ -43,26 +43,26 @@ export function LeftToolbar({
   };
 
   return (
-    <aside className="hidden md:flex pointer-events-auto absolute top-14 bottom-0 left-0 z-30 w-12 bg-[#1a1b1e] border-r border-[#2b2d31] flex-col items-center py-4 gap-4 shadow-xl overflow-y-auto custom-scrollbar">
+    <aside className="hidden md:flex pointer-events-auto absolute top-14 bottom-0 left-0 z-30 w-12 bg-[#0B132B] border-r border-[#1A223A] flex-col items-center py-4 gap-4 shadow-xl overflow-y-auto custom-scrollbar">
       <button 
         onClick={() => {
           if (isLeftPanelOpen && leftPanelTab === 'hierarchy') setLeftPanelOpen(false);
           else { setLeftPanelOpen(true); setLeftPanelTab('hierarchy'); }
         }}
-        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'hierarchy' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'hierarchy' ? 'bg-[#1A223A] text-[#62E5FF] border border-[#62E5FF]' : 'text-gray-400 hover:text-gray-200 border border-transparent'}`}
         title="Scene Hierarchy"
       >
         <FolderOpen size={18} />
       </button>
       
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
+      <div className="w-6 h-px bg-[#1A223A]"></div>
       
       <button 
         onClick={() => {
           if (isLeftPanelOpen && leftPanelTab === 'library') setLeftPanelOpen(false);
           else { setLeftPanelOpen(true); setLeftPanelTab('library'); }
         }}
-        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'library' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'library' ? 'bg-[#1A223A] text-[#62E5FF] border border-[#62E5FF]' : 'text-gray-400 hover:text-gray-200 border border-transparent'}`}
         title="Asset Library"
       >
         <Box size={18} />
@@ -73,7 +73,7 @@ export function LeftToolbar({
           if (isLeftPanelOpen && leftPanelTab === 'media') setLeftPanelOpen(false);
           else { setLeftPanelOpen(true); setLeftPanelTab('media'); }
         }}
-        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'media' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'media' ? 'bg-[#1A223A] text-[#62E5FF] border border-[#62E5FF]' : 'text-gray-400 hover:text-gray-200 border border-transparent'}`}
         title="Media & VFX"
       >
         <Film size={18} />
@@ -84,28 +84,28 @@ export function LeftToolbar({
           if (isLeftPanelOpen && leftPanelTab === 'interact') setLeftPanelOpen(false);
           else { setLeftPanelOpen(true); setLeftPanelTab('interact'); }
         }}
-        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'interact' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'interact' ? 'bg-[#1A223A] text-[#62E5FF] border border-[#62E5FF]' : 'text-gray-400 hover:text-gray-200 border border-transparent'}`}
         title="Interactivity"
       >
         <MousePointerClick size={18} />
       </button>
       
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
+      <div className="w-6 h-px bg-[#1A223A]"></div>
       
       <button 
         onClick={() => {
           if (isLeftPanelOpen && leftPanelTab === 'prefabs') setLeftPanelOpen(false);
           else { setLeftPanelOpen(true); setLeftPanelTab('prefabs'); }
         }}
-        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'prefabs' ? 'bg-pln-blue/20 text-pln-blue' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31]'}`}
+        className={`p-2 rounded-lg transition-colors ${isLeftPanelOpen && leftPanelTab === 'prefabs' ? 'bg-[#1A223A] text-[#62E5FF] border border-[#62E5FF]' : 'text-gray-400 hover:text-gray-200 border border-transparent'}`}
         title="Templates (Prefabs)"
       >
         <LayoutTemplate size={18} />
       </button>
 
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
+      <div className="w-6 h-px bg-[#1A223A]"></div>
 
-      <button onClick={handleAddText} className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" title="Add Text">
+      <button onClick={handleAddText} className="p-2 text-gray-400 hover:text-gray-200 border border-transparent rounded-lg transition-colors" title="Add Text">
         <Type size={18} />
       </button>
       
@@ -119,13 +119,13 @@ export function LeftToolbar({
       
       <button 
         onClick={() => setShowTimeline(!showTimeline)} 
-        className={`p-2 rounded-lg transition-colors border ${showTimeline ? 'text-pln-blue bg-pln-blue/20 border-pln-blue/30' : 'text-gray-400 hover:text-white hover:bg-[#2b2d31] border-transparent'}`} 
+        className={`p-2 rounded-lg transition-colors border ${showTimeline ? 'bg-[#1A223A] text-[#62E5FF] border-[#62E5FF]' : 'text-gray-400 hover:text-gray-200 border-transparent'}`} 
         title="Toggle Timeline Animation"
       >
         <Clock size={18} />
       </button>
 
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
+      <div className="w-6 h-px bg-[#1A223A]"></div>
 
       <button 
         onClick={() => {
@@ -140,13 +140,13 @@ export function LeftToolbar({
             eduMaintenanceTasks: []
           });
         }} 
-        className="p-2 text-gray-400 hover:text-white hover:bg-[#2b2d31] rounded-lg transition-colors" 
+        className="p-2 text-gray-400 hover:text-gray-200 border border-transparent rounded-lg transition-colors" 
         title="Add UI Dashboard (Edu Panel)"
       >
         <LayoutDashboard size={18} />
       </button>
 
-      <div className="w-6 h-px bg-[#2b2d31]"></div>
+      <div className="w-6 h-px bg-[#1A223A]"></div>
       
       <button 
         onClick={() => {
@@ -158,7 +158,7 @@ export function LeftToolbar({
             scale: [1, 1, 1]
           });
         }} 
-        className="p-2 text-gray-400 hover:text-[#ff00ff] hover:bg-[#2b2d31] rounded-lg transition-colors" 
+        className="p-2 text-gray-400 hover:text-[#ff00ff] border border-transparent rounded-lg transition-colors" 
         title="Add Occluder Plane (Depth Masking)"
       >
         <Square size={18} />
@@ -174,7 +174,7 @@ export function LeftToolbar({
             scale: [1, 1, 1]
           });
         }} 
-        className="p-2 text-gray-400 hover:text-[#ff00ff] hover:bg-[#2b2d31] rounded-lg transition-colors" 
+        className="p-2 text-gray-400 hover:text-[#ff00ff] border border-transparent rounded-lg transition-colors" 
         title="Add Occluder Cube (Depth Masking)"
       >
         <Box size={18} />

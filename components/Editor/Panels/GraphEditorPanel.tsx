@@ -128,7 +128,7 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
 
   if (!selectedElement) {
     return (
-      <div className="flex-1 bg-[#1a1b1e] flex items-center justify-center text-gray-500 text-xs h-full">
+      <div className="flex-1 bg-[#0B132B] flex items-center justify-center text-gray-500 text-xs h-full">
         Pilih objek untuk melihat kurva animasi.
       </div>
     );
@@ -166,14 +166,14 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-1/2 bg-[#151618] border-b border-[#2b2d31] z-40 flex flex-col shadow-2xl">
-      <div className="h-8 bg-[#202227] border-b border-[#2b2d31] flex items-center px-4 justify-between">
+    <div className="absolute top-0 left-0 right-0 h-1/2 bg-[#0B132B] border-b border-[#1A223A] z-40 flex flex-col shadow-2xl">
+      <div className="h-8 bg-[#1A223A] border-b border-[#1A223A] flex items-center px-4 justify-between">
         <div className="flex items-center gap-2">
           <Move size={12} className="text-gray-400" />
           <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Graph Editor (Position)</span>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setViewBox({ x: 0, y: -5, w: duration, h: 10 })} className="text-[10px] text-pln-blue hover:text-blue-300 bg-pln-blue/10 px-2 py-0.5 rounded">Home</button>
+          <button onClick={() => setViewBox({ x: 0, y: -5, w: duration, h: 10 })} className="text-[10px] text-[#62E5FF] hover:text-white bg-[#62E5FF]/10 px-2 py-0.5 rounded">Home</button>
           <button onClick={onClose} className="text-gray-400 hover:text-white"><Minimize2 size={12} /></button>
         </div>
       </div>
@@ -228,12 +228,12 @@ export function GraphEditorPanel({ onClose }: { onClose: () => void }) {
         </svg>
         
         {/* Legend */}
-        <div className="absolute top-2 left-2 bg-[#1a1b1e]/80 border border-[#2b2d31] rounded p-1 text-[9px] font-mono flex flex-col gap-1 pointer-events-none">
+        <div className="absolute top-2 left-2 bg-[#0B132B]/80 border border-[#1A223A] rounded p-1 text-[9px] font-mono flex flex-col gap-1 pointer-events-none">
           <div className="flex items-center gap-1"><div className="w-2 h-2 bg-red-500 rounded-full"></div> Pos X</div>
           <div className="flex items-center gap-1"><div className="w-2 h-2 bg-green-500 rounded-full"></div> Pos Y</div>
           <div className="flex items-center gap-1"><div className="w-2 h-2 bg-blue-500 rounded-full"></div> Pos Z</div>
         </div>
-        <div className="absolute bottom-2 right-2 text-[9px] text-gray-500 pointer-events-none bg-[#1a1b1e]/50 px-1 rounded">
+        <div className="absolute bottom-2 right-2 text-[9px] text-gray-500 pointer-events-none bg-[#0B132B]/50 px-1 rounded">
           Drag dots to edit | Drag background to pan
         </div>
       </div>

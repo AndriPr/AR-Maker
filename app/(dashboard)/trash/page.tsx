@@ -5,12 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Trash2, RefreshCw, AlertTriangle, Box } from 'lucide-react';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import { useDashboardStore } from '@/lib/dashboardStore';
 
 export default function TrashPage() {
   const router = useRouter();
   const { activeWorkspace, user, isLoading: workspaceLoading } = useWorkspace();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchQuery = useDashboardStore((s) => s.searchQuery);
 
   useEffect(() => {
     if (!workspaceLoading) {
@@ -71,6 +73,10 @@ export default function TrashPage() {
     return <div className="flex h-[50vh] items-center justify-center text-gray-500 font-bold">Memuat tong sampah...</div>;
   }
 
+  const filteredProjects = projects.filter(project => 
+    project.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-8">
       <div>
@@ -81,15 +87,15 @@ export default function TrashPage() {
         <p className="text-gray-500 text-sm mt-1">Proyek yang dihapus akan disimpan di sini.</p>
       </div>
 
-      {projects.length === 0 ? (
+      {filteredProjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center bg-gray-50 rounded-3xl border border-dashed border-gray-300 text-gray-500 p-10 min-h-[300px]">
           <Box size={48} className="mb-4 text-gray-300" />
-          <p className="font-bold">Tong sampah kosong</p>
-          <p className="text-sm">Tidak ada proyek yang dihapus.</p>
+          <p className="font-bold">{projects.length === 0 ? 'Tong sampah kosong' : 'Tidak ada proyek yang cocok'}</p>
+          <p className="text-sm">{projects.length === 0 ? 'Tidak ada proyek yang dihapus.' : 'Coba kata kunci pencarian yang lain.'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <div key={project.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
               <div className="flex flex-col">
                 <h3 className="font-bold text-gray-900">{project.title}</h3>
