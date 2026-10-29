@@ -11,6 +11,54 @@ interface RuntimeAction {
   value?: string;
 }
 
+interface RuntimeKeyframe {
+  time?: number;
+  position?: Vec3;
+  rotation?: Vec3;
+  scale?: Vec3;
+  easing?: string;
+}
+
+interface RuntimeEduComponent {
+  id?: string;
+  name?: string;
+  actionTargetId?: string;
+  actionAnimation?: string;
+  showTargetId?: string;
+  hideTargetId?: string;
+}
+
+interface RuntimeSubMeshAnimation {
+  targetElementId?: string;
+  targetSubMeshName?: string;
+  keyframes?: RuntimeKeyframe[];
+}
+
+interface RuntimeEduStep {
+  id?: string;
+  stepNumber?: number;
+  title?: string;
+  instruction?: string;
+  voiceoverUrl?: string;
+  animations?: RuntimeSubMeshAnimation[];
+  actionTargetId?: string;
+  actionAnimation?: string;
+  showTargetId?: string;
+  hideTargetId?: string;
+}
+
+interface RuntimeEduTask {
+  id?: string;
+  title?: string;
+  steps?: RuntimeEduStep[];
+}
+
+interface RuntimeEduTrigger {
+  id?: string;
+  label?: string;
+  targetElementId?: string;
+}
+
 interface RuntimeElement {
   id: string;
   type: string;
@@ -22,7 +70,7 @@ interface RuntimeElement {
   buttonText?: string;
   panelTitle?: string;
   hotspotText?: string;
-  data?: { description?: string };
+  data?: { description?: string; showInARMenu?: boolean };
   position?: Vec3;
   rotation?: Vec3;
   scale?: Vec3;
@@ -35,6 +83,14 @@ interface RuntimeElement {
   onClickActionType?: string;
   onClickActionValue?: string;
   onClickActions?: RuntimeAction[];
+  availableAnimations?: string[];
+  autoplayAnimation?: string;
+  animationLoopMode?: 'loop' | 'once' | 'pingpong';
+  animationSpeed?: number;
+  keyframes?: RuntimeKeyframe[];
+  eduComponents?: RuntimeEduComponent[];
+  eduMaintenanceTasks?: RuntimeEduTask[];
+  eduCustomTriggers?: RuntimeEduTrigger[];
 }
 
 interface RuntimeScene {
@@ -43,9 +99,35 @@ interface RuntimeScene {
 }
 
 interface ClientAction {
-  type: 'open_url' | 'change_scene' | 'toggle_visibility' | 'play_audio';
+  type: 'open_url' | 'change_scene' | 'toggle_visibility' | 'play_audio' | 'play_animation';
   value?: string;
   targetId?: string;
+}
+
+interface EducationPayload {
+  initialSceneId: string;
+  scenes: Array<{ id: string; name: string }>;
+  panels: Array<{
+    id: string;
+    sceneId: string;
+    title: string;
+    description: string;
+    components: RuntimeEduComponent[];
+    modules: RuntimeEduTask[];
+    triggers: RuntimeEduTrigger[];
+  }>;
+  objects: Array<{
+    id: string;
+    sceneId: string;
+    type: string;
+    name: string;
+    description: string;
+    availableAnimations: string[];
+    autoplayAnimation?: string;
+    animationLoopMode: 'loop' | 'once' | 'pingpong';
+    animationSpeed: number;
+    keyframes: RuntimeKeyframe[];
+  }>;
 }
 
 const DEFAULT_COLOR = '#ffffff';
@@ -128,6 +210,8 @@ function getClientActions(element: RuntimeElement, validSceneIds: Set<string>): 
       actions.push({ type: 'toggle_visibility', targetId: action.targetId });
     } else if (action.type === 'play_audio' && action.targetId) {
       actions.push({ type: 'play_audio', targetId: action.targetId });
+    } else if (action.type === 'play_animation' && action.targetId && action.value) {
+      actions.push({ type: 'play_animation', targetId: action.targetId, value: action.value });
     }
   }
 
@@ -143,6 +227,113 @@ function getClientActions(element: RuntimeElement, validSceneIds: Set<string>): 
   }
 
   return actions;
+}
+
+function finiteNumber(value: unknown, fallback: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function stringValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function normalizeKeyframes(value: unknown): RuntimeKeyframe[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((raw) => {
+    if (!raw || typeof raw !== 'object') return [];
+    const keyframe = raw as RuntimeKeyframe;
+    return [{
+      time: Math.max(0, finiteNumber(keyframe.time, 0)),
+      position: keyframe.position ? safeVec3(keyframe.position, [0, 0, 0]) : undefined,
+      rotation: keyframe.rotation ? safeVec3(keyframe.rotation, [0, 0, 0]) : undefined,
+      scale: keyframe.scale ? safeVec3(keyframe.scale, [1, 1, 1]) : undefined,
+      easing: stringValue(keyframe.easing, 'linear'),
+    }];
+  }).sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
+}
+
+function buildEducationPayload(
+  elements: RuntimeElement[],
+  scenes: RuntimeScene[]
+): EducationPayload {
+  const initialSceneId = String(scenes[0]?.id ?? 'scene-1');
+  const sceneIdFor = (element: RuntimeElement) => String(element.sceneId || initialSceneId);
+
+  const panels = elements
+    .filter((element) => element.type === 'edu_panel')
+    .map((panel) => ({
+      id: String(panel.id),
+      sceneId: sceneIdFor(panel),
+      title: stringValue(panel.panelTitle || panel.name, 'Panel Edukasi'),
+      description: stringValue(panel.data?.description),
+      components: (Array.isArray(panel.eduComponents) ? panel.eduComponents : []).map((component, index) => ({
+        id: stringValue(component?.id, `component-${index}`),
+        name: stringValue(component?.name, `Komponen ${index + 1}`),
+        actionTargetId: stringValue(component?.actionTargetId) || undefined,
+        actionAnimation: stringValue(component?.actionAnimation) || undefined,
+        showTargetId: stringValue(component?.showTargetId) || undefined,
+        hideTargetId: stringValue(component?.hideTargetId) || undefined,
+      })),
+      modules: (Array.isArray(panel.eduMaintenanceTasks) ? panel.eduMaintenanceTasks : []).map((task, taskIndex) => ({
+        id: stringValue(task?.id, `module-${taskIndex}`),
+        title: stringValue(task?.title, `Modul ${taskIndex + 1}`),
+        steps: (Array.isArray(task?.steps) ? task.steps : []).map((step, stepIndex) => ({
+          id: stringValue(step?.id, `step-${stepIndex}`),
+          stepNumber: finiteNumber(step?.stepNumber, stepIndex + 1),
+          title: stringValue(step?.title, `Langkah ${stepIndex + 1}`),
+          instruction: stringValue(step?.instruction),
+          voiceoverUrl: safeUrl(step?.voiceoverUrl) ?? undefined,
+          animations: (Array.isArray(step?.animations) ? step.animations : []).map((animation) => ({
+            targetElementId: stringValue(animation?.targetElementId),
+            targetSubMeshName: stringValue(animation?.targetSubMeshName),
+            keyframes: normalizeKeyframes(animation?.keyframes),
+          })).filter((animation) => animation.targetElementId && animation.targetSubMeshName && animation.keyframes.length > 0),
+          actionTargetId: stringValue(step?.actionTargetId) || undefined,
+          actionAnimation: stringValue(step?.actionAnimation) || undefined,
+          showTargetId: stringValue(step?.showTargetId) || undefined,
+          hideTargetId: stringValue(step?.hideTargetId) || undefined,
+        })),
+      })),
+      triggers: (Array.isArray(panel.eduCustomTriggers) ? panel.eduCustomTriggers : []).map((trigger, index) => ({
+        id: stringValue(trigger?.id, `trigger-${index}`),
+        label: stringValue(trigger?.label, `Aksi ${index + 1}`),
+        targetElementId: stringValue(trigger?.targetElementId),
+      })).filter((trigger) => trigger.targetElementId),
+    }));
+
+  const objects = elements
+    .filter((element) => (
+      element.type !== 'edu_panel' &&
+      !['ambient_light', 'directional_light'].includes(element.type) &&
+      element.data?.showInARMenu !== false
+    ))
+    .map((element): EducationPayload['objects'][number] => ({
+      id: String(element.id),
+      sceneId: sceneIdFor(element),
+      type: element.type,
+      name: stringValue(element.name, 'Objek AR'),
+      description: stringValue(element.data?.description),
+      availableAnimations: (Array.isArray(element.availableAnimations) ? element.availableAnimations : [])
+        .filter((animation): animation is string => typeof animation === 'string' && animation.trim().length > 0),
+      autoplayAnimation: stringValue(element.autoplayAnimation) || undefined,
+      animationLoopMode: element.animationLoopMode === 'once' || element.animationLoopMode === 'pingpong'
+        ? element.animationLoopMode
+        : 'loop',
+      animationSpeed: Math.max(0.05, finiteNumber(element.animationSpeed, 1)),
+      keyframes: normalizeKeyframes(element.keyframes),
+    }));
+
+  return {
+    initialSceneId,
+    scenes: scenes.map((scene, index) => ({
+      id: String(scene.id),
+      name: stringValue(scene.name, `Scene ${index + 1}`),
+    })),
+    panels,
+    objects,
+  };
 }
 
 function renderExperience(project: Record<string, unknown>): string {
@@ -198,9 +389,15 @@ function renderExperience(project: Record<string, unknown>): string {
     const actions = getClientActions(element, sceneIds);
     if (actions.length > 0) actionMap[element.id] = actions;
   }
+  const educationPayload = buildEducationPayload(elements, scenes);
+  const educationObjectIds = new Set(educationPayload.objects.map((element) => element.id));
+  const hasEducationContent = educationPayload.panels.length > 0;
 
   const renderElement = (element: RuntimeElement, visited: Set<string>): string => {
     if (visited.has(element.id)) return '';
+    // Edu panels are screen-space controls. Rendering them as a plane inside
+    // the tracked marker caused the large empty rectangle seen in public AR.
+    if (element.type === 'edu_panel') return '';
     const nextVisited = new Set(visited).add(element.id);
     const position = safeVec3(element.position, [0, 0, 0]);
     const rotation = safeVec3(element.rotation, [0, 0, 0]);
@@ -210,13 +407,13 @@ function renderExperience(project: Record<string, unknown>): string {
     const children = (childrenByParent.get(element.id) ?? [])
       .map((child) => renderElement(child, nextVisited))
       .join('');
-    const interactiveClass = actionMap[element.id] ? ' class="interactive"' : '';
+    const interactiveClass = actionMap[element.id] || educationObjectIds.has(element.id) ? ' class="interactive"' : '';
     const common = `position="${vecToAttribute(position)}" rotation="${rotationToDegrees(rotation)}" scale="${vecToAttribute(scale)}" visible="${element.isHidden ? 'false' : 'true'}" data-element-id="${elementId}"${interactiveClass}`;
     let visual = '';
 
     if (element.type === '3d_model') {
       const assetId = modelAssetIds.get(element.id);
-      if (assetId) visual = `<a-gltf-model src="#${assetId}"></a-gltf-model>`;
+      if (assetId) visual = `<a-gltf-model src="#${assetId}" data-model-for="${elementId}"></a-gltf-model>`;
     } else if (element.type === '3d_shape') {
       const primitives: Record<string, string> = {
         cube: 'box', sphere: 'sphere', cylinder: 'cylinder', plane: 'plane',
@@ -242,9 +439,6 @@ function renderExperience(project: Record<string, unknown>): string {
       visual = `<a-plane width="2.4" height="0.62" color="${color === DEFAULT_COLOR ? '#2563eb' : color}" material="side: double"></a-plane><a-text value="${escapeHtml(element.buttonText || element.name || 'Button')}" color="#ffffff" align="center" anchor="center" position="0 0 0.01" width="3.2"></a-text>`;
     } else if (element.type === 'hotspot') {
       visual = `<a-circle radius="0.28" color="${color === DEFAULT_COLOR ? '#f59e0b' : color}" material="side: double"></a-circle><a-text value="${escapeHtml(element.hotspotText || element.name || 'Info')}" color="#ffffff" align="center" anchor="center" position="0 -0.46 0.01" width="2.5"></a-text>`;
-    } else if (element.type === 'edu_panel') {
-      const body = [element.panelTitle || element.name, element.data?.description].filter(Boolean).join('\n');
-      visual = `<a-plane width="3" height="1.8" color="${color === DEFAULT_COLOR ? '#111827' : color}" material="side: double; opacity: 0.94"></a-plane><a-text value="${escapeHtml(body || 'Panel')}" color="#ffffff" align="center" anchor="center" position="0 0 0.01" width="2.7" wrap-count="32"></a-text>`;
     }
 
     return `<a-entity ${common}>${visual}${children}</a-entity>`;
@@ -299,6 +493,7 @@ function renderExperience(project: Record<string, unknown>): string {
       #hint { position: fixed; z-index: 8; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 9px 13px; border-radius: 999px; color: #dbeafe; background: #070b14b8; backdrop-filter: blur(12px); text-align: center; font-size: 11px; opacity: 0; transition: opacity .25s; pointer-events: none; }
       #hint.visible { opacity: 1; }
     </style>
+    ${hasEducationContent ? '<link rel="stylesheet" href="/ar-education-runtime.css" />' : ''}
   </head>
   <body>
     <div id="topbar">
@@ -306,6 +501,28 @@ function renderExperience(project: Record<string, unknown>): string {
       <div id="status">Siap</div>
     </div>
     <div id="hint">Arahkan kamera ke gambar marker</div>
+    ${hasEducationContent ? `<div id="edu-runtime" hidden>
+      <button id="edu-dock" type="button" aria-controls="edu-sheet" aria-expanded="false">
+        <span class="edu-dock-icon" aria-hidden="true">✦</span>
+        <span class="edu-dock-copy"><strong id="edu-dock-title">Panel Edukasi</strong><small id="edu-dock-meta">Buka informasi dan animasi</small></span>
+        <span class="edu-dock-open" aria-hidden="true">Buka</span>
+      </button>
+      <div id="edu-backdrop" aria-hidden="true"></div>
+      <section id="edu-sheet" role="dialog" aria-modal="true" aria-labelledby="edu-title" aria-hidden="true">
+        <div class="edu-grabber" aria-hidden="true"></div>
+        <header class="edu-header">
+          <div><span class="edu-eyebrow">MODE BELAJAR AR</span><h2 id="edu-title">Panel Edukasi</h2></div>
+          <button id="edu-close" class="edu-icon-button" type="button" aria-label="Tutup panel edukasi">×</button>
+        </header>
+        <nav id="edu-tabs" class="edu-tabs" aria-label="Menu edukasi">
+          <button type="button" data-edu-tab="info" aria-selected="true">Info</button>
+          <button type="button" data-edu-tab="guide" aria-selected="false">Panduan</button>
+          <button type="button" data-edu-tab="animation" aria-selected="false">Animasi</button>
+        </nav>
+        <div id="edu-content" class="edu-content" aria-live="polite"></div>
+      </section>
+      <div id="edu-toast" role="status" aria-live="polite"></div>
+    </div>` : ''}
     <div id="start-overlay">
       <main id="start-card">
         <h1>${projectTitle}</h1>
@@ -388,6 +605,7 @@ function renderExperience(project: Record<string, unknown>): string {
         target.addEventListener('targetFound', () => {
           hint.classList.remove('visible');
           setStatus('Marker ditemukan');
+          window.dispatchEvent(new CustomEvent('ar-target-found'));
         });
         target.addEventListener('targetLost', () => {
           hint.classList.add('visible');
@@ -400,6 +618,7 @@ function renderExperience(project: Record<string, unknown>): string {
         const sceneRoots = Array.from(document.querySelectorAll('[data-scene-root]'));
         const setScene = (sceneId) => {
           sceneRoots.forEach((root) => root.setAttribute('visible', String(root.dataset.sceneRoot === sceneId)));
+          window.dispatchEvent(new CustomEvent('ar-scene-change', { detail: { sceneId } }));
         };
         document.querySelectorAll('.interactive').forEach((entity) => {
           entity.addEventListener('click', () => {
@@ -417,12 +636,18 @@ function renderExperience(project: Record<string, unknown>): string {
               } else if (action.type === 'play_audio' && action.targetId) {
                 const audioEntity = entities.get(action.targetId);
                 audioEntity?.components?.sound?.playSound();
+              } else if (action.type === 'play_animation' && action.targetId && action.value) {
+                window.dispatchEvent(new CustomEvent('ar-play-animation', {
+                  detail: { targetId: action.targetId, animationName: action.value }
+                }));
               }
             }
           });
         });
       })();
     </script>
+    ${hasEducationContent ? `<script id="edu-runtime-data" type="application/json">${jsonForScript(educationPayload)}</script>
+    <script src="/ar-education-runtime.js"></script>` : ''}
   </body>
 </html>`;
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T15:06:24.654477+00:00",
+  "generated_at": "2026-10-29T23:29:01.608202+00:00",
   "nodes": {
     "app_ar_canvas_id_page": {
       "code_fingerprint": "",
@@ -17,7 +17,7 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.997645919,
+      "score": 1.981600671,
       "source_file": "app/ar-canvas/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
@@ -38,7 +38,7 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.997645919,
+      "score": 1.981600671,
       "source_file": "app/ar-canvas/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
@@ -59,24 +59,109 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.997645919,
+      "score": 1.981600671,
       "source_file": "app/ar-viewer/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
     },
     "components_editor_editorviewport": {
-      "code_fingerprint": "168eb8a9e4d6f3f5aa46ac321ad63bf619bcac084079e36a78e610f78310606a",
+      "code_fingerprint": "c29bb1ad8de69782421a67c472bac599b0b24149e234b5d70763b32ae4c28c42",
       "label": "EditorViewport.tsx",
-      "last": "2026-10-29T14:29:49.838539+00:00",
+      "last": "2026-10-29T23:15:32.524735+00:00",
       "provenance": [
+        {
+          "date": "2026-10-29T23:15:32.524735+00:00",
+          "outcome": "useful",
+          "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
+        },
         {
           "date": "2026-10-29T14:29:49.838539+00:00",
           "outcome": "useful",
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.999413239,
+      "score": 1.991169534,
       "source_file": "components/Editor/EditorViewport.tsx",
+      "status": "preferred",
+      "uses": 2
+    },
+    "components_editor_elements_animatedelementwrapper": {
+      "code_fingerprint": "753a550ef21b5b53c9247aed1433cbb2db5e654b2ae8dbbf96a44a3fc13c5516",
+      "label": "AnimatedElementWrapper.tsx",
+      "last": "2026-10-29T23:15:32.524735+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:15:32.524735+00:00",
+          "outcome": "useful",
+          "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
+        }
+      ],
+      "score": 0.99978366,
+      "source_file": "components/Editor/Elements/AnimatedElementWrapper.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "components_editor_panels_rightpanel": {
+      "code_fingerprint": "253ba6fe7f2cb8220418b64c7ab5dc60de9bba6bec0fe43dca40ae4fd7332122",
+      "label": "RightPanel.tsx",
+      "last": "2026-10-29T23:15:32.524735+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:15:32.524735+00:00",
+          "outcome": "useful",
+          "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
+        }
+      ],
+      "score": 0.99978366,
+      "source_file": "components/Editor/Panels/RightPanel.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "components_editor_timelinepanel": {
+      "code_fingerprint": "c292ec0751004bda6dc3e023dbd2a17f3c4e31036216f57d770178967fe1e683",
+      "label": "TimelinePanel.tsx",
+      "last": "2026-10-29T23:15:32.524735+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:15:32.524735+00:00",
+          "outcome": "useful",
+          "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
+        }
+      ],
+      "score": 0.99978366,
+      "source_file": "components/Editor/TimelinePanel.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "hooks_useeditorshortcuts": {
+      "code_fingerprint": "60dfe5a3a24c148b81bd078976ec5e44dc302b36c799fa9872bf53ed51e1f475",
+      "label": "useEditorShortcuts.ts",
+      "last": "2026-10-29T23:15:32.524735+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:15:32.524735+00:00",
+          "outcome": "useful",
+          "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
+        }
+      ],
+      "score": 0.99978366,
+      "source_file": "hooks/useEditorShortcuts.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "hooks_usetransformlogic": {
+      "code_fingerprint": "fa679c6bf65fc1ffade8778271947fa4777410cc67d7d6a68de7c549bde0b21a",
+      "label": "useTransformLogic.ts",
+      "last": "2026-10-29T23:15:32.524735+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:15:32.524735+00:00",
+          "outcome": "useful",
+          "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
+        }
+      ],
+      "score": 0.99978366,
+      "source_file": "hooks/useTransformLogic.ts",
       "status": "tentative",
       "uses": 1
     },
@@ -91,7 +176,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.999413239,
+      "score": 0.991385874,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -107,7 +192,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.999413239,
+      "score": 0.991385874,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -123,7 +208,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.999413239,
+      "score": 0.991385874,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -139,7 +224,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.999413239,
+      "score": 0.991385874,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -155,7 +240,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.999413239,
+      "score": 0.991385874,
       "source_file": "README.md",
       "status": "tentative",
       "uses": 1
