@@ -206,55 +206,58 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   // Folder State
   const [folderName, setFolderName] = useState('Personal');
   
-  const fetchEditorData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push('/login');
-      return;
+  const fetchAssets = async (userId: string) => {
+    let assetsQuery = supabase.from('assets').select('*').order('created_at', { ascending: false });
+    if (activeWorkspace) {
+      assetsQuery = assetsQuery.eq('workspace_id', activeWorkspace.id);
+    } else {
+      assetsQuery = assetsQuery.eq('user_id', userId).is('workspace_id', null);
     }
+    const { data: assetsData, error: assetsError } = await assetsQuery;
+    if (assetsError) throw assetsError;
+    setAssets(assetsData || []);
+  };
 
-    const { data: projData } = await supabase
-      .from('ar_projects')
-      .select('*')
-      .eq('id', unwrappedParams.id)
-      .single();
-      
-    if (projData) {
+  const fetchEditorData = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      const { data: projData, error: projectError } = await supabase
+        .from('ar_projects')
+        .select('*')
+        .eq('id', unwrappedParams.id)
+        .single();
+      if (projectError) throw projectError;
+      if (!projData) throw new Error('Proyek tidak ditemukan.');
+
       setProject(projData);
       setTargetImageUrl(projData.target_image_url);
       setBrandColor(projData.brand_color || '#00A2E9');
       setBrandLogoUrl(projData.brand_logo_url || null);
       setFolderName(projData.folder_name || 'Personal');
-      
-      // Load scene data from JSONB
-      if (projData.scene_data) {
-        if (projData.scene_data.elements) {
-          setElements(projData.scene_data.elements);
-        }
-        if (projData.scene_data.scenes && projData.scene_data.scenes.length > 0) {
-          setScenes(projData.scene_data.scenes);
-          setCurrentSceneId(projData.scene_data.scenes[0].id);
-        }
-        if (projData.scene_data.nodes) {
-          setNodes(projData.scene_data.nodes);
-        }
-        if (projData.scene_data.edges) {
-          setEdges(projData.scene_data.edges);
-        }
-      }
-    }
 
-    let assetsQuery = supabase.from('assets').select('*').order('created_at', { ascending: false });
-    if (activeWorkspace) {
-      assetsQuery = assetsQuery.eq('workspace_id', activeWorkspace.id);
-    } else {
-      assetsQuery = assetsQuery.eq('user_id', session.user.id).is('workspace_id', null);
+      const sceneData = projData.scene_data || {};
+      const loadedScenes = Array.isArray(sceneData.scenes) && sceneData.scenes.length > 0
+        ? sceneData.scenes
+        : [{ id: 'scene-1', name: 'Scene 1' }];
+      setElements(Array.isArray(sceneData.elements) ? sceneData.elements : []);
+      setScenes(loadedScenes);
+      setCurrentSceneId(loadedScenes[0].id);
+      setNodes(Array.isArray(sceneData.nodes) ? sceneData.nodes : []);
+      setEdges(Array.isArray(sceneData.edges) ? sceneData.edges : []);
+      await fetchAssets(session.user.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Terjadi kesalahan yang tidak diketahui.';
+      setProject(null);
+      toast.error(`Gagal memuat editor: ${message}`);
+    } finally {
+      setLoading(false);
     }
-    const { data: assetsData } = await assetsQuery;
-
-    if (assetsData) setAssets(assetsData);
-    
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -361,20 +364,35 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgress("Memuat AR Compiler...");
       setPublishProgressPercent(5);
 
-      // 1. Load the browser-only compiler used by the public runtime. Keeping
-      // MindAR out of package.json avoids its optional native `canvas` build,
-      // which is not needed in the browser and fails on Vercel's Node runtime.
-      if (!(window as any).MINDAR?.IMAGE?.Compiler) {
+      // MindAR 1.2.5's browser compiler can silently fall back to TensorFlow's
+      // CPU backend even when WebGL is present. Its custom BinomialFilter kernel
+      // is registered for `webgl` only, so that fallback crashes publishing.
+      // The official MindAR compiler page intentionally uses 1.1.5, whose
+      // compiler emits the same .mind v2 format consumed by our 1.2.5 runtime.
+      // Keep this compiler isolated from the runtime version and out of npm so
+      // Vercel never tries to build MindAR's optional native `canvas` package.
+      const compilerScriptId = 'mindar-image-compiler-v1-1-5';
+      const compilerScriptUrl = 'https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.5/dist/mindar-image.prod.js';
+      if (!(window as any).MINDAR?.IMAGE?.Compiler || !document.getElementById(compilerScriptId)) {
+        // A failed attempt with the old 1.2.5 module may have left a broken
+        // Compiler constructor on window. Remove only the image compiler global
+        // before loading the known-good standalone build.
+        if ((window as any).MINDAR?.IMAGE) {
+          delete (window as any).MINDAR.IMAGE;
+        }
         await new Promise<void>((resolve, reject) => {
-          const scriptId = 'mindar-image-compiler';
-          let existing = document.getElementById(scriptId) as HTMLScriptElement | null;
+          let existing = document.getElementById(compilerScriptId) as HTMLScriptElement | null;
           const onLoad = () => {
-            const loadedScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+            const loadedScript = document.getElementById(compilerScriptId) as HTMLScriptElement | null;
             if (loadedScript) loadedScript.dataset.status = 'loaded';
-            resolve();
+            if ((window as any).MINDAR?.IMAGE?.Compiler) {
+              resolve();
+            } else {
+              reject(new Error('MindAR Compiler selesai dimuat tetapi API Compiler tidak tersedia.'));
+            }
           };
           const onError = () => {
-            document.getElementById(scriptId)?.remove();
+            document.getElementById(compilerScriptId)?.remove();
             reject(new Error('MindAR Compiler gagal diunduh. Periksa koneksi internet lalu coba lagi.'));
           };
 
@@ -392,9 +410,8 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           }
 
           const script = document.createElement('script');
-          script.id = scriptId;
-          script.type = 'module';
-          script.src = 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js';
+          script.id = compilerScriptId;
+          script.src = compilerScriptUrl;
           script.async = true;
           script.crossOrigin = 'anonymous';
           script.dataset.status = 'loading';
@@ -636,8 +653,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       }
       toast.success('Aset berhasil diunggah!', { id: 'upload' });
 
-      // refresh assets
-      fetchEditorData();
+      await fetchAssets(session.user.id);
     } catch (err: any) {
       alert('Gagal mengunggah: ' + err.message);
     } finally {
@@ -648,6 +664,17 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
   if (loading) {
     return <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white"><Loader2 className="animate-spin" size={32} /></div>;
+  }
+
+  if (!project) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-gray-900 px-6 text-center text-white">
+        <p className="text-sm text-gray-300">Proyek tidak dapat dimuat atau Anda tidak memiliki akses.</p>
+        <Link href="/" className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300">
+          Kembali ke Dashboard
+        </Link>
+      </div>
+    );
   }
 
   const selectedElement = elements.find(el => el.id === selectedId);

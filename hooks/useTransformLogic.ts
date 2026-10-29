@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useEditorStore } from '@/lib/store';
 
 export function useTransformLogic(element: any, isSelected: boolean, transformRef: React.MutableRefObject<any>) {
-  const updateElement = useEditorStore(state => state.updateElement);
+  const commitTransform = useEditorStore(state => state.commitTransform);
   
   useEffect(() => {
     if (transformRef.current && isSelected) {
@@ -64,10 +64,6 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
           const rotChanged = Math.abs(rx) > 0.0001 || Math.abs(ry) > 0.0001 || Math.abs(rz) > 0.0001;
           const scaleChanged = Math.abs(sx) > 0.0001 || Math.abs(sy) > 0.0001 || Math.abs(sz) > 0.0001;
 
-          if (posChanged) {
-            useEditorStore.getState().applyTransformDelta(element.id, [dx, dy, dz]);
-          }
-          
           const updates: any = {};
           if (posChanged) updates.position = [obj.position.x, obj.position.y, obj.position.z];
           if (rotChanged) updates.rotation = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
@@ -76,12 +72,7 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
           // Fallback if somehow nothing changed but event fired (unlikely)
           if (!posChanged && !rotChanged && !scaleChanged) return;
 
-          updateElement(element.id, updates);
-          
-          const state = useEditorStore.getState();
-          if (state.isAutoKeying) {
-            state.addKeyframe();
-          }
+          commitTransform(element.id, updates, posChanged ? [dx, dy, dz] : undefined);
         }
       };
 
@@ -107,7 +98,7 @@ export function useTransformLogic(element: any, isSelected: boolean, transformRe
          controls.removeEventListener('change', callbackChange);
       };
     }
-  }, [isSelected, element.id, updateElement]);
+  }, [isSelected, element.id, element.position, element.rotation, element.scale, commitTransform, transformRef]);
 }
 
 

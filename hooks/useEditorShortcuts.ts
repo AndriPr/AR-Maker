@@ -90,7 +90,11 @@ export function useEditorShortcuts({ setTransformMode, toggleLeftPanel, toggleRi
 
         case 'delete':
         case 'backspace':
-          if (selectedId) removeElement(selectedId);
+          if (useEditorStore.getState().selectedKeyframes.length > 0) break;
+          if (selectedId) {
+            e.preventDefault();
+            removeElement(selectedId);
+          }
           break;
 
         case 'g':
@@ -155,5 +159,5 @@ export function useEditorShortcuts({ setTransformMode, toggleLeftPanel, toggleRi
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, groupSelectedElements, elements, duplicateElement, isOrthographic, setIsOrthographic, updateElement, setCameraFocusTarget, setTransformMode, setAxisLock, toggleLeftPanel, toggleRightPanel, openLibrary]);
+  }, [selectedId, multiSelectedIds, removeElement, undo, redo, setSelectedId, setMultiSelectedIds, groupSelectedElements, elements, duplicateElement, isOrthographic, setIsOrthographic, updateElement, setCameraFocusTarget, setTransformMode, setAxisLock, toggleLeftPanel, toggleRightPanel, openLibrary]);
 }

@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-29T14:24:15.151127+00:00",
+  "generated_at": "2026-10-29T15:06:24.654477+00:00",
   "nodes": {
     "app_ar_canvas_id_page": {
-      "code_fingerprint": "08f3231303cc434ef8d0076d011ac087f3cc36d4f0b4088f33bae6cc7bbda22e",
+      "code_fingerprint": "",
       "label": "ar-canvas/[id]/page.tsx",
       "last": "2026-10-29T14:04:44.096980+00:00",
       "provenance": [
@@ -17,13 +17,13 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.998997653,
+      "score": 1.997645919,
       "source_file": "app/ar-canvas/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
     },
     "app_ar_canvas_id_page_vpsmanager": {
-      "code_fingerprint": "08f3231303cc434ef8d0076d011ac087f3cc36d4f0b4088f33bae6cc7bbda22e",
+      "code_fingerprint": "",
       "label": "VPSManager()",
       "last": "2026-10-29T14:04:44.096980+00:00",
       "provenance": [
@@ -38,7 +38,7 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.998997653,
+      "score": 1.997645919,
       "source_file": "app/ar-canvas/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
@@ -59,10 +59,106 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.998997653,
+      "score": 1.997645919,
       "source_file": "app/ar-viewer/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
+    },
+    "components_editor_editorviewport": {
+      "code_fingerprint": "168eb8a9e4d6f3f5aa46ac321ad63bf619bcac084079e36a78e610f78310606a",
+      "label": "EditorViewport.tsx",
+      "last": "2026-10-29T14:29:49.838539+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T14:29:49.838539+00:00",
+          "outcome": "useful",
+          "q": "perbaiki ini"
+        }
+      ],
+      "score": 0.999413239,
+      "source_file": "components/Editor/EditorViewport.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "package": {
+      "code_fingerprint": "42ef9b13a39c4d93c5a1096f865e7e5de1f5c982f65f05e8a0984f554257e4a4",
+      "label": "package.json",
+      "last": "2026-10-29T14:29:49.838539+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T14:29:49.838539+00:00",
+          "outcome": "useful",
+          "q": "perbaiki ini"
+        }
+      ],
+      "score": 0.999413239,
+      "source_file": "package.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "package_devdependencies": {
+      "code_fingerprint": "42ef9b13a39c4d93c5a1096f865e7e5de1f5c982f65f05e8a0984f554257e4a4",
+      "label": "devDependencies",
+      "last": "2026-10-29T14:29:49.838539+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T14:29:49.838539+00:00",
+          "outcome": "useful",
+          "q": "perbaiki ini"
+        }
+      ],
+      "score": 0.999413239,
+      "source_file": "package.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "package_scripts": {
+      "code_fingerprint": "42ef9b13a39c4d93c5a1096f865e7e5de1f5c982f65f05e8a0984f554257e4a4",
+      "label": "scripts",
+      "last": "2026-10-29T14:29:49.838539+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T14:29:49.838539+00:00",
+          "outcome": "useful",
+          "q": "perbaiki ini"
+        }
+      ],
+      "score": 0.999413239,
+      "source_file": "package.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "package_scripts_build": {
+      "code_fingerprint": "42ef9b13a39c4d93c5a1096f865e7e5de1f5c982f65f05e8a0984f554257e4a4",
+      "label": "build",
+      "last": "2026-10-29T14:29:49.838539+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T14:29:49.838539+00:00",
+          "outcome": "useful",
+          "q": "perbaiki ini"
+        }
+      ],
+      "score": 0.999413239,
+      "source_file": "package.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "readme_vercel": {
+      "code_fingerprint": "60b55ff7df79af72590f9524208e46642bc32bdc175cdad41349681c0e2f958f",
+      "label": "Vercel",
+      "last": "2026-10-29T14:29:49.838539+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T14:29:49.838539+00:00",
+          "outcome": "useful",
+          "q": "perbaiki ini"
+        }
+      ],
+      "score": 0.999413239,
+      "source_file": "README.md",
+      "status": "tentative",
+      "uses": 1
     }
   },
   "version": 1

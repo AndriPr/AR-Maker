@@ -257,22 +257,33 @@ export function RightPanel({
             {/* Tracking Tab (When no element is selected) */}
             {selectedId === null && activeTab === 'tracking' && (
               <div className="p-4">
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1.5 mt-2">
-                      <label className="text-[10px] text-gray-400">MultiSet Map ID / Object Code</label>
-                      <input 
-                        type="text" 
-                        value={multisetMapId}
-                        onChange={(e) => {
-                          setMultisetMapId(e.target.value);
-                          handleSave(true);
-                        }}
-                        className="w-full bg-transparent border border-[#1A223A] rounded p-2 text-xs text-gray-200 outline-none focus:border-[#62E5FF] transition-colors font-mono"
-                        placeholder="c4b1a..."
-                      />
-                      <p className="text-[9px] text-gray-500">Dapatkan Map ID dari dashboard akun MultiSet AI Anda.</p>
-                    </div>
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-3">
+                    <div className="text-[10px] font-bold text-cyan-300">MindAR Image Target</div>
+                    <p className="mt-1 text-[9px] leading-relaxed text-gray-400">
+                      Tidak memerlukan Map ID atau akun pihak ketiga. Marker dikompilasi menjadi file .mind saat proyek dipublikasikan.
+                    </p>
                   </div>
+                  {targetImageUrl ? (
+                    <div className="overflow-hidden rounded-lg border border-[#1A223A] bg-black/30">
+                      <img src={targetImageUrl} alt="Marker MindAR aktif" className="aspect-video w-full object-contain" />
+                      <div className="flex items-center justify-between gap-2 border-t border-[#1A223A] p-2">
+                        <span className="truncate text-[9px] text-emerald-400">Marker siap dikompilasi</span>
+                        <button
+                          type="button"
+                          onClick={() => setTargetImageUrl(null)}
+                          className="text-[9px] font-semibold text-red-400 hover:text-red-300"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-[#1A223A] p-4 text-center text-[9px] text-gray-500">
+                      Pilih Target Image dari panel Media sebelum Publish.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

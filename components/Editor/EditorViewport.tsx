@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as React from 'react';
@@ -68,11 +68,9 @@ function ExporterComponent() {
 }
 
 export default function EditorViewport({ transformMode = 'translate', simulateMode = false }: { transformMode?: 'translate' | 'rotate' | 'scale', simulateMode?: boolean }) {
-  const isSimulating = simulateMode || useEditorStore(state => state.isSimulating);
+  const storeIsSimulating = useEditorStore(state => state.isSimulating);
+  const isSimulating = simulateMode || storeIsSimulating;
   const elements = useEditorStore(state => state.elements);
-  const updateElement = useEditorStore(state => state.updateElement);
-  const selectedId = useEditorStore(state => state.selectedId);
-  const selectedElement = elements.find(el => el.id === selectedId);
   // Precomputed once per elements change instead of every RecursiveNode doing
   // its own elements.filter(el => el.parentId === element.id) - that turned
   // building the scene tree into O(n^2) work on every store update.
@@ -87,29 +85,28 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
     return map;
   }, [elements]);
   const setSelectedId = useEditorStore(state => state.setSelectedId);
-  const handleElementClick = useEditorStore(state => state.handleElementClick);
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
-  const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
   const isOrthographic = useEditorStore(state => state.isOrthographic);
-  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
 
   // Logic Engine Setup
   const nodes = useEditorStore(state => state.nodes);
   const { executeNextNodes } = useLogicEngine();
-  const proximityTriggered = useRef<Set<string>>(new Set());
   
   useEffect(() => {
+    const startTimers: ReturnType<typeof setTimeout>[] = [];
     if (isSimulating) {
       // Find "On Scene Start" triggers
       const startTriggers = nodes.filter(n => n.type === 'trigger' && n.data?.triggerType === 'on_scene_start');
       
       startTriggers.forEach(triggerNode => {
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           executeNextNodes(triggerNode.id);
         }, 100);
+        startTimers.push(timer);
       });
-      
     }
+
+    return () => startTimers.forEach(clearTimeout);
   }, [isSimulating, nodes, executeNextNodes]);
 
   useEffect(() => {
@@ -141,10 +138,10 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const isSnapping = useEditorStore(state => state.isSnapping);
   const ambientLightIntensity = useEditorStore(state => state.ambientLightIntensity);
   const directionalLightIntensity = useEditorStore(state => state.directionalLightIntensity);
   const environmentMap = useEditorStore(state => state.environmentMap);
+  const scenes = useEditorStore(state => state.scenes);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
   const viewportShading = useEditorStore(state => state.viewportShading);
   const setViewportShading = useEditorStore(state => state.setViewportShading);
@@ -265,7 +262,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
                   }
                 }}
               >
-                {elements.filter(el => el.sceneId === currentSceneId && !el.parentId).map(el => (
+                {elements.filter(el => (el.sceneId ?? scenes[0]?.id) === currentSceneId && !el.parentId).map(el => (
                   <RecursiveNode key={el.id} element={el} childrenByParentId={childrenByParentId} transformMode={transformMode} />
                 ))}
               </Select>

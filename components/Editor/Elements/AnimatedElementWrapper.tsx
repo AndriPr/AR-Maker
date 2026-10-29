@@ -7,11 +7,22 @@ import { useEditorStore } from '@/lib/store';
 
 export function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
-    const prevTimeRef = useRef<number | null>(null);
 
-  const posKfs = useMemo(() => element.keyframes?.filter((k: any) => k.position !== undefined) || [], [element.keyframes]);
-  const rotKfs = useMemo(() => element.keyframes?.filter((k: any) => k.rotation !== undefined) || [], [element.keyframes]);
-  const sclKfs = useMemo(() => element.keyframes?.filter((k: any) => k.scale !== undefined) || [], [element.keyframes]);
+  const posKfs = useMemo(() => (element.keyframes?.filter((k: any) => k.position !== undefined) || []).sort((a: any, b: any) => a.time - b.time), [element.keyframes]);
+  const rotKfs = useMemo(() => (element.keyframes?.filter((k: any) => k.rotation !== undefined) || []).sort((a: any, b: any) => a.time - b.time), [element.keyframes]);
+  const sclKfs = useMemo(() => (element.keyframes?.filter((k: any) => k.scale !== undefined) || []).sort((a: any, b: any) => a.time - b.time), [element.keyframes]);
+
+  // Removing the final keyframe used to leave the last sampled transform on
+  // the Three.js group forever. Reset the animation layer whenever the
+  // keyframe collection changes; the next frame reapplies entrance/idle/keyframe
+  // animation as appropriate.
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group) return;
+    group.position.set(0, 0, 0);
+    group.rotation.set(0, 0, 0);
+    group.scale.set(1, 1, 1);
+  }, [element.keyframes]);
 
   // Every animated element re-scanned the full elements array for edu_panel
   // triggers on every frame (O(n) x every animated element x 60fps). Cache the
@@ -133,33 +144,18 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
         }
 
         const maxTime = Math.max(...element.keyframes.map((k: any) => k.time));
-        const animSpeed = 1.0; // Frames per second equivalent
+        const animSpeed = 1.0;
 
         if (isActive && group.userData.localAnimTime < maxTime) {
-          group.userData.localAnimTime = Math.min(maxTime, group.userData.localAnimTime + delta * animSpeed * 10); // scale speed to timeline format (fps)
+          group.userData.localAnimTime = Math.min(maxTime, group.userData.localAnimTime + delta * animSpeed);
         } else if (!isActive && group.userData.localAnimTime > 0) {
-          group.userData.localAnimTime = Math.max(0, group.userData.localAnimTime - delta * animSpeed * 10);
+          group.userData.localAnimTime = Math.max(0, group.userData.localAnimTime - delta * animSpeed);
         }
         
         tTime = group.userData.localAnimTime;
       }
       
-      const keyframes = element.keyframes;
-      
-      if (keyframes.length === 1) {
-         if (tTime >= keyframes[0].time) {
-            const pos = keyframes[0].position || [0,0,0];
-            const rot = keyframes[0].rotation || [0,0,0];
-            const scl = keyframes[0].scale || [1,1,1];
-            // Keyframe values are absolute (captured from element.position at
-            // record time), but this group is nested inside the outer wrapper
-            // that already applies element.position/rotation/scale. Cancel
-            // that base out here so the two don't compound into double the offset.
-            group.position.set(pos[0] - element.position[0], pos[1] - element.position[1], pos[2] - element.position[2]);
-            group.rotation.set(rot[0] - element.rotation[0], rot[1] - element.rotation[1], rot[2] - element.rotation[2]);
-            group.scale.set(scl[0] / (element.scale[0] || 1), scl[1] / (element.scale[1] || 1), scl[2] / (element.scale[2] || 1));
-         }
-      } else {
+      {
         // Reuse the arrays already memoized above (per element.keyframes change)
         // instead of re-filtering the full keyframe list 3x every frame.
         const getBoundingKeyframes = (propKfs: any[]) => {
@@ -203,8 +199,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
 
         // Keyframe values are absolute, but this group sits inside the outer
         // wrapper that already applies element.position/rotation/scale - so the
-        // base is subtracted (divided out for scale) here to avoid compounding
-        // into double the offset (see the single-keyframe branch above).
+        // base is subtracted (divided out for scale) here to avoid compounding.
         const posBounds = getBoundingKeyframes(posKfs);
         if (posBounds && posBounds.kf1.position && posBounds.kf2.position) {
           const progress = calculateProgress(posBounds.kf1, posBounds.kf2);
@@ -235,8 +230,6 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
   const isPrimarySelected = useEditorStore(state => state.selectedId === element.id);
   const isMultiSelected = useEditorStore(state => state.multiSelectedIds.includes(element.id));
   const isHovered = useEditorStore(state => state.hoveredId === element.id);
-  const setHoveredId = useEditorStore(state => state.setHoveredId);
-  const isTransforming = useEditorStore(state => state.isTransforming);
 
   useEffect(() => {
     if (!groupRef.current) return;
@@ -244,7 +237,7 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
     const shouldOutline = isPrimarySelected || isMultiSelected;
     const color = isPrimarySelected ? '#ff7f00' : isMultiSelected ? '#cc4400' : 'white';
     
-    let outlines: any[] = [];
+    const outlines: any[] = [];
     if (shouldOutline) {
       const mat = new THREE.LineBasicMaterial({ color, depthTest: false, transparent: true });
       group.traverse((node: any) => {

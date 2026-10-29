@@ -6,7 +6,20 @@ import { transformDragState } from '@/lib/viewportRefs';
 // fps, so a keyframe placed at "frame 1" is stored at that frame's exact time
 // instead of a coarse 0.1s-rounded value that visually drifts from the playhead.
 function snapTimeToFrame(time: number, fps: number): number {
-  return Math.round(time * fps) / fps;
+  const safeFps = Math.max(1, Math.round(fps));
+  return Math.round(Math.max(0, time) * safeFps) / safeFps;
+}
+
+export type KeyframeEasing = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'bounce';
+
+export interface SceneKeyframe {
+  id: string;
+  time: number;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  easing?: KeyframeEasing;
+  bezierHandles?: [number, number, number, number];
 }
 
 type ElementType = 'group_folder' | '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
@@ -162,15 +175,41 @@ export interface SceneElement {
   parentId?: string; // If set, this element renders relative to its parent group
 
   // Keyframe Animations (Phase 3)
-  keyframes?: {
-    id: string;
-    time: number; // in seconds
-    position?: [number, number, number];
-    rotation?: [number, number, number];
-    scale?: [number, number, number];
-    easing?: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'bounce';
-    bezierHandles?: [number, number, number, number]; // x1, y1, x2, y2 for custom curve
-  }[];
+  keyframes?: SceneKeyframe[];
+}
+
+type TransformUpdate = Pick<Partial<SceneElement>, 'position' | 'rotation' | 'scale'>;
+
+function upsertTransformKeyframe(
+  element: SceneElement,
+  transform: TransformUpdate,
+  time: number,
+  fps: number,
+  easing: KeyframeEasing
+): SceneElement {
+  const snappedTime = snapTimeToFrame(time, fps);
+  const frameTolerance = 0.5 / Math.max(1, fps);
+  const keyframes = [...(element.keyframes || [])];
+  const existingIndex = keyframes.findIndex(keyframe => Math.abs(keyframe.time - snappedTime) < frameTolerance);
+
+  if (existingIndex >= 0) {
+    keyframes[existingIndex] = {
+      ...keyframes[existingIndex],
+      ...transform,
+      time: snappedTime,
+      easing: keyframes[existingIndex].easing || easing
+    };
+  } else {
+    keyframes.push({
+      id: Math.random().toString(36).substring(2, 9),
+      time: snappedTime,
+      ...transform,
+      easing
+    });
+  }
+
+  keyframes.sort((a, b) => a.time - b.time);
+  return { ...element, ...transform, keyframes };
 }
 
 interface EditorState {
@@ -233,7 +272,7 @@ interface EditorState {
   setPreviewAnimationData: (data: { targetId: string, animationName: string } | null) => void;
   addElement: (element: Omit<SceneElement, 'id'>) => void;
   updateElement: (id: string, element: Partial<SceneElement>, options?: { skipHistory?: boolean }) => void;
-  applyTransformDelta: (primaryId: string, positionDelta: [number, number, number]) => void;
+  commitTransform: (primaryId: string, transform: TransformUpdate, positionDelta?: [number, number, number]) => void;
   removeElement: (id: string) => void;
   removeElements: (ids: string[]) => void;
   duplicateElement: (id: string) => void;
@@ -292,9 +331,11 @@ interface EditorState {
   showTimeline: boolean;
   setShowTimeline: (show: boolean) => void;
   isAutoKeying: boolean;
-  currentEasing: string;
-  setCurrentEasing: (easing: string) => void;
+  currentEasing: KeyframeEasing;
+  setCurrentEasing: (easing: KeyframeEasing) => void;
   addKeyframe: (id?: string) => void;
+  updateKeyframe: (elementId: string, keyframeId: string, updates: Partial<SceneKeyframe>) => void;
+  removeKeyframes: (keyframes: { elementId: string, id: string }[]) => void;
   setIsAutoKeying: (autoKeying: boolean) => void;
   
   // Advanced Animation Features (Phase 10)
@@ -378,7 +419,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         return { ...kf, id: Math.random().toString(36).substring(2, 9) };
       });
       return changed ? { ...el, keyframes } : el;
-    })
+    }),
+    selectedId: null,
+    multiSelectedIds: [],
+    selectedKeyframes: [],
+    past: [],
+    future: []
   }),
   
   setTargetImageUrl: (url) => set({ targetImageUrl: url }),
@@ -420,42 +466,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   updateElement: (id, data, options) => set((state) => {
     // INTERCEPT AUTO-KEYING
-    if (state.isAutoKeying && state.timelineTime > 0) {
+    if (state.isAutoKeying) {
       // Check if data contains transform changes (position, rotation, scale)
       const hasTransformChanges = 'position' in data || 'rotation' in data || 'scale' in data;
       
       if (hasTransformChanges && !('keyframes' in data)) {
-        return {
-          elements: state.elements.map(e => {
-            if (e.id !== id) return e;
-            
-            let kfs = [...(e.keyframes || [])];
-            // Half a frame of tolerance - wide enough to re-key the same frame,
-            // narrow enough that adjacent frames (as close as 1/fps apart) don't
-            // collapse into a single keyframe and silently erase the other one.
-            const frameTolerance = 0.5 / state.fps;
-            const snappedTime = snapTimeToFrame(state.timelineTime, state.fps);
-            let existingKfIndex = kfs.findIndex(k => Math.abs(k.time - state.timelineTime) < frameTolerance);
+        const transform: TransformUpdate = {};
+        if (data.position) transform.position = data.position;
+        if (data.rotation) transform.rotation = data.rotation;
+        if (data.scale) transform.scale = data.scale;
 
-            if (existingKfIndex >= 0) {
-              // Update existing keyframe with ONLY the changed properties
-              const updatedKf = { ...kfs[existingKfIndex] };
-              if ('position' in data) updatedKf.position = data.position;
-              if ('rotation' in data) updatedKf.rotation = data.rotation;
-              if ('scale' in data) updatedKf.scale = data.scale;
-              kfs[existingKfIndex] = updatedKf;
-            } else {
-              // Create new property-specific keyframe
-              const newKf: any = { id: Math.random().toString(36).substring(2, 9), time: snappedTime };
-              if ('position' in data) newKf.position = data.position;
-              if ('rotation' in data) newKf.rotation = data.rotation;
-              if ('scale' in data) newKf.scale = data.scale;
-              kfs.push(newKf);
-              kfs.sort((a, b) => a.time - b.time);
-            }
-            
-            return { ...e, keyframes: kfs };
-          })
+        return {
+          past: [...state.past, state.elements],
+          future: [],
+          elements: state.elements.map(element => element.id === id
+            ? upsertTransformKeyframe(element, transform, state.timelineTime, state.fps, state.currentEasing)
+            : element)
         };
       }
     }
@@ -478,25 +504,37 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  applyTransformDelta: (primaryId, positionDelta) => set((state) => {
-    // If the primary item isn't even selected, don't move multi-selected
-    if (state.selectedId !== primaryId) return state;
-    if (state.multiSelectedIds.length === 0) return state;
+  commitTransform: (primaryId, transform, positionDelta) => set((state) => {
+    const primary = state.elements.find(element => element.id === primaryId);
+    if (!primary) return state;
+
+    const selectedForDelta = new Set(state.multiSelectedIds);
+    const nextElements = state.elements.map(element => {
+      let nextTransform: TransformUpdate | null = null;
+
+      if (element.id === primaryId) {
+        nextTransform = transform;
+      } else if (positionDelta && selectedForDelta.has(primaryId) && selectedForDelta.has(element.id)) {
+        nextTransform = {
+          position: [
+            element.position[0] + positionDelta[0],
+            element.position[1] + positionDelta[1],
+            element.position[2] + positionDelta[2]
+          ]
+        };
+      }
+
+      if (!nextTransform) return element;
+      if (state.isAutoKeying) {
+        return upsertTransformKeyframe(element, nextTransform, state.timelineTime, state.fps, state.currentEasing);
+      }
+      return { ...element, ...nextTransform };
+    });
 
     return {
-      elements: state.elements.map(e => {
-        if (state.multiSelectedIds.includes(e.id)) {
-          return {
-            ...e,
-            position: [
-              e.position[0] + positionDelta[0],
-              e.position[1] + positionDelta[1],
-              e.position[2] + positionDelta[2]
-            ] as [number, number, number]
-          };
-        }
-        return e;
-      })
+      past: [...state.past, state.elements],
+      future: [],
+      elements: nextElements
     };
   }),
 
@@ -512,7 +550,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       future: [],
       elements: state.elements.filter((el) => !idsToRemove.includes(el.id)),
       selectedId: state.selectedId && idsToRemove.includes(state.selectedId) ? null : state.selectedId,
-      multiSelectedIds: state.multiSelectedIds.filter(selected => !idsToRemove.includes(selected))
+      multiSelectedIds: state.multiSelectedIds.filter(selected => !idsToRemove.includes(selected)),
+      selectedKeyframes: state.selectedKeyframes.filter(keyframe => !idsToRemove.includes(keyframe.elementId))
     };
   }),
 
@@ -532,7 +571,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       future: [],
       elements: state.elements.filter((el) => !allIdsToRemove.has(el.id)),
       selectedId: state.selectedId && allIdsToRemove.has(state.selectedId) ? null : state.selectedId,
-      multiSelectedIds: state.multiSelectedIds.filter(selected => !allIdsToRemove.has(selected))
+      multiSelectedIds: state.multiSelectedIds.filter(selected => !allIdsToRemove.has(selected)),
+      selectedKeyframes: state.selectedKeyframes.filter(keyframe => !allIdsToRemove.has(keyframe.elementId))
     };
   }),
 
@@ -626,8 +666,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
   }),
 
-  setSelectedId: (id) => set({ selectedId: id, multiSelectedIds: [] }),
-  setMultiSelectedIds: (ids) => set({ multiSelectedIds: ids }),
+  setSelectedId: (id) => set({ selectedId: id, multiSelectedIds: [], selectedKeyframes: [] }),
+  setMultiSelectedIds: (ids) => set({ multiSelectedIds: ids, selectedKeyframes: [] }),
   setHoveredId: (id) => set({ hoveredId: id }),
   handleElementClick: (id, ctrlKey, shiftKey) => set((state) => {
     // Swallow the ghost click that follows a TransformControls drag release
@@ -655,28 +695,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if (isMulti || isPrimary) {
         return {
           multiSelectedIds: state.multiSelectedIds.filter(mid => mid !== id),
-          selectedId: isPrimary ? null : state.selectedId
+          selectedId: isPrimary ? null : state.selectedId,
+          selectedKeyframes: []
         };
       } else {
-        return { multiSelectedIds: [...state.multiSelectedIds, id] };
+        return { multiSelectedIds: [...state.multiSelectedIds, id], selectedKeyframes: [] };
       }
     } else if (shiftKey) {
       // Range select based on visual store order
       if (!state.selectedId) {
-         return { selectedId: id, multiSelectedIds: [] };
+         return { selectedId: id, multiSelectedIds: [], selectedKeyframes: [] };
       }
       const startIndex = state.elements.findIndex(e => e.id === state.selectedId);
       const endIndex = state.elements.findIndex(e => e.id === id);
       if (startIndex === -1 || endIndex === -1) {
-         return { selectedId: id, multiSelectedIds: [] };
+         return { selectedId: id, multiSelectedIds: [], selectedKeyframes: [] };
       }
       const min = Math.min(startIndex, endIndex);
       const max = Math.max(startIndex, endIndex);
       const rangeIds = state.elements.slice(min, max + 1).map(e => e.id);
       
-      return { multiSelectedIds: Array.from(new Set([...state.multiSelectedIds, ...rangeIds])) };
+      return { multiSelectedIds: Array.from(new Set([...state.multiSelectedIds, ...rangeIds])), selectedKeyframes: [] };
     } else {
-      return { selectedId: id, multiSelectedIds: [] };
+      return { selectedId: id, multiSelectedIds: [], selectedKeyframes: [] };
     }
   }),
   
@@ -894,16 +935,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1, cameraFocusTarget: null })),
   setCameraFocusTarget: (target) => set({ cameraFocusTarget: target }),
   
-  setTimelineTime: (time) => set({ timelineTime: time }),
+  setTimelineTime: (time) => set({ timelineTime: Number.isFinite(time) ? Math.max(0, time) : 0 }),
   setTimelinePlaying: (playing) => set({ timelinePlaying: playing }),
   setTimelineLooping: (loop) => set({ timelineLooping: loop }),
   setShowTimeline: (show) => set({ showTimeline: show }),
   setIsAutoKeying: (autoKeying) => set({ isAutoKeying: autoKeying }),
   setCurrentEasing: (easing) => set({ currentEasing: easing }),
-  setPlaybackRange: (range) => set({ playbackRange: range }),
+  setPlaybackRange: (range) => set({
+    playbackRange: range
+      ? [Math.max(0, Math.min(range[0], range[1])), Math.max(0, Math.max(range[0], range[1]))]
+      : null
+  }),
   setPlaybackDirection: (dir) => set({ playbackDirection: dir }),
   setSelectedKeyframes: (kfs) => set({ selectedKeyframes: kfs }),
-  setFps: (fps) => set({ fps }),
+  setFps: (fps) => set({ fps: Number.isFinite(fps) ? Math.max(1, Math.min(240, Math.round(fps))) : 30 }),
   
   addKeyframe: (specificId?: string) => set((state) => {
     const idToKeyframe = specificId || state.selectedId;
@@ -916,22 +961,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     // Half a frame of tolerance - wide enough to re-key the same frame, narrow
     // enough that two keyframes only 1 frame apart (as little as 1/fps seconds,
     // e.g. ~0.033s at 30fps) don't get merged into a single overwritten one.
+    const snappedTime = snapTimeToFrame(state.timelineTime, state.fps);
     const frameTolerance = 0.5 / state.fps;
-    const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - state.timelineTime) < frameTolerance);
+    const existingIndex = currentKeyframes.findIndex(kf => Math.abs(kf.time - snappedTime) < frameTolerance);
 
     const newKeyframe = {
       id: Math.random().toString(36).substring(2, 9),
-      time: snapTimeToFrame(state.timelineTime, state.fps),
-      position: [...targetElement.position],
-      rotation: [...targetElement.rotation],
-      scale: [...targetElement.scale],
+      time: snappedTime,
+      position: [...targetElement.position] as [number, number, number],
+      rotation: [...targetElement.rotation] as [number, number, number],
+      scale: [...targetElement.scale] as [number, number, number],
       easing: state.currentEasing
     };
 
     let updatedKeyframes;
     if (existingIndex >= 0) {
       updatedKeyframes = [...currentKeyframes];
-      updatedKeyframes[existingIndex] = newKeyframe as any;
+      updatedKeyframes[existingIndex] = {
+        ...updatedKeyframes[existingIndex],
+        ...newKeyframe,
+        id: updatedKeyframes[existingIndex].id
+      };
     } else {
       updatedKeyframes = [...currentKeyframes, newKeyframe as any].sort((a, b) => a.time - b.time);
     }
@@ -942,6 +992,64 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       elements: state.elements.map((el) => 
         el.id === idToKeyframe ? { ...el, keyframes: updatedKeyframes } : el
       )
+    };
+  }),
+
+  updateKeyframe: (elementId, keyframeId, updates) => set((state) => {
+    const element = state.elements.find(item => item.id === elementId);
+    const current = element?.keyframes?.find(keyframe => keyframe.id === keyframeId);
+    if (!element || !current) return state;
+
+    const requestedTime = updates.time ?? current.time;
+    const snappedTime = snapTimeToFrame(requestedTime, state.fps);
+    const frameTolerance = 0.5 / state.fps;
+    const collision = element.keyframes?.find(keyframe =>
+      keyframe.id !== keyframeId && Math.abs(keyframe.time - snappedTime) < frameTolerance
+    );
+    const merged: SceneKeyframe = {
+      ...(collision || {}),
+      ...current,
+      ...updates,
+      id: current.id,
+      time: snappedTime
+    };
+    const updatedKeyframes = (element.keyframes || [])
+      .filter(keyframe => keyframe.id !== keyframeId && keyframe.id !== collision?.id)
+      .concat(merged)
+      .sort((a, b) => a.time - b.time);
+
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: state.elements.map(item => item.id === elementId ? { ...item, keyframes: updatedKeyframes } : item)
+    };
+  }),
+
+  removeKeyframes: (keyframesToRemove) => set((state) => {
+    if (keyframesToRemove.length === 0) return state;
+    const idsByElement = new Map<string, Set<string>>();
+    keyframesToRemove.forEach(({ elementId, id }) => {
+      const ids = idsByElement.get(elementId) || new Set<string>();
+      ids.add(id);
+      idsByElement.set(elementId, ids);
+    });
+
+    let changed = false;
+    const nextElements = state.elements.map(element => {
+      const ids = idsByElement.get(element.id);
+      if (!ids || !element.keyframes) return element;
+      const keyframes = element.keyframes.filter(keyframe => !ids.has(keyframe.id));
+      if (keyframes.length === element.keyframes.length) return element;
+      changed = true;
+      return { ...element, keyframes };
+    });
+    if (!changed) return state;
+
+    return {
+      past: [...state.past, state.elements],
+      future: [],
+      elements: nextElements,
+      selectedKeyframes: state.selectedKeyframes.filter(({ elementId, id }) => !idsByElement.get(elementId)?.has(id))
     };
   }),
 }));
