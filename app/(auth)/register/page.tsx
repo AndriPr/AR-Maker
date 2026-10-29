@@ -154,27 +154,9 @@ export default function RegisterPage() {
         </div>
       </form>
 
-      <div className="mt-8">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">Atau daftar dengan</span>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <button onClick={() => handleOAuthLogin('google')} className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors text-sm font-bold text-gray-700">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-4 h-4" alt="Google" />
-            Google
-          </button>
-          <button onClick={() => handleOAuthLogin('azure')} className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors text-sm font-bold text-gray-700">
-            <img src="https://www.svgrepo.com/show/475666/microsoft-color.svg" className="w-4 h-4" alt="Microsoft" />
-            Microsoft
-          </button>
-        </div>
-      </div>
+      {/* Pendaftaran Google/Microsoft disembunyikan: provider belum diaktifkan di Supabase.
+          Aktifkan dulu di Supabase (Authentication > Providers), lalu tampilkan lagi
+          tombol yang memanggil handleOAuthLogin('google') / handleOAuthLogin('azure'). */}
 
       <p className="mt-8 text-center text-sm text-gray-600">
         Sudah punya akun?{' '}

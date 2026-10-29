@@ -278,7 +278,10 @@ function renderExperience(project: Record<string, unknown>): string {
     <style>
       :root { --brand: ${brandColor}; color-scheme: dark; }
       * { box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #05070b; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      /* Warna latar hanya di html. MindAR menaruh <video> kamera dengan z-index negatif,
+         jadi background body harus transparan, kalau tidak video tertutup dan layar tampak hitam. */
+      html { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #05070b; }
+      body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
       a-scene { position: fixed !important; inset: 0; }
       #topbar { position: fixed; z-index: 8; top: max(14px, env(safe-area-inset-top)); left: 14px; right: 14px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
       .brand { display: flex; align-items: center; gap: 9px; max-width: 70vw; padding: 8px 11px; border: 1px solid #ffffff26; border-radius: 999px; color: #fff; background: #070b14b8; backdrop-filter: blur(12px); box-shadow: 0 8px 24px #0005; }

@@ -37,7 +37,7 @@ export function LeftToolbar({
       content: 'Hello AR',
       color: '#ffffff',
       is3D: true,
-      fontFamily: 'Roboto',
+      fontFamily: 'helvetiker',
       textEffect: 'none'
     });
   };
