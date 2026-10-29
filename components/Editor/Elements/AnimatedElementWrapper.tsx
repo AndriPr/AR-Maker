@@ -4,6 +4,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
+import { resolveEduAnimationSource } from '@/lib/education';
 
 export function AnimatedElementWrapper({ element, children }: { element: any, children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -116,10 +117,20 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
       // no trigger is ever "active" outside of a live simulation.
       let isTargeted = false;
       let isActive = false;
+      let maintenanceProgress: number | null = null;
 
       if (stateStore.isSimulating) {
         const eduPanels = getEduPanels(elements);
         for (const panel of eduPanels) {
+          const maintenance = panel.eduMaintenanceTasks?.[stateStore.currentARModuleIndex];
+          const maintenanceStep = maintenance?.steps?.[stateStore.currentARStepIndex];
+          if (
+            maintenanceStep &&
+            resolveEduAnimationSource(maintenanceStep) === 'editor' &&
+            maintenanceStep.actionTargetId === element.id
+          ) {
+            maintenanceProgress = stateStore.arPlaybackProgress;
+          }
           if (panel.eduCustomTriggers) {
             for (const trigger of panel.eduCustomTriggers) {
               if (trigger.targetElementId === element.id) {
@@ -138,7 +149,10 @@ export function AnimatedElementWrapper({ element, children }: { element: any, ch
       // Calculate local time for trigger animation
       let tTime = tTimeGlobal;
 
-      if (isTargeted) {
+      if (maintenanceProgress !== null) {
+        const maxTime = Math.max(...element.keyframes.map((k: any) => k.time));
+        tTime = maxTime * maintenanceProgress;
+      } else if (isTargeted) {
         if (group.userData.localAnimTime === undefined) {
           group.userData.localAnimTime = 0;
         }

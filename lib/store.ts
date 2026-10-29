@@ -24,14 +24,22 @@ export interface SceneKeyframe {
 
 type ElementType = 'group_folder' | '3d_model' | '3d_shape' | '3d_text' | 'image' | 'video' | 'ui_button' | 'edu_panel' | 'audio' | 'vfx_sparkles' | 'hotspot' | 'occluder_plane' | 'occluder_cube';
 
-interface EduComponent {
+export interface EduComponent {
   id: string;
   name: string;
+  description?: string;
   actionTargetId?: string;
   actionAnimation?: string;
   showTargetId?: string;
   hideTargetId?: string;
 }
+
+export interface EduGeneralInfo {
+  title: string;
+  description: string;
+}
+
+export type EduAnimationSource = 'none' | 'blender' | 'editor' | 'submesh';
 
 export interface TransformKeyframe {
   time: number;
@@ -54,6 +62,7 @@ export interface EduMaintenanceStep {
   instruction: string;
   voiceoverUrl?: string;
   animations: SubMeshAnimation[];
+  animationSource?: EduAnimationSource;
   
   // Legacy fields (optional backward compatibility)
   actionTargetId?: string;
@@ -65,6 +74,7 @@ export interface EduMaintenanceStep {
 export interface EduMaintenanceTask {
   id: string;
   title: string;
+  description?: string;
   steps: EduMaintenanceStep[];
 }
 
@@ -116,7 +126,7 @@ export interface SceneElement {
   isHidden?: boolean; // Default visibility state
   isLocked?: boolean;
   isJoint?: boolean; // Selectability state (Blender Outliner)
-  eduCustomTriggers?: any[];
+  eduCustomTriggers?: EduCustomTrigger[];
   
   // Audio Properties
   loop?: boolean;
@@ -129,6 +139,7 @@ export interface SceneElement {
 
   // Edu Panel Properties
   panelTitle?: string;
+  eduGeneralInfo?: EduGeneralInfo;
   eduComponents?: EduComponent[];
   eduMaintenanceTasks?: EduMaintenanceTask[];
 
@@ -216,9 +227,11 @@ interface EditorState {
   selectedSubMesh: { elementId: string, meshName: string } | null;
   setSelectedSubMesh: (subMesh: { elementId: string, meshName: string } | null) => void;
   currentARStepIndex: number;
+  currentARModuleIndex: number;
   arPlaybackProgress: number;
   setArPlaybackProgress: (p: number) => void;
   setCurrentARStepIndex: (index: number) => void;
+  setCurrentARModuleIndex: (index: number) => void;
   
   activeTriggers: string[];
   toggleTrigger: (triggerId: string) => void;
@@ -354,9 +367,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedSubMesh: null,
   setSelectedSubMesh: (subMesh: { elementId: string, meshName: string } | null) => set({ selectedSubMesh: subMesh }),
   currentARStepIndex: 0,
+  currentARModuleIndex: 0,
   arPlaybackProgress: 0,
   setArPlaybackProgress: (p) => set({ arPlaybackProgress: p }),
   setCurrentARStepIndex: (index: number) => set({ currentARStepIndex: index }),
+  setCurrentARModuleIndex: (index: number) => set({ currentARModuleIndex: index, currentARStepIndex: 0 }),
 
   activeTriggers: [],
   toggleTrigger: (id: string) => set((state) => ({

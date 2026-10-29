@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T23:29:01.608202+00:00",
+  "generated_at": "2026-10-29T23:45:26.687456+00:00",
   "nodes": {
     "app_ar_canvas_id_page": {
       "code_fingerprint": "",
@@ -17,7 +17,7 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.981600671,
+      "score": 1.981078731,
       "source_file": "app/ar-canvas/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
@@ -38,7 +38,7 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.981600671,
+      "score": 1.981078731,
       "source_file": "app/ar-canvas/[id]/page.tsx",
       "status": "preferred",
       "uses": 2
@@ -46,8 +46,13 @@
     "app_ar_viewer_id_page_arviewer": {
       "code_fingerprint": "7245a0070a026688755fdcf9120a8a5852df635fd4f3f61262c2cee0e36fe563",
       "label": "ARViewer()",
-      "last": "2026-10-29T14:04:44.096980+00:00",
+      "last": "2026-10-29T23:44:24.263661+00:00",
       "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
         {
           "date": "2026-10-29T14:04:44.096980+00:00",
           "outcome": "useful",
@@ -59,10 +64,10 @@
           "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
         }
       ],
-      "score": 1.981600671,
+      "score": 2.981062038,
       "source_file": "app/ar-viewer/[id]/page.tsx",
       "status": "preferred",
-      "uses": 2
+      "uses": 3
     },
     "components_editor_editorviewport": {
       "code_fingerprint": "c29bb1ad8de69782421a67c472bac599b0b24149e234b5d70763b32ae4c28c42",
@@ -80,7 +85,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 1.991169534,
+      "score": 1.990645074,
       "source_file": "components/Editor/EditorViewport.tsx",
       "status": "preferred",
       "uses": 2
@@ -96,7 +101,7 @@
           "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
         }
       ],
-      "score": 0.99978366,
+      "score": 0.999520324,
       "source_file": "components/Editor/Elements/AnimatedElementWrapper.tsx",
       "status": "tentative",
       "uses": 1
@@ -104,16 +109,37 @@
     "components_editor_panels_rightpanel": {
       "code_fingerprint": "253ba6fe7f2cb8220418b64c7ab5dc60de9bba6bec0fe43dca40ae4fd7332122",
       "label": "RightPanel.tsx",
-      "last": "2026-10-29T23:15:32.524735+00:00",
+      "last": "2026-10-29T23:44:24.263661+00:00",
       "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
         {
           "date": "2026-10-29T23:15:32.524735+00:00",
           "outcome": "useful",
           "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
         }
       ],
-      "score": 0.99978366,
+      "score": 1.999503631,
       "source_file": "components/Editor/Panels/RightPanel.tsx",
+      "status": "preferred",
+      "uses": 2
+    },
+    "components_editor_simulator_aruserinterface": {
+      "code_fingerprint": "2cf2017e8d1a0a60249e16ea94b065318994de9a32592103ef84fad669cb4ca8",
+      "label": "ARUserInterface.tsx",
+      "last": "2026-10-29T23:44:24.263661+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        }
+      ],
+      "score": 0.999983307,
+      "source_file": "components/Editor/Simulator/ARUserInterface.tsx",
       "status": "tentative",
       "uses": 1
     },
@@ -128,7 +154,7 @@
           "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
         }
       ],
-      "score": 0.99978366,
+      "score": 0.999520324,
       "source_file": "components/Editor/TimelinePanel.tsx",
       "status": "tentative",
       "uses": 1
@@ -144,7 +170,7 @@
           "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
         }
       ],
-      "score": 0.99978366,
+      "score": 0.999520324,
       "source_file": "hooks/useEditorShortcuts.ts",
       "status": "tentative",
       "uses": 1
@@ -160,10 +186,115 @@
           "q": "kamu analisis kode kode yang aneh di bagian page /edit, ataupun bagian pada saat buat animasi atau editor page, perbaiki bug-bugnya"
         }
       ],
-      "score": 0.99978366,
+      "score": 0.999520324,
       "source_file": "hooks/useTransformLogic.ts",
       "status": "tentative",
       "uses": 1
+    },
+    "lib_store_educomponent": {
+      "code_fingerprint": "a3ba01111c878188ba7c53cfa24a64c2727856a0fd7b24511a452910f9245075",
+      "label": "EduComponent",
+      "last": "2026-10-29T23:44:24.263661+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
+        {
+          "date": "2026-10-29T23:35:35.691178+00:00",
+          "outcome": "useful",
+          "q": "ini kan masih kosong banget nih, bisa ga di-instegrasikan dengan edu-dashboard yang sudah ada? agar sistem edukasi ini bisa memberikan animasi pilihan, informasi yang ada sesuai edu dashboard dan sebagainya"
+        }
+      ],
+      "score": 1.999825276,
+      "source_file": "lib/store.ts",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_store_edumaintenancestep": {
+      "code_fingerprint": "a3ba01111c878188ba7c53cfa24a64c2727856a0fd7b24511a452910f9245075",
+      "label": "EduMaintenanceStep",
+      "last": "2026-10-29T23:44:24.263661+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
+        {
+          "date": "2026-10-29T23:35:35.691178+00:00",
+          "outcome": "useful",
+          "q": "ini kan masih kosong banget nih, bisa ga di-instegrasikan dengan edu-dashboard yang sudah ada? agar sistem edukasi ini bisa memberikan animasi pilihan, informasi yang ada sesuai edu dashboard dan sebagainya"
+        }
+      ],
+      "score": 1.999825276,
+      "source_file": "lib/store.ts",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_store_edumaintenancetask": {
+      "code_fingerprint": "a3ba01111c878188ba7c53cfa24a64c2727856a0fd7b24511a452910f9245075",
+      "label": "EduMaintenanceTask",
+      "last": "2026-10-29T23:44:24.263661+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
+        {
+          "date": "2026-10-29T23:35:35.691178+00:00",
+          "outcome": "useful",
+          "q": "ini kan masih kosong banget nih, bisa ga di-instegrasikan dengan edu-dashboard yang sudah ada? agar sistem edukasi ini bisa memberikan animasi pilihan, informasi yang ada sesuai edu dashboard dan sebagainya"
+        }
+      ],
+      "score": 1.999825276,
+      "source_file": "lib/store.ts",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_store_sceneelement": {
+      "code_fingerprint": "a3ba01111c878188ba7c53cfa24a64c2727856a0fd7b24511a452910f9245075",
+      "label": "SceneElement",
+      "last": "2026-10-29T23:44:24.263661+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
+        {
+          "date": "2026-10-29T23:35:35.691178+00:00",
+          "outcome": "useful",
+          "q": "ini kan masih kosong banget nih, bisa ga di-instegrasikan dengan edu-dashboard yang sudah ada? agar sistem edukasi ini bisa memberikan animasi pilihan, informasi yang ada sesuai edu dashboard dan sebagainya"
+        }
+      ],
+      "score": 1.999825276,
+      "source_file": "lib/store.ts",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_store_submeshanimation": {
+      "code_fingerprint": "a3ba01111c878188ba7c53cfa24a64c2727856a0fd7b24511a452910f9245075",
+      "label": "SubMeshAnimation",
+      "last": "2026-10-29T23:44:24.263661+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T23:44:24.263661+00:00",
+          "outcome": "useful",
+          "q": "Analisis Edu Panel Dashboard: menu informasi komponen, maintenance dengan jenis/prosedur/animasi editor atau Blender, informasi general, dan tampil saat tes kamera HP AR."
+        },
+        {
+          "date": "2026-10-29T23:35:35.691178+00:00",
+          "outcome": "useful",
+          "q": "ini kan masih kosong banget nih, bisa ga di-instegrasikan dengan edu-dashboard yang sudah ada? agar sistem edukasi ini bisa memberikan animasi pilihan, informasi yang ada sesuai edu dashboard dan sebagainya"
+        }
+      ],
+      "score": 1.999825276,
+      "source_file": "lib/store.ts",
+      "status": "preferred",
+      "uses": 2
     },
     "package": {
       "code_fingerprint": "42ef9b13a39c4d93c5a1096f865e7e5de1f5c982f65f05e8a0984f554257e4a4",
@@ -176,7 +307,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.991385874,
+      "score": 0.99112475,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -192,7 +323,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.991385874,
+      "score": 0.99112475,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -208,7 +339,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.991385874,
+      "score": 0.99112475,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -224,7 +355,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.991385874,
+      "score": 0.99112475,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -240,7 +371,7 @@
           "q": "perbaiki ini"
         }
       ],
-      "score": 0.991385874,
+      "score": 0.99112475,
       "source_file": "README.md",
       "status": "tentative",
       "uses": 1

@@ -40,7 +40,7 @@
 
   const state = {
     sceneId: config.initialSceneId,
-    tab: 'info',
+    tab: 'components',
     moduleIndex: 0,
     stepIndex: 0,
     selectedObjectId: null,
@@ -67,30 +67,12 @@
   );
   const currentModule = () => currentPanel()?.modules?.[state.moduleIndex] || null;
   const currentStep = () => currentModule()?.steps?.[state.stepIndex] || null;
-
-  const typeLabel = (type) => ({
-    '3d_model': 'Model 3D',
-    '3d_shape': 'Bentuk 3D',
-    '3d_text': 'Teks 3D',
-    image: 'Gambar',
-    video: 'Video',
-    audio: 'Audio',
-    hotspot: 'Hotspot',
-    ui_button: 'Tombol',
-    group_folder: 'Grup',
-  }[type] || String(type || 'Objek').replaceAll('_', ' '));
-
-  const typeIcon = (type) => ({
-    '3d_model': '◇',
-    '3d_shape': '◆',
-    '3d_text': 'T',
-    image: '▧',
-    video: '▶',
-    audio: '♪',
-    hotspot: '◎',
-    ui_button: '↗',
-    group_folder: '▣',
-  }[type] || '•');
+  const resolveStepSource = (step) => {
+    if (step?.animationSource) return step.animationSource;
+    if (step?.actionTargetId && step?.actionAnimation) return 'blender';
+    if (step?.animations?.length) return 'submesh';
+    return 'none';
+  };
 
   function showToast(message) {
     if (!message) return;
@@ -164,7 +146,7 @@
       if (object?.autoplayAnimation) playClip(elementId, object.autoplayAnimation, true);
     }
 
-    if (state.tab === 'guide' && currentStep()) startCurrentStep(false);
+    if (state.tab === 'maintenance' && currentStep()) startCurrentStep(false);
   }
 
   function playClip(elementId, animationName, silent = false) {
@@ -351,8 +333,10 @@
     audio.play().catch(() => showToast('Audio narasi tidak dapat diputar.'));
   }
 
-  function runLegacyStepActions(step, silent) {
-    if (step.actionTargetId && step.actionAnimation) playClip(step.actionTargetId, step.actionAnimation, silent);
+  function runStepActions(step, silent) {
+    if (resolveStepSource(step) === 'blender' && step.actionTargetId && step.actionAnimation) {
+      playClip(step.actionTargetId, step.actionAnimation, silent);
+    }
     if (step.showTargetId) setVisible(step.showTargetId, true);
     if (step.hideTargetId) setVisible(step.hideTargetId, false);
   }
@@ -365,20 +349,36 @@
     stopVoiceover();
     state.stepAnimation = null;
 
-    lessonModule.steps.forEach((item) => (item.animations || []).forEach((animation) => applySubMeshFrame(animation, false)));
+    lessonModule.steps.forEach((item) => {
+      if (resolveStepSource(item) === 'submesh') {
+        (item.animations || []).forEach((animation) => applySubMeshFrame(animation, false));
+      }
+    });
     lessonModule.steps.slice(0, state.stepIndex).forEach((item) => {
-      (item.animations || []).forEach((animation) => applySubMeshFrame(animation, true));
-      runLegacyStepActions(item, true);
+      if (resolveStepSource(item) === 'submesh') {
+        (item.animations || []).forEach((animation) => applySubMeshFrame(animation, true));
+      }
+      runStepActions(item, true);
     });
 
-    const tracks = (step.animations || []).flatMap((animation) => {
-      const mesh = subMeshFor(animation);
-      return mesh && animation.keyframes?.length ? [{ mesh, keyframes: animation.keyframes }] : [];
-    });
+    const source = resolveStepSource(step);
+    const tracks = source === 'submesh'
+      ? (step.animations || []).flatMap((animation) => {
+          const mesh = subMeshFor(animation);
+          return mesh && animation.keyframes?.length ? [{ mesh, keyframes: animation.keyframes }] : [];
+        })
+      : [];
+    if (source === 'editor' && step.actionTargetId) {
+      const targetObject = objectsById.get(step.actionTargetId);
+      const targetEntity = entities.get(step.actionTargetId);
+      if (targetObject?.keyframes?.length && targetEntity?.object3D) {
+        tracks.push({ mesh: targetEntity.object3D, keyframes: targetObject.keyframes });
+      }
+    }
     tracks.forEach((track) => sampleTransform(track.mesh, track.keyframes, 0));
-    runLegacyStepActions(step, false);
+    runStepActions(step, false);
 
-    if (animate && tracks.length > 0) {
+    if (animate) {
       state.stepAnimation = { elapsed: 0, duration: 2, tracks };
     } else {
       tracks.forEach((track) => sampleTransform(track.mesh, track.keyframes, maxKeyframeTime(track.keyframes)));
@@ -419,37 +419,29 @@
     </section>`;
   }
 
-  function renderInfo() {
+  function renderComponents() {
     const panel = currentPanel();
-    const objects = currentObjects();
-    if (!state.selectedObjectId || !objects.some((object) => object.id === state.selectedObjectId)) {
-      state.selectedObjectId = objects[0]?.id || null;
-    }
-    const selected = objects.find((object) => object.id === state.selectedObjectId);
     const components = panel?.components || [];
+    const triggers = panel?.triggers || [];
 
-    content.innerHTML = `${panel?.description ? `<section class="edu-section"><p class="edu-copy">${escapeHtml(panel.description)}</p></section>` : ''}
-      ${renderSceneSelector()}
-      <section class="edu-section">
-        <div class="edu-section-head"><h3>Komponen Edukasi</h3><span class="edu-count">${components.length} komponen</span></div>
-        ${components.length ? `<div class="edu-card-grid">${components.map((component, index) => `
-          <button class="edu-card" type="button" data-component-index="${index}">
-            <span class="edu-card-icon">◎</span><span class="edu-card-title">${escapeHtml(component.name)}</span>
-            <span class="edu-card-meta">${component.actionAnimation ? 'Ketuk untuk animasi' : component.showTargetId || component.hideTargetId ? 'Ketuk untuk aksi' : 'Informasi komponen'}</span>
+    content.innerHTML = `<section class="edu-section">
+        <div class="edu-section-head"><h3>Informasi Komponen</h3><span class="edu-count">${components.length} komponen</span></div>
+        ${components.length ? `<div class="edu-action-list">${components.map((component, index) => `
+          <button class="edu-action-card" type="button" data-component-index="${index}">
+            <span class="edu-card-icon">◎</span><span class="edu-action-copy"><strong>${escapeHtml(component.name)}</strong><small>${escapeHtml(component.description || 'Deskripsi komponen belum diisi.')}</small></span>
+            <span class="edu-action-badge">${component.actionAnimation || component.showTargetId || component.hideTargetId ? 'Buka' : 'Info'}</span>
           </button>`).join('')}</div>` : '<div class="edu-empty">Belum ada komponen pada Edu Dashboard.</div>'}
       </section>
-      <section class="edu-section">
-        <div class="edu-section-head"><h3>Objek AR</h3><span class="edu-count">${objects.length} objek</span></div>
-        ${objects.length ? `<div class="edu-card-grid">${objects.map((object) => `
-          <button class="edu-card ${object.id === state.selectedObjectId ? 'edu-selected' : ''}" type="button" data-object-id="${escapeHtml(object.id)}">
-            <span class="edu-card-icon">${typeIcon(object.type)}</span><span class="edu-card-title">${escapeHtml(object.name)}</span>
-            <span class="edu-card-meta">${escapeHtml(typeLabel(object.type))}</span>
-          </button>`).join('')}</div>` : '<div class="edu-empty">Belum ada objek yang ditampilkan pada menu AR.</div>'}
-        ${selected ? `<div class="edu-detail"><h4>${escapeHtml(selected.name)}</h4><p>${escapeHtml(selected.description || `Objek ${typeLabel(selected.type)} interaktif. Tambahkan deskripsi melalui panel properti agar informasi tampil lebih lengkap.`)}</p></div>` : ''}
-      </section>`;
+      ${triggers.length ? `<section class="edu-section"><div class="edu-section-head"><h3>Aksi Interaktif Lama</h3><span class="edu-count">${triggers.length} aksi</span></div><div class="edu-action-list">${triggers.map((trigger) => `
+        <button class="edu-action-card ${state.activeTriggers.has(trigger.id) ? 'edu-active' : ''}" type="button" data-trigger-id="${escapeHtml(trigger.id)}"><span class="edu-card-icon">${state.activeTriggers.has(trigger.id) ? '●' : '○'}</span><span class="edu-action-copy"><strong>${escapeHtml(trigger.label)}</strong><small>Animasi timeline kompatibilitas proyek lama</small></span><span class="edu-action-badge">${state.activeTriggers.has(trigger.id) ? 'On' : 'Off'}</span></button>`).join('')}</div></section>` : ''}`;
   }
 
-  function renderGuide() {
+  function renderGeneral() {
+    const panel = currentPanel();
+    content.innerHTML = `${renderSceneSelector()}<section class="edu-section"><div class="edu-section-head"><h3>${escapeHtml(panel?.generalTitle || 'Informasi General')}</h3></div><div class="edu-detail"><p>${escapeHtml(panel?.description || 'Informasi general belum diisi pada Edu Dashboard.')}</p></div></section>`;
+  }
+
+  function renderMaintenance() {
     const modules = currentPanel()?.modules || [];
     const lessonModule = currentModule();
     const step = currentStep();
@@ -462,37 +454,15 @@
     content.innerHTML = `${moduleSelect}<article class="edu-step">
       <div class="edu-step-top"><div><span class="edu-step-kicker">${escapeHtml(lessonModule.title)}</span><div class="edu-card-title">Langkah ${state.stepIndex + 1} dari ${lessonModule.steps.length}</div></div><span class="edu-step-progress" data-step-progress-label>0%</span></div>
       <div class="edu-progress-track"><div class="edu-progress-bar" data-step-progress-bar style="width:0%"></div></div>
-      <div class="edu-step-body"><h4>${escapeHtml(step.title)}</h4><p>${escapeHtml(step.instruction || 'Ikuti petunjuk visual pada objek AR.')}</p>${step.voiceoverUrl ? '<button class="edu-button edu-voice" type="button" data-voiceover>♪ Putar narasi</button>' : ''}</div>
+      <div class="edu-step-body">${lessonModule.description ? `<p class="edu-copy" style="margin-bottom:12px">${escapeHtml(lessonModule.description)}</p>` : ''}<h4>${escapeHtml(step.title)}</h4><p>${escapeHtml(step.instruction || 'Ikuti petunjuk visual pada objek AR.')}</p>${step.voiceoverUrl ? '<button class="edu-button edu-voice" type="button" data-voiceover>♪ Putar narasi</button>' : ''}</div>
       <div class="edu-step-actions"><button class="edu-button" type="button" data-step-prev ${state.stepIndex === 0 ? 'disabled' : ''}>← Sebelumnya</button><button class="edu-button edu-primary" type="button" data-step-next>${state.stepIndex === lessonModule.steps.length - 1 ? 'Selesai' : 'Berikutnya →'}</button></div>
     </article>`;
   }
 
-  function renderAnimations() {
-    const panel = currentPanel();
-    const objects = currentObjects();
-    const components = (panel?.components || []).filter((component) => component.actionAnimation || component.showTargetId || component.hideTargetId);
-    const triggers = panel?.triggers || [];
-    const animatedObjects = objects.filter((object) => object.availableAnimations?.length);
-
-    content.innerHTML = `${components.length ? `<section class="edu-section"><div class="edu-section-head"><h3>Pilihan Edu Dashboard</h3><span class="edu-count">${components.length} aksi</span></div><div class="edu-action-list">${components.map((component, index) => `
-      <button class="edu-action-card" type="button" data-action-component="${index}"><span class="edu-card-icon">▶</span><span class="edu-action-copy"><strong>${escapeHtml(component.name)}</strong><small>${escapeHtml(component.actionAnimation || 'Tampilkan / sembunyikan objek')}</small></span><span class="edu-action-badge">Jalankan</span></button>`).join('')}</div></section>` : ''}
-      ${triggers.length ? `<section class="edu-section"><div class="edu-section-head"><h3>Sakelar Aksi</h3><span class="edu-count">Animasi timeline</span></div><div class="edu-action-list">${triggers.map((trigger) => `
-        <button class="edu-action-card ${state.activeTriggers.has(trigger.id) ? 'edu-active' : ''}" type="button" data-trigger-id="${escapeHtml(trigger.id)}"><span class="edu-card-icon">${state.activeTriggers.has(trigger.id) ? '●' : '○'}</span><span class="edu-action-copy"><strong>${escapeHtml(trigger.label)}</strong><small>${state.activeTriggers.has(trigger.id) ? 'Aktif — ketuk untuk kembali' : 'Ketuk untuk menjalankan animasi'}</small></span><span class="edu-action-badge">${state.activeTriggers.has(trigger.id) ? 'On' : 'Off'}</span></button>`).join('')}</div></section>` : ''}
-      ${animatedObjects.map((object) => `<section class="edu-section"><div class="edu-section-head"><h3>${escapeHtml(object.name)}</h3><span class="edu-count">${object.availableAnimations.length} clip</span></div><div class="edu-action-list">${object.availableAnimations.map((animation) => `
-        <button class="edu-action-card" type="button" data-clip-target="${escapeHtml(object.id)}" data-clip-name="${escapeHtml(animation)}"><span class="edu-card-icon">▷</span><span class="edu-action-copy"><strong>${escapeHtml(animation)}</strong><small>${escapeHtml(object.name)}</small></span><span class="edu-action-badge">Putar</span></button>`).join('')}</div></section>`).join('')}
-      ${!components.length && !triggers.length && !animatedObjects.length ? '<div class="edu-empty">Belum ada animasi yang dikonfigurasi. Pilih clip atau buat Sakelar Aksi melalui Edu Dashboard.</div>' : ''}`;
-  }
-
   function bindContentEvents() {
     content.querySelectorAll('[data-scene-id]').forEach((button) => button.addEventListener('click', () => setScene(button.dataset.sceneId)));
-    content.querySelectorAll('[data-object-id]').forEach((button) => button.addEventListener('click', () => {
-      state.selectedObjectId = button.dataset.objectId;
-      render();
-    }));
     content.querySelectorAll('[data-component-index]').forEach((button) => button.addEventListener('click', () => executeComponent(currentPanel().components[Number(button.dataset.componentIndex)])));
-    content.querySelectorAll('[data-action-component]').forEach((button) => button.addEventListener('click', () => executeComponent(currentPanel().components.filter((component) => component.actionAnimation || component.showTargetId || component.hideTargetId)[Number(button.dataset.actionComponent)])));
     content.querySelectorAll('[data-trigger-id]').forEach((button) => button.addEventListener('click', () => toggleTrigger(button.dataset.triggerId)));
-    content.querySelectorAll('[data-clip-target]').forEach((button) => button.addEventListener('click', () => playClip(button.dataset.clipTarget, button.dataset.clipName)));
 
     const moduleSelect = content.querySelector('[data-module-select]');
     moduleSelect?.addEventListener('change', () => {
@@ -528,9 +498,9 @@
     const objectCount = currentObjects().length;
     dockMeta.textContent = `${objectCount} objek • ${moduleCount} modul • animasi interaktif`;
     tabs.querySelectorAll('[data-edu-tab]').forEach((button) => button.setAttribute('aria-selected', String(button.dataset.eduTab === state.tab)));
-    if (state.tab === 'guide') renderGuide();
-    else if (state.tab === 'animation') renderAnimations();
-    else renderInfo();
+    if (state.tab === 'maintenance') renderMaintenance();
+    else if (state.tab === 'general') renderGeneral();
+    else renderComponents();
     bindContentEvents();
   }
 
@@ -551,7 +521,7 @@
     if (!button) return;
     state.tab = button.dataset.eduTab;
     render();
-    if (state.tab === 'guide') startCurrentStep(true);
+    if (state.tab === 'maintenance') startCurrentStep(true);
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && runtime.classList.contains('edu-open')) closeSheet();
@@ -561,8 +531,8 @@
     entity.addEventListener('click', () => {
       if (!objectsById.has(elementId)) return;
       state.selectedObjectId = elementId;
-      state.tab = 'info';
-      openSheet('info');
+      state.tab = 'components';
+      openSheet('components');
     });
   });
 

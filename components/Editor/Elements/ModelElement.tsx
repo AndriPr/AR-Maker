@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 import { AnimatedElementWrapper } from '@/components/Editor/Elements/AnimatedElementWrapper';
 import { useTransformLogic } from '@/hooks/useTransformLogic';
+import { resolveEduAnimationSource } from '@/lib/education';
 
 // Custom Selection Pointer
 const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) => {
@@ -53,6 +54,7 @@ const SelectionPointer = ({ targetRef }: { targetRef: React.RefObject<THREE.Grou
 // --- Deep Edu Dashboard: Sub-Mesh Animator ---
 const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: string }) => {
   const elements = useEditorStore(state => state.elements);
+  const currentARModuleIndex = useEditorStore(state => state.currentARModuleIndex);
   const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
   const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
 
@@ -70,14 +72,15 @@ const SubMeshAnimator = ({ scene, elementId }: { scene: THREE.Group, elementId: 
     if (!eduPanel) return;
     const modules = eduPanel.eduMaintenanceTasks || [];
     if (modules.length === 0) return;
-    const activeModule = modules[0];
+    const activeModule = modules[currentARModuleIndex] || modules[0];
     const steps = activeModule.steps || [];
     if (steps.length === 0) return;
     const currentStep = steps[currentARStepIndex];
     if (!currentStep) return;
+    if (resolveEduAnimationSource(currentStep) !== 'submesh') return;
 
     currentStep.animations?.forEach((anim: any) => {
-      // In a full implementation, we'd check anim.targetElementId === elementId
+      if (anim.targetElementId && anim.targetElementId !== elementId) return;
       const mesh = scene.getObjectByName(anim.targetSubMeshName);
       if (!mesh) return;
 

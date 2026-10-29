@@ -22,6 +22,7 @@ interface RuntimeKeyframe {
 interface RuntimeEduComponent {
   id?: string;
   name?: string;
+  description?: string;
   actionTargetId?: string;
   actionAnimation?: string;
   showTargetId?: string;
@@ -41,6 +42,7 @@ interface RuntimeEduStep {
   instruction?: string;
   voiceoverUrl?: string;
   animations?: RuntimeSubMeshAnimation[];
+  animationSource?: 'none' | 'blender' | 'editor' | 'submesh';
   actionTargetId?: string;
   actionAnimation?: string;
   showTargetId?: string;
@@ -50,6 +52,7 @@ interface RuntimeEduStep {
 interface RuntimeEduTask {
   id?: string;
   title?: string;
+  description?: string;
   steps?: RuntimeEduStep[];
 }
 
@@ -91,6 +94,7 @@ interface RuntimeElement {
   eduComponents?: RuntimeEduComponent[];
   eduMaintenanceTasks?: RuntimeEduTask[];
   eduCustomTriggers?: RuntimeEduTrigger[];
+  eduGeneralInfo?: { title?: string; description?: string };
 }
 
 interface RuntimeScene {
@@ -111,6 +115,7 @@ interface EducationPayload {
     id: string;
     sceneId: string;
     title: string;
+    generalTitle: string;
     description: string;
     components: RuntimeEduComponent[];
     modules: RuntimeEduTask[];
@@ -267,10 +272,12 @@ function buildEducationPayload(
       id: String(panel.id),
       sceneId: sceneIdFor(panel),
       title: stringValue(panel.panelTitle || panel.name, 'Panel Edukasi'),
-      description: stringValue(panel.data?.description),
+      generalTitle: stringValue(panel.eduGeneralInfo?.title, 'Informasi General'),
+      description: stringValue(panel.eduGeneralInfo?.description || panel.data?.description),
       components: (Array.isArray(panel.eduComponents) ? panel.eduComponents : []).map((component, index) => ({
         id: stringValue(component?.id, `component-${index}`),
         name: stringValue(component?.name, `Komponen ${index + 1}`),
+        description: stringValue(component?.description),
         actionTargetId: stringValue(component?.actionTargetId) || undefined,
         actionAnimation: stringValue(component?.actionAnimation) || undefined,
         showTargetId: stringValue(component?.showTargetId) || undefined,
@@ -279,12 +286,14 @@ function buildEducationPayload(
       modules: (Array.isArray(panel.eduMaintenanceTasks) ? panel.eduMaintenanceTasks : []).map((task, taskIndex) => ({
         id: stringValue(task?.id, `module-${taskIndex}`),
         title: stringValue(task?.title, `Modul ${taskIndex + 1}`),
+        description: stringValue(task?.description),
         steps: (Array.isArray(task?.steps) ? task.steps : []).map((step, stepIndex) => ({
           id: stringValue(step?.id, `step-${stepIndex}`),
           stepNumber: finiteNumber(step?.stepNumber, stepIndex + 1),
           title: stringValue(step?.title, `Langkah ${stepIndex + 1}`),
           instruction: stringValue(step?.instruction),
           voiceoverUrl: safeUrl(step?.voiceoverUrl) ?? undefined,
+          animationSource: step?.animationSource,
           animations: (Array.isArray(step?.animations) ? step.animations : []).map((animation) => ({
             targetElementId: stringValue(animation?.targetElementId),
             targetSubMeshName: stringValue(animation?.targetSubMeshName),
@@ -515,9 +524,9 @@ function renderExperience(project: Record<string, unknown>): string {
           <button id="edu-close" class="edu-icon-button" type="button" aria-label="Tutup panel edukasi">×</button>
         </header>
         <nav id="edu-tabs" class="edu-tabs" aria-label="Menu edukasi">
-          <button type="button" data-edu-tab="info" aria-selected="true">Info</button>
-          <button type="button" data-edu-tab="guide" aria-selected="false">Panduan</button>
-          <button type="button" data-edu-tab="animation" aria-selected="false">Animasi</button>
+          <button type="button" data-edu-tab="components" aria-selected="true">Komponen</button>
+          <button type="button" data-edu-tab="maintenance" aria-selected="false">Maintenance</button>
+          <button type="button" data-edu-tab="general" aria-selected="false">General</button>
         </nav>
         <div id="edu-content" class="edu-content" aria-live="polite"></div>
       </section>

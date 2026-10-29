@@ -1,454 +1,239 @@
-import React, { useEffect, useState } from 'react';
-import { useEditorStore } from '@/lib/store';
-import { Camera, Maximize, X, Info, ScanLine, Type, Image as ImageIcon, Box, Video, Music, List, GraduationCap, ChevronLeft, ChevronRight, CheckCircle2, ToggleLeft, Power } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEditorStore, type EduComponent } from '@/lib/store';
+import { getEduGeneralInfo, resolveEduAnimationSource } from '@/lib/education';
+import {
+  BookOpen,
+  Box,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Cpu,
+  Headphones,
+  Info,
+  ScanLine,
+  Wrench,
+  X,
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+
+type ActiveView = 'closed' | 'menu' | 'components' | 'maintenance' | 'general';
 
 export function ARUserInterface() {
-  const selectedId = useEditorStore(state => state.selectedId);
-  const elements = useEditorStore(state => state.elements);
-  const setSelectedId = useEditorStore(state => state.setSelectedId);
-  const isScanningAR = useEditorStore(state => state.isScanningAR);
-  const setIsScanningAR = useEditorStore(state => state.setIsScanningAR);
-  const [flash, setFlash] = useState(false);
-  const currentSceneId = useEditorStore(state => state.currentSceneId);
-  const scenes = useEditorStore(state => state.scenes);
-  const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
-  
-  const currentARStepIndex = useEditorStore(state => state.currentARStepIndex);
-  const setCurrentARStepIndex = useEditorStore(state => state.setCurrentARStepIndex);
-  const arPlaybackProgress = useEditorStore(state => state.arPlaybackProgress);
-  const setArPlaybackProgress = useEditorStore(state => state.setArPlaybackProgress);
-  const activeTriggers = useEditorStore(state => state.activeTriggers);
-  const toggleTrigger = useEditorStore(state => state.toggleTrigger);
-  
-  const [activeView, setActiveView] = useState<'closed' | 'menu' | 'module' | 'objects' | 'scenes' | 'actions'>('closed');
+  const elements = useEditorStore((state) => state.elements);
+  const currentSceneId = useEditorStore((state) => state.currentSceneId);
+  const scenes = useEditorStore((state) => state.scenes);
+  const setCurrentSceneId = useEditorStore((state) => state.setCurrentSceneId);
+  const setSelectedId = useEditorStore((state) => state.setSelectedId);
+  const updateElement = useEditorStore((state) => state.updateElement);
+  const setPreviewAnimationData = useEditorStore((state) => state.setPreviewAnimationData);
+  const isScanningAR = useEditorStore((state) => state.isScanningAR);
+  const setIsScanningAR = useEditorStore((state) => state.setIsScanningAR);
+  const currentARModuleIndex = useEditorStore((state) => state.currentARModuleIndex);
+  const setCurrentARModuleIndex = useEditorStore((state) => state.setCurrentARModuleIndex);
+  const currentARStepIndex = useEditorStore((state) => state.currentARStepIndex);
+  const setCurrentARStepIndex = useEditorStore((state) => state.setCurrentARStepIndex);
+  const arPlaybackProgress = useEditorStore((state) => state.arPlaybackProgress);
+  const setArPlaybackProgress = useEditorStore((state) => state.setArPlaybackProgress);
+
+  const [activeView, setActiveView] = useState<ActiveView>('closed');
   const [showFinishBanner, setShowFinishBanner] = useState(false);
+  const voiceoverRef = useRef<HTMLAudioElement | null>(null);
 
-  const selectedElement = selectedId ? elements.find(el => el.id === selectedId) : undefined;
-
-  // Filter out orphaned (ghost) elements
-  const validElements = elements.filter(el => {
-    if (!el.parentId) return true;
-    let currentParent: string | undefined = el.parentId;
-    while (currentParent) {
-      const parent = elements.find(p => p.id === currentParent);
-      if (!parent) return false;
-      currentParent = parent.parentId;
-    }
-    return true;
-  });
-  const validSceneElements = validElements.filter(el => 
-    el.sceneId === (currentSceneId || '') && 
-    el.data?.showInARMenu !== false &&
-    !['edu_panel', 'ambient_light', 'directional_light'].includes(el.type)
-  );
-
-  const eduPanel = elements.find(el => el.type === 'edu_panel' && el.sceneId === currentSceneId);
-  const modules = (eduPanel as any)?.eduMaintenanceTasks || [];
-  const activeModule = modules.length > 0 ? modules[0] : null;
+  const eduPanel = useMemo(() => (
+    elements.find((element) => element.type === 'edu_panel' && element.sceneId === currentSceneId) ||
+    elements.find((element) => element.type === 'edu_panel')
+  ), [elements, currentSceneId]);
+  const modules = eduPanel?.eduMaintenanceTasks || [];
+  const activeModule = modules[currentARModuleIndex] || modules[0] || null;
   const steps = activeModule?.steps || [];
-  const activeStep = steps[currentARStepIndex];
+  const activeStep = steps[currentARStepIndex] || null;
+  const general = getEduGeneralInfo(eduPanel);
 
   useEffect(() => {
-    if (steps.length === 0) return;
-    const currentStep = steps[currentARStepIndex];
-    if (!currentStep) return;
+    if (!isScanningAR) return;
+    const timer = window.setTimeout(() => setIsScanningAR(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [isScanningAR, setIsScanningAR]);
 
+  useEffect(() => {
+    if (!activeStep) return;
     setArPlaybackProgress(0);
-    
-    let start = performance.now();
-    let frameId: number;
+    const source = resolveEduAnimationSource(activeStep);
+    if (source === 'blender' && activeStep.actionTargetId && activeStep.actionAnimation) {
+      setPreviewAnimationData({ targetId: activeStep.actionTargetId, animationName: activeStep.actionAnimation });
+    }
+    if (activeStep.showTargetId) updateElement(activeStep.showTargetId, { isHidden: false }, { skipHistory: true });
+    if (activeStep.hideTargetId) updateElement(activeStep.hideTargetId, { isHidden: true }, { skipHistory: true });
+
+    const startedAt = performance.now();
+    let frameId = 0;
     const animate = (time: number) => {
-      const elapsed = (time - start) / 1000;
-      const progress = Math.min(elapsed / 2.0, 1.0);
+      const progress = Math.min((time - startedAt) / 2000, 1);
       setArPlaybackProgress(progress);
-      if (progress < 1.0) {
-        frameId = requestAnimationFrame(animate);
-      }
+      if (progress < 1) frameId = requestAnimationFrame(animate);
     };
     frameId = requestAnimationFrame(animate);
-
     return () => cancelAnimationFrame(frameId);
-  }, [currentARStepIndex, steps, setArPlaybackProgress]);
+  }, [activeStep, setArPlaybackProgress, setPreviewAnimationData, updateElement]);
+
+  useEffect(() => () => {
+    voiceoverRef.current?.pause();
+  }, []);
+
+  const playVoiceover = () => {
+    if (!activeStep?.voiceoverUrl) return;
+    voiceoverRef.current?.pause();
+    const audio = new Audio(activeStep.voiceoverUrl);
+    voiceoverRef.current = audio;
+    void audio.play();
+  };
+
+  const activateComponent = (component: EduComponent) => {
+    if (component.actionTargetId) {
+      setSelectedId(component.actionTargetId);
+      if (component.actionAnimation) {
+        setPreviewAnimationData({ targetId: component.actionTargetId, animationName: component.actionAnimation });
+      }
+    }
+    if (component.showTargetId) updateElement(component.showTargetId, { isHidden: false }, { skipHistory: true });
+    if (component.hideTargetId) updateElement(component.hideTargetId, { isHidden: true }, { skipHistory: true });
+  };
+
+  const selectModule = (index: number) => {
+    setCurrentARModuleIndex(index);
+    setCurrentARStepIndex(0);
+  };
 
   const handleNext = () => {
     if (currentARStepIndex < steps.length - 1) {
       setCurrentARStepIndex(currentARStepIndex + 1);
-    } else {
-      setShowFinishBanner(true);
-      setTimeout(() => setShowFinishBanner(false), 3000);
+      return;
     }
-  };
-
-  const handlePrev = () => {
-    if (currentARStepIndex > 0) {
-      setCurrentARStepIndex(currentARStepIndex - 1);
-    }
-  };
-
-  useEffect(() => {
-    if (isScanningAR) {
-      const timer = setTimeout(() => {
-        setIsScanningAR(false);
-      }, 3000); // 3 seconds scanning phase
-      return () => clearTimeout(timer);
-    }
-  }, [isScanningAR, setIsScanningAR]);
-
-  const getElementIcon = (type: string) => {
-    switch(type) {
-      case '3d_model': return <Box size={20} />;
-      case '3d_text': return <Type size={20} />;
-      case 'image': return <ImageIcon size={20} />;
-      case 'video': return <Video size={20} />;
-      case 'audio': return <Music size={20} />;
-      default: return <Info size={20} />;
-    }
+    setShowFinishBanner(true);
+    window.setTimeout(() => setShowFinishBanner(false), 2500);
   };
 
   return (
-    <>
-      <div className="absolute inset-0 pointer-events-none flex flex-col z-[50]">
-      {/* Screen Flash for Camera */}
-      <AnimatePresence>
-        {flash && (
-          <motion.div 
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-white z-[100]"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Scanning Overlay */}
+    <div className="absolute inset-0 z-[50] flex flex-col pointer-events-none">
       <AnimatePresence>
         {isScanningAR && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-auto"
+            className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto"
           >
-             <motion.div 
-               animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
-               transition={{ repeat: Infinity, duration: 1.5 }}
-             >
-               <ScanLine size={64} className="text-pln-blue mb-4" />
-             </motion.div>
-             <h3 className="text-white font-bold text-xl mb-2">Arahkan ke Permukaan</h3>
-             <p className="text-gray-300 text-center max-w-[80%] text-sm">
-               Cari permukaan datar dan terang untuk menempatkan objek AR Anda.
-             </p>
+            <ScanLine size={60} className="mb-4 text-pln-blue animate-pulse" />
+            <h3 className="text-lg font-bold text-white">Menyiapkan pengalaman AR</h3>
+            <p className="mt-2 max-w-[80%] text-center text-xs text-gray-300">Arahkan kamera ke marker untuk membuka materi edukasi.</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main AR UI (Only visible when not scanning) */}
-      {!isScanningAR && (
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          className="w-full h-full flex flex-col justify-between"
-        >
-          {/* Top Header */}
-          <div className="w-full p-4 flex justify-between items-start pointer-events-auto">
-             <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/60 transition-colors">
-                <Maximize size={18} />
-             </button>
-             
-             {/* Hint Badge */}
-             {!selectedId && (
-               <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-white text-xs font-medium animate-pulse shadow-lg">
-                 Ketuk objek untuk info
-               </div>
-             )}
-          </div>
-
-          {/* Interactive Edu Panel (Glassmorphism) */}
-          <AnimatePresence>
-            {selectedElement && (
-              <motion.div
-                initial={{ y: 50, opacity: 0, scale: 0.95, x: '-50%' }}
-                animate={{ y: 0, opacity: 1, scale: 1, x: '-50%' }}
-                exit={{ y: 50, opacity: 0, scale: 0.95, x: '-50%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="absolute bottom-28 left-1/2 w-[90%] max-w-sm bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-3xl shadow-2xl pointer-events-auto"
+      {!isScanningAR && eduPanel && (
+        <div className="absolute inset-x-0 bottom-4 flex justify-center px-4">
+          <AnimatePresence mode="wait">
+            {activeView === 'closed' ? (
+              <motion.button
+                key="dock"
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 30, opacity: 0 }}
+                type="button"
+                onClick={() => setActiveView('menu')}
+                className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-white/15 bg-black/75 p-2.5 text-left text-white shadow-2xl backdrop-blur-xl"
               >
-                <button 
-                  onClick={() => setSelectedId(null)}
-                  className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/20 rounded-full p-1 transition-colors"
-                >
-                  <X size={16} />
-                </button>
-                
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pln-blue to-purple-600 flex items-center justify-center text-white shadow-lg shrink-0">
-                    {getElementIcon(selectedElement.type)}
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-pln-blue"><BookOpen size={21} /></span>
+                <span className="min-w-0 flex-1"><strong className="block truncate text-sm">{eduPanel.panelTitle || 'Panel Edukasi'}</strong><small className="text-[10px] text-white/55">Komponen • Maintenance • Informasi general</small></span>
+                <ChevronRight size={17} className="text-white/50" />
+              </motion.button>
+            ) : (
+              <motion.section
+                key="panel"
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 40, opacity: 0 }}
+                className="pointer-events-auto flex max-h-[65vh] w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-white/15 bg-black/85 text-white shadow-2xl backdrop-blur-2xl"
+              >
+                <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {activeView !== 'menu' && <button type="button" onClick={() => setActiveView('menu')} className="text-white/60 hover:text-white"><ChevronLeft size={18} /></button>}
+                    <div className="min-w-0"><span className="block text-[8px] font-black tracking-widest text-pln-blue">MODE BELAJAR AR</span><h2 className="truncate text-sm font-bold">{eduPanel.panelTitle || 'Panel Edukasi'}</h2></div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-bold text-lg leading-tight truncate">{selectedElement.name}</h3>
-                    <p className="text-white/60 text-xs capitalize">{selectedElement.type} Element</p>
-                  </div>
-                </div>
-                
-                <div className="text-white/80 text-sm leading-relaxed mb-4 max-h-32 overflow-y-auto custom-scrollbar">
-                  {(selectedElement as any).data?.description ? (
-                    (selectedElement as any).data.description
-                  ) : (
-                    <>
-                      {selectedElement.type === '3d_model' && "Model 3D interaktif. Anda dapat menambahkan deskripsi kustom untuk objek ini melalui panel properti di sebelah kanan editor."}
-                      {selectedElement.type === '3d_text' && `Konten Teks: "${(selectedElement as any).data?.text || 'Teks kosong'}"`}
-                      {selectedElement.type === 'video' && "Konten Video. Pengguna dapat memutar atau menjeda video ini langsung di dunia nyata."}
-                      {selectedElement.type === 'audio' && "Efek Suara. Mendekat ke sumber suara untuk mendengarkan lebih jelas (Spatial Audio)."}
-                      {['image', 'hotspot', '3d_shape', 'vfx_sparkles', 'group_folder', 'ui_button'].includes(selectedElement.type) && `Ini adalah elemen berjenis ${selectedElement.type.replace('3d_', '').replace('vfx_', '').replace('ui_', '')}. Anda bisa menambahkan deskripsi kustom di panel kanan editor.`}
-                    </>
+                  <button type="button" onClick={() => setActiveView('closed')} className="rounded-full bg-white/5 p-1.5 text-white/60 hover:text-white"><X size={15} /></button>
+                </header>
+
+                <div className="overflow-y-auto p-4 custom-scrollbar">
+                  {activeView === 'menu' && (
+                    <div className="space-y-3">
+                      <button type="button" onClick={() => setActiveView('components')} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/10">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/15 text-blue-300"><Cpu size={20} /></span><span><strong className="block text-xs">Informasi Komponen</strong><small className="text-[10px] text-white/45">Fungsi dan detail bagian model</small></span>
+                      </button>
+                      <button type="button" onClick={() => setActiveView('maintenance')} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/10">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/15 text-amber-300"><Wrench size={20} /></span><span><strong className="block text-xs">Maintenance</strong><small className="text-[10px] text-white/45">Jenis perawatan dan prosedur animasi</small></span>
+                      </button>
+                      <button type="button" onClick={() => setActiveView('general')} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/10">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15 text-emerald-300"><Info size={20} /></span><span><strong className="block text-xs">Informasi General</strong><small className="text-[10px] text-white/45">Penjelasan umum objek</small></span>
+                      </button>
+                      {scenes.length > 1 && <div className="grid grid-cols-2 gap-2 pt-1">{scenes.map((scene) => <button key={scene.id} type="button" onClick={() => setCurrentSceneId(scene.id)} className={`rounded-xl border px-2 py-2 text-[9px] font-bold ${scene.id === currentSceneId ? 'border-pln-blue bg-pln-blue/15 text-white' : 'border-white/10 bg-white/5 text-white/55'}`}>{scene.name}</button>)}</div>}
+                    </div>
+                  )}
+
+                  {activeView === 'general' && (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <Info size={24} className="mb-3 text-emerald-300" />
+                      <h3 className="text-base font-bold">{general.title}</h3>
+                      <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-white/65">{general.description || 'Informasi general belum diisi pada Edu Dashboard.'}</p>
+                    </div>
+                  )}
+
+                  {activeView === 'components' && (
+                    <div className="space-y-2">
+                      {!(eduPanel.eduComponents || []).length && <div className="rounded-2xl border border-dashed border-white/15 p-5 text-center text-xs text-white/45">Belum ada informasi komponen.</div>}
+                      {(eduPanel.eduComponents || []).map((component) => (
+                        <button key={component.id} type="button" onClick={() => activateComponent(component)} className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/10">
+                          <div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/15 text-blue-300"><Box size={16} /></span><strong className="text-xs">{component.name}</strong></div>
+                          <p className="mt-2 text-[10px] leading-relaxed text-white/55">{component.description || 'Deskripsi komponen belum diisi.'}</p>
+                          {component.actionAnimation && <span className="mt-2 inline-flex rounded-full bg-pln-blue/15 px-2 py-1 text-[8px] font-bold text-pln-blue">Ketuk untuk animasi</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {activeView === 'maintenance' && (
+                    <div className="space-y-3">
+                      {!modules.length && <div className="rounded-2xl border border-dashed border-white/15 p-5 text-center text-xs text-white/45">Belum ada jenis maintenance.</div>}
+                      {modules.length > 1 && <div className="grid grid-cols-2 gap-2">{modules.map((maintenance, index) => <button key={maintenance.id} type="button" onClick={() => selectModule(index)} className={`rounded-xl border p-2 text-left ${index === currentARModuleIndex ? 'border-amber-400/60 bg-amber-400/15' : 'border-white/10 bg-white/5'}`}><strong className="block truncate text-[10px]">{maintenance.title}</strong><small className="text-[8px] text-white/45">{maintenance.steps.length} langkah</small></button>)}</div>}
+                      {activeModule && (
+                        <article className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                          <div className="border-b border-white/10 bg-amber-400/10 px-3 py-2.5">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-amber-300">{activeModule.title}</span>
+                            {activeModule.description && <p className="mt-1 text-[9px] text-white/50">{activeModule.description}</p>}
+                          </div>
+                          {activeStep ? (
+                            <>
+                              <div className="h-1 bg-white/5"><div className="h-full bg-pln-blue transition-all" style={{ width: `${Math.round(arPlaybackProgress * 100)}%` }} /></div>
+                              <div className="p-4"><span className="text-[9px] font-bold text-pln-blue">Langkah {currentARStepIndex + 1} dari {steps.length}</span><h3 className="mt-1 text-sm font-bold">{activeStep.title}</h3><p className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-white/65">{activeStep.instruction}</p>{activeStep.voiceoverUrl && <button type="button" onClick={playVoiceover} className="mt-3 flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-[9px] font-bold"><Headphones size={12} /> Putar narasi</button>}</div>
+                              <div className="grid grid-cols-2 gap-2 bg-black/15 p-2"><button type="button" disabled={currentARStepIndex === 0} onClick={() => setCurrentARStepIndex(Math.max(0, currentARStepIndex - 1))} className="rounded-lg bg-white/5 py-2 text-[9px] font-bold disabled:opacity-30">← Sebelumnya</button><button type="button" onClick={handleNext} className="rounded-lg bg-pln-blue py-2 text-[9px] font-bold">{currentARStepIndex === steps.length - 1 ? 'Selesai' : 'Berikutnya →'}</button></div>
+                            </>
+                          ) : <div className="p-4 text-center text-xs text-white/45">Jenis maintenance ini belum memiliki langkah.</div>}
+                        </article>
+                      )}
+                    </div>
                   )}
                 </div>
-                
-                <button className="w-full py-2.5 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-xl transition-colors shadow-inner border border-white/10">
-                  Lihat Detail Selengkapnya
-                </button>
-              </motion.div>
+              </motion.section>
             )}
           </AnimatePresence>
-
-          {/* Bottom Action Bar (Unified Panel) */}
-          <div className="w-full p-4 flex justify-center items-end pointer-events-none absolute bottom-4">
-            <AnimatePresence mode="wait">
-              {activeView !== 'closed' ? (
-                <motion.div
-                  key="panel"
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 50, opacity: 0 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="pointer-events-auto w-full max-w-sm bg-black/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
-                >
-                  <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5">
-                    <div className="flex items-center gap-2">
-                      {activeView !== 'menu' && (
-                        <button onClick={() => setActiveView('menu')} className="mr-1 text-white/70 hover:text-white transition-colors">
-                          <ChevronLeft size={20} />
-                        </button>
-                      )}
-                      {activeView === 'menu' && <GraduationCap size={18} className="text-pln-blue" />}
-                      <span className="text-white font-bold">
-                        {activeView === 'menu' && "Edu Panel"}
-                        {activeView === 'module' && "Modul Edukasi"}
-                        {activeView === 'objects' && "Daftar Objek"}
-                        {activeView === 'scenes' && "Daftar Scene"}
-                        {activeView === 'actions' && "Tombol Aksi"}
-                      </span>
-                    </div>
-                    <button onClick={() => setActiveView('closed')} className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors">
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col p-4 max-h-[50vh] overflow-y-auto custom-scrollbar gap-2">
-                    
-                    {/* MENU VIEW */}
-                    {activeView === 'menu' && (
-                      <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 snap-x">
-                        <button onClick={() => setActiveView('objects')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
-                          <Box size={24} className="text-white/70" />
-                          <span className="text-white font-medium text-xs">Object</span>
-                        </button>
-                        <button onClick={() => setActiveView('module')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
-                          <GraduationCap size={24} className="text-pln-blue" />
-                          <span className="text-white font-medium text-xs text-center leading-tight">Modul<br/>Edukasi</span>
-                        </button>
-                          <button onClick={() => setActiveView('scenes')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-colors">
-                            <ImageIcon size={24} className="text-white/70" />
-                            <span className="text-white font-medium text-xs">Scene</span>
-                          </button>
-                          
-                          {eduPanel?.eduCustomTriggers && eduPanel.eduCustomTriggers.length > 0 && (
-                            <button onClick={() => setActiveView('actions')} className="snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-2xl transition-colors">
-                              <ToggleLeft size={24} className="text-purple-400" />
-                              <span className="text-white font-medium text-xs">Aksi</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                    {/* MODULE VIEW */}
-                    {activeView === 'module' && (
-                      <div className="flex flex-col gap-3">
-                        {!eduPanel || steps.length === 0 ? (
-                          <div className="bg-white/5 rounded-xl p-4 text-center text-white/50 text-xs">
-                            Belum ada modul edukasi yang ditambahkan pada scene ini.
-                          </div>
-                        ) : (
-                          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                            <div className="bg-pln-blue/20 px-3 py-2 border-b border-white/5 flex items-center justify-between">
-                              <div>
-                                <span className="text-pln-blue text-[9px] font-bold uppercase tracking-wider">{activeModule?.title}</span>
-                                <h3 className="text-white font-bold text-xs leading-tight mt-0.5">Langkah {currentARStepIndex + 1} dari {steps.length}</h3>
-                              </div>
-                              
-                              <div className="relative w-6 h-6 flex items-center justify-center">
-                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                  <path className="text-white/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
-                                  <path className="text-pln-blue transition-all duration-300" strokeDasharray={`\${arPlaybackProgress * 100}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="3" fill="none" />
-                                </svg>
-                                <span className="absolute text-[6px] font-bold text-white">{Math.round(arPlaybackProgress * 100)}%</span>
-                              </div>
-                            </div>
-
-                            <div className="p-3">
-                              <h4 className="text-white font-bold text-sm mb-1">{activeStep?.title}</h4>
-                              <p className="text-gray-300 text-xs leading-relaxed">{activeStep?.instruction}</p>
-                            </div>
-
-                            <div className="p-2 bg-black/20 flex gap-2">
-                              <button onClick={handlePrev} disabled={currentARStepIndex === 0} className="flex-1 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-lg flex items-center justify-center text-white text-xs font-medium transition-colors">
-                                <ChevronLeft size={14} className="mr-1" /> Prev
-                              </button>
-                              <button onClick={handleNext} className="flex-1 py-2 bg-pln-blue hover:bg-pln-blue/90 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-lg transition-colors">
-                                {currentARStepIndex === steps.length - 1 ? 'Selesai' : 'Next'} <ChevronRight size={14} className="ml-1" />
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* OBJECTS VIEW */}
-                    {activeView === 'objects' && (
-                      <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 snap-x">
-                        {validSceneElements.length === 0 && (
-                          <div className="text-center text-white/50 text-xs py-4 w-full">
-                            Tidak ada objek di scene ini
-                          </div>
-                        )}
-                        {validSceneElements.map(el => (
-                          <button
-                            key={el.id}
-                            onClick={() => {
-                              setSelectedId(el.id);
-                              setActiveView('closed');
-                            }}
-                            className={`snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${selectedId === el.id ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
-                          >
-                            <div className={`${selectedId === el.id ? 'text-pln-blue' : 'text-white/70'}`}>
-                              {getElementIcon(el.type)}
-                            </div>
-                            <div className="flex flex-col items-center w-full px-2">
-                              <span className={`font-medium text-xs truncate w-full text-center ${selectedId === el.id ? 'text-white' : 'text-white/80'}`}>{el.name}</span>
-                              <span className="text-[9px] text-white/50 capitalize truncate w-full text-center">{el.type}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* SCENES VIEW */}
-                    {activeView === 'scenes' && (
-                      <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 snap-x">
-                        {scenes.map(s => (
-                          <button
-                            key={s.id}
-                            onClick={() => {
-                              setCurrentSceneId(s.id);
-                              setActiveView('closed');
-                            }}
-                            className={`relative snap-start shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${currentSceneId === s.id ? 'bg-pln-blue/20 border border-pln-blue/50' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
-                          >
-                            <div className={`${currentSceneId === s.id ? 'text-pln-blue text-white' : 'text-white/70'}`}>
-                              <ImageIcon size={24} />
-                            </div>
-                            <div className="flex flex-col items-center w-full px-2">
-                              <span className={`font-medium text-xs truncate w-full text-center ${currentSceneId === s.id ? 'text-white' : 'text-white/80'}`}>{s.name}</span>
-                            </div>
-                            {currentSceneId === s.id && (
-                              <CheckCircle2 size={12} className="text-pln-blue absolute top-2 right-2" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {/* ACTIONS VIEW */}
-                    {activeView === 'actions' && (
-                      <div className="flex flex-col gap-3">
-                        {!eduPanel?.eduCustomTriggers || eduPanel.eduCustomTriggers.length === 0 ? (
-                          <div className="bg-white/5 rounded-xl p-4 text-center text-white/50 text-xs">
-                            Belum ada tombol aksi.
-                          </div>
-                        ) : (
-                          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden p-3 space-y-3">
-                            <h4 className="text-white font-bold text-xs border-b border-white/10 pb-2 flex items-center gap-2">
-                              <ToggleLeft size={14} className="text-purple-400" /> Sakelar Aksi
-                            </h4>
-                            
-                            <div className="grid grid-cols-2 gap-2">
-                              {eduPanel.eduCustomTriggers.map(trigger => (
-                                <button
-                                  key={trigger.id}
-                                  onClick={() => toggleTrigger(trigger.id)}
-                                  className={`relative overflow-hidden rounded-xl p-3 flex flex-col items-center justify-center gap-2 transition-all ${
-                                    activeTriggers.includes(trigger.id) 
-                                      ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
-                                      : 'bg-white/5 hover:bg-white/10 text-white/70 border border-white/10'
-                                  }`}
-                                >
-                                  <Power size={20} className={activeTriggers.includes(trigger.id) ? 'text-white' : 'text-purple-400'} />
-                                  <span className="text-[10px] font-bold text-center leading-tight">{trigger.label}</span>
-                                  {activeTriggers.includes(trigger.id) && (
-                                    <div className="absolute top-1 right-1">
-                                      <span className="flex h-2 w-2 relative">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                                      </span>
-                                    </div>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="pill"
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 50, opacity: 0 }}
-                  className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex gap-4 items-center shadow-2xl"
-                >
-                  <button 
-                    onClick={() => setActiveView('menu')}
-                    className="w-16 h-16 rounded-full bg-pln-blue flex items-center justify-center shadow-[0_0_20px_rgba(0,162,233,0.4)] hover:scale-105 active:scale-95 transition-all text-white border-2 border-white/20"
-                  >
-                    <GraduationCap size={28} />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Finish Banner Toast */}
-            <AnimatePresence>
-              {showFinishBanner && (
-                <motion.div
-                  initial={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
-                  animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
-                  exit={{ opacity: 0, scale: 0.9, x: '-50%' }}
-                  className="absolute top-10 left-1/2 bg-green-500/20 backdrop-blur-md border border-green-500/50 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-2xl"
-                >
-                  <CheckCircle2 size={32} className="text-green-400 mb-2" />
-                  <h3 className="text-green-100 font-bold text-lg">Modul Selesai!</h3>
-                  <p className="text-green-200/80 text-xs">Anda telah menyelesaikan panduan ini.</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+        </div>
       )}
-      </div>
-    </>
+
+      <AnimatePresence>
+        {showFinishBanner && (
+          <motion.div initial={{ opacity: 0, y: -10, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, x: '-50%' }} className="absolute left-1/2 top-10 rounded-2xl border border-green-400/40 bg-green-500/20 p-4 text-center text-white backdrop-blur-xl">
+            <CheckCircle2 size={28} className="mx-auto mb-1 text-green-300" /><strong className="text-sm">Prosedur selesai</strong>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

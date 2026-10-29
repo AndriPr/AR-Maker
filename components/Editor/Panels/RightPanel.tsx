@@ -1,11 +1,11 @@
 import React from 'react';
 import { 
   ChevronLeft, X, ImageIcon, Copy, Trash2, Sparkles, Type, Loader2, 
-  MousePointerClick, Magnet, Plus, ExternalLink, LayoutDashboard, ListChecks,
-  Wrench, Eye, Palette, Layers, Box, Play, Volume2, Video, MapPin, FolderOpen, LayoutTemplate, Globe, ToggleLeft
+  MousePointerClick, Magnet, Plus, ExternalLink, Eye, Palette, Layers, Box, Play, FolderOpen
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EduDashboardPanel } from '@/components/Editor/Panels/EduDashboardPanel';
 
 interface RightPanelProps {
   isRightPanelOpen: boolean;
@@ -119,13 +119,9 @@ export function RightPanel({
     removeElement,
     removeElements,
     duplicateElement, 
-    scenes, 
-    previewAnimationData: previewAnim, 
-    setPreviewAnimationData, 
+    scenes,
     explodeModel, 
-    reparentElement, 
-    currentSceneId, 
-    addElement,
+    reparentElement,
     timelineTime,
     multiSelectedIds,
     setSelectedId,
@@ -454,17 +450,19 @@ export function RightPanel({
                     </label>
                   </div>
 
-                  <div className="flex flex-col gap-1 mt-3">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Deskripsi (Edu Panel)</label>
-                    <textarea 
-                      value={selectedElement.data?.description || ''}
-                      onChange={(e) => updateElement(selectedElement.id, { 
-                        data: { ...selectedElement.data, description: e.target.value }
-                      })}
-                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors resize-none h-20"
-                      placeholder="Masukkan deskripsi untuk AR Edu Panel..."
-                    />
-                  </div>
+                  {selectedElement.type !== 'edu_panel' && (
+                    <div className="flex flex-col gap-1 mt-3">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Deskripsi Objek di Menu AR</label>
+                      <textarea
+                        value={selectedElement.data?.description || ''}
+                        onChange={(e) => updateElement(selectedElement.id, {
+                          data: { ...selectedElement.data, description: e.target.value }
+                        })}
+                        className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors resize-none h-20"
+                        placeholder="Masukkan deskripsi objek untuk pengalaman AR..."
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Advanced Animations Panel (For all elements) */}
@@ -899,404 +897,16 @@ export function RightPanel({
                         </div>
                       )}
 
-                      {/* Edu Panel Specific Properties */}
                       {selectedElement.type === 'edu_panel' && (
-                        <div className="space-y-4 pt-4 border-t border-[#2b2d31]">
-                          <h4 className="text-xs font-bold text-pln-yellow uppercase flex items-center gap-2">
-                            <LayoutDashboard size={14} /> Edu Panel Konten
-                          </h4>
-                          <p className="text-[10px] text-gray-500 leading-tight">
-                            Panel ini akan melayang di layar AR saat audiens memindai gambar.
-                          </p>
-                          
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] text-gray-400 font-medium">Judul Panel Utama</label>
-                            <input 
-                              type="text"
-                              value={selectedElement.panelTitle || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { panelTitle: e.target.value })}
-                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-sm text-white outline-none focus:border-pln-blue shadow-inner"
-                              placeholder="Misal: MESIN MOTOR"
-                            />
-                          </div>
-
-                          <div className="h-px bg-[#1a1b1e] my-4"></div>
-
-                          {/* Asset Information (Components) Builder */}
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                              <ListChecks size={14} /> Info Aset (Komponen)
-                            </h4>
-                            <button 
-                              onClick={() => {
-                                const newComps = [...(selectedElement.eduComponents || []), { id: crypto.randomUUID(), name: 'Komponen Baru' }];
-                                updateElement(selectedElement.id, { eduComponents: newComps });
-                              }}
-                              className="text-[10px] bg-pln-blue/20 text-pln-blue px-2 py-1 rounded border border-pln-blue/30 hover:bg-pln-blue/30 flex items-center gap-1"
-                            >
-                              <Plus size={10} /> Tambah
-                            </button>
-                          </div>
-                          
-                          <div className="space-y-2 mt-2">
-                            {(!selectedElement.eduComponents || selectedElement.eduComponents.length === 0) && (
-                              <div className="text-[10px] text-gray-500 italic text-center py-2 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada komponen.</div>
-                            )}
-                            {selectedElement.eduComponents?.map((comp, idx) => (
-                              <div key={comp.id} className="bg-[#1a1b1e]/80 border border-gray-700 rounded p-2 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <input 
-                                    type="text"
-                                    value={comp.name}
-                                    onChange={(e) => {
-                                      const newComps = [...selectedElement.eduComponents!];
-                                      newComps[idx].name = e.target.value;
-                                      updateElement(selectedElement.id, { eduComponents: newComps });
-                                    }}
-                                    className="flex-1 bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-xs text-white outline-none focus:border-pln-blue"
-                                    placeholder="Nama Komponen"
-                                  />
-                                  <button 
-                                    onClick={() => {
-                                      const newComps = selectedElement.eduComponents!.filter(c => c.id !== comp.id);
-                                      updateElement(selectedElement.id, { eduComponents: newComps });
-                                    }}
-                                    className="text-red-400 hover:text-red-300 p-1"
-                                  ><Trash2 size={12} /></button>
-                                </div>
-                                <div className="flex gap-2">
-                                  <select
-                                    value={comp.actionTargetId || ''}
-                                    onChange={(e) => {
-                                      const newComps = [...selectedElement.eduComponents!];
-                                      newComps[idx].actionTargetId = e.target.value;
-                                      newComps[idx].actionAnimation = '';
-                                      updateElement(selectedElement.id, { eduComponents: newComps });
-                                    }}
-                                    className="flex-1 min-w-0 text-ellipsis bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-[10px] text-white outline-none"
-                                  >
-                                    <option value="">-- Target Model 3D --</option>
-                                    {elements.filter(el => el.type === '3d_model').map(model => (
-                                      <option key={model.id} value={model.id}>{model.name}</option>
-                                    ))}
-                                  </select>
-                                  {comp.actionTargetId && (
-                                    <select
-                                      value={comp.actionAnimation || ''}
-                                      onChange={(e) => {
-                                        const newComps = [...selectedElement.eduComponents!];
-                                        newComps[idx].actionAnimation = e.target.value;
-                                        updateElement(selectedElement.id, { eduComponents: newComps });
-                                      }}
-                                      className="flex-1 min-w-0 text-ellipsis bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-[10px] text-white outline-none"
-                                    >
-                                      <option value="">-- Animasi --</option>
-                                      <option value="*">Semua (*)</option>
-                                      {elements.find(el => el.id === comp.actionTargetId)?.availableAnimations?.map(anim => (
-                                        <option key={anim} value={anim}>{anim}</option>
-                                      ))}
-                                    </select>
-                                  )}
-                                </div>
-                                <div className="flex gap-2">
-                                  <select
-                                    value={comp.showTargetId || ''}
-                                    onChange={(e) => {
-                                      const newComps = [...selectedElement.eduComponents!];
-                                      newComps[idx].showTargetId = e.target.value;
-                                      updateElement(selectedElement.id, { eduComponents: newComps });
-                                    }}
-                                    className="flex-1 min-w-0 text-ellipsis bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-[10px] text-green-400 outline-none"
-                                  >
-                                    <option value="">- Munculkan Model -</option>
-                                    {elements.filter(el => el.type === '3d_model').map(model => (
-                                      <option key={model.id} value={model.id}>{model.name}</option>
-                                    ))}
-                                  </select>
-                                  <select
-                                    value={comp.hideTargetId || ''}
-                                    onChange={(e) => {
-                                      const newComps = [...selectedElement.eduComponents!];
-                                      newComps[idx].hideTargetId = e.target.value;
-                                      updateElement(selectedElement.id, { eduComponents: newComps });
-                                    }}
-                                    className="flex-1 min-w-0 text-ellipsis bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-[10px] text-red-400 outline-none"
-                                  >
-                                    <option value="">- Sembunyikan Model -</option>
-                                    {elements.filter(el => el.type === '3d_model').map(model => (
-                                      <option key={model.id} value={model.id}>{model.name}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="h-px bg-[#1a1b1e] my-4"></div>
-
-
-                            {/* Maintenance Tasks Builder (Deep Edu Dashboard) */}
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                <Wrench size={14} /> Modul Edukasi
-                              </h4>
-                              <button 
-                                onClick={() => {
-                                  const newTasks = [...(selectedElement.eduMaintenanceTasks || []), { id: crypto.randomUUID(), title: 'Modul Baru', steps: [] }];
-                                  updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                }}
-                                className="text-[10px] bg-pln-yellow/20 text-pln-yellow px-2 py-1 rounded border border-pln-yellow/30 hover:bg-pln-yellow/30 flex items-center gap-1"
-                              >
-                                <Plus size={10} /> Tambah Modul
-                              </button>
-                            </div>
-  
-                            <div className="space-y-3 mt-2">
-                              {(!selectedElement.eduMaintenanceTasks || selectedElement.eduMaintenanceTasks.length === 0) && (
-                                <div className="text-[10px] text-gray-500 italic text-center py-2 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada modul edukasi.</div>
-                              )}
-                              {selectedElement.eduMaintenanceTasks?.map((task, tIdx) => (
-                                <div key={task.id} className="bg-[#202227] border border-[#2b2d31] rounded p-2 space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <input 
-                                      type="text"
-                                      value={task.title}
-                                      onChange={(e) => {
-                                        const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                        newTasks[tIdx].title = e.target.value;
-                                        updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                      }}
-                                      className="flex-1 bg-[#0f1013] border border-[#2b2d31] rounded p-1 text-xs font-bold text-pln-yellow outline-none focus:border-pln-yellow"
-                                      placeholder="Judul Modul (misal: Ganti Baterai)"
-                                    />
-                                    <button 
-                                      onClick={() => {
-                                        const newTasks = selectedElement.eduMaintenanceTasks!.filter(t => t.id !== task.id);
-                                        updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                      }}
-                                      className="text-red-400 hover:text-red-300 p-1"
-                                    ><Trash2 size={12} /></button>
-                                  </div>
-                                  
-                                  {/* Steps Builder */}
-                                  <div className="pl-3 border-l-2 border-gray-700 space-y-2">
-                                    {task.steps.map((step, sIdx) => (
-                                      <div key={step.id} className="bg-[#0f1013] border border-[#2b2d31] rounded p-2 space-y-2">
-                                        <div className="flex items-start justify-between gap-2">
-                                          <div className="flex items-center gap-1.5 flex-1">
-                                            <span className="text-[9px] font-bold text-gray-500 bg-[#1a1b1e] px-1.5 py-0.5 rounded">{step.stepNumber}</span>
-                                            <input
-                                              type="text"
-                                              value={step.title || ''}
-                                              onChange={(e) => {
-                                                const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                                newTasks[tIdx].steps[sIdx].title = e.target.value;
-                                                updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                              }}
-                                              className="flex-1 min-w-0 bg-transparent border-b border-transparent hover:border-[#2b2d31] focus:border-pln-blue text-[10px] font-bold text-white outline-none px-1"
-                                              placeholder="Judul Langkah..."
-                                            />
-                                          </div>
-                                          <button 
-                                            onClick={() => {
-                                              const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                              newTasks[tIdx].steps = newTasks[tIdx].steps.filter(s => s.id !== step.id);
-                                              // Re-number
-                                              newTasks[tIdx].steps.forEach((s, idx) => s.stepNumber = idx + 1);
-                                              updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                            }}
-                                            className="text-red-400 hover:text-red-300 shrink-0"
-                                          ><X size={12} /></button>
-                                        </div>
-                                        
-                                        <textarea
-                                          value={step.instruction}
-                                          onChange={(e) => {
-                                            const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                            newTasks[tIdx].steps[sIdx].instruction = e.target.value;
-                                            updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                          }}
-                                          className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-[10px] text-gray-300 outline-none focus:border-pln-blue min-h-[40px] resize-none"
-                                          placeholder="Instruksi detail..."
-                                        />
-
-                                        {/* Sub-Mesh Animation UI */}
-                                        <div className="bg-[#1a1b1e] rounded border border-[#2b2d31] p-1.5 space-y-1.5">
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-[9px] font-medium text-gray-400">Part Animasi ({step.animations?.length || 0})</span>
-                                            <button 
-                                              onClick={() => {
-                                                const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                                if (!newTasks[tIdx].steps[sIdx].animations) newTasks[tIdx].steps[sIdx].animations = [];
-                                                newTasks[tIdx].steps[sIdx].animations.push({
-                                                  targetElementId: '',
-                                                  targetSubMeshName: 'Pilih Part 3D...',
-                                                  keyframes: [
-                                                    { time: 0, position: [0,0,0], rotation: [0,0,0], scale: [1,1,1], easing: 'easeInOutQuad' },
-                                                    { time: 2, position: [0,0,0], rotation: [0,0,0], scale: [1,1,1], easing: 'easeInOutQuad' }
-                                                  ]
-                                                });
-                                                updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                              }}
-                                              className="text-[9px] bg-[#2b2d31] text-gray-300 hover:text-white px-1.5 py-0.5 rounded flex items-center gap-1"
-                                            >
-                                              <Plus size={10} /> Tambah Part
-                                            </button>
-                                          </div>
-                                          
-                                          {step.animations?.map((anim, aIdx) => (
-                                            <div key={aIdx} className="bg-[#202227] p-1.5 rounded border border-[#2b2d31] flex flex-col gap-1.5">
-                                              <div className="flex justify-between items-center">
-                                                <input 
-                                                  type="text" 
-                                                  value={anim.targetSubMeshName}
-                                                  onChange={(e) => {
-                                                    const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                                    newTasks[tIdx].steps[sIdx].animations[aIdx].targetSubMeshName = e.target.value;
-                                                    updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                                  }}
-                                                  className="bg-[#0f1013] text-[9px] text-pln-blue border border-[#2b2d31] rounded px-1 w-[100px] outline-none"
-                                                  placeholder="Nama Part..."
-                                                />
-                                                <button 
-                                                  onClick={() => {
-                                                    const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                                    newTasks[tIdx].steps[sIdx].animations = newTasks[tIdx].steps[sIdx].animations.filter((_, i) => i !== aIdx);
-                                                    updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                                  }}
-                                                  className="text-red-400 p-0.5 hover:bg-red-400/20 rounded"
-                                                ><X size={10}/></button>
-                                              </div>
-                                              <div className="flex gap-1">
-                                                <button className="flex-1 bg-pln-blue/20 text-pln-blue text-[8px] py-1 rounded hover:bg-pln-blue/30 text-center font-bold">
-                                                  Rekam Awal (0s)
-                                                </button>
-                                                <button className="flex-1 bg-pln-yellow/20 text-pln-yellow text-[8px] py-1 rounded hover:bg-pln-yellow/30 text-center font-bold">
-                                                  Rekam Akhir (ts)
-                                                </button>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-
-                                      </div>
-                                    ))}
-                                    
-                                    <button 
-                                      onClick={() => {
-                                        const newTasks = [...selectedElement.eduMaintenanceTasks!];
-                                        const currentSteps = newTasks[tIdx].steps;
-                                        currentSteps.push({ 
-                                          id: crypto.randomUUID(), 
-                                          stepNumber: currentSteps.length + 1, 
-                                          title: 'Langkah Baru', 
-                                          instruction: '',
-                                          animations: []
-                                        });
-                                        updateElement(selectedElement.id, { eduMaintenanceTasks: newTasks });
-                                      }}
-                                      className="text-[9px] text-gray-400 hover:text-white flex items-center gap-1 ml-1"
-                                    >
-                                      <Plus size={10} /> Tambah Langkah
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            
-                            <div className="h-px bg-[#1a1b1e] my-4"></div>
-                            
-                            {/* Custom Triggers Builder (AR Toggles) */}
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                <ToggleLeft size={14} className="text-purple-400" /> Tombol Aksi (AR)
-                              </h4>
-                              <button 
-                                onClick={() => {
-                                  const newTriggers = [...(selectedElement.eduCustomTriggers || []), { id: crypto.randomUUID(), label: 'Aksi Baru', targetElementId: '' }];
-                                  updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
-                                }}
-                                className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded border border-purple-500/30 hover:bg-purple-500/30 flex items-center gap-1"
-                              >
-                                <Plus size={10} /> Tambah
-                              </button>
-                            </div>
-                            
-                            <div className="space-y-3 mt-2">
-                              {(!selectedElement.eduCustomTriggers || selectedElement.eduCustomTriggers.length === 0) && (
-                                <div className="text-[10px] text-gray-500 italic text-center py-2 bg-[#1a1b1e]/50 rounded border border-[#2b2d31] border-dashed">Belum ada tombol aksi.</div>
-                              )}
-                              {selectedElement.eduCustomTriggers?.map((trigger, trIdx) => (
-                                <div key={trigger.id} className="bg-[#202227] border border-[#2b2d31] rounded p-2 space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <input 
-                                      type="text"
-                                      value={trigger.label}
-                                      onChange={(e) => {
-                                        const newTriggers = [...selectedElement.eduCustomTriggers!];
-                                        newTriggers[trIdx].label = e.target.value;
-                                        updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
-                                      }}
-                                      className="flex-1 bg-[#0f1013] border border-[#2b2d31] rounded p-1.5 text-xs font-bold text-white outline-none focus:border-purple-400"
-                                      placeholder="Label Tombol (misal: Buka Laptop)"
-                                    />
-                                    <button 
-                                      onClick={() => {
-                                        const newTriggers = selectedElement.eduCustomTriggers!.filter(t => t.id !== trigger.id);
-                                        updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
-                                      }}
-                                      className="text-red-400 hover:text-red-300 p-1"
-                                    ><Trash2 size={12} /></button>
-                                  </div>
-                                  
-                                  <div className="flex flex-col gap-1.5">
-                                    <label className="text-[9px] text-gray-400 font-medium">Pilih Objek Target:</label>
-                                    <select
-                                      value={trigger.targetElementId}
-                                      onChange={(e) => {
-                                        const newTriggers = [...selectedElement.eduCustomTriggers!];
-                                        newTriggers[trIdx].targetElementId = e.target.value;
-                                        updateElement(selectedElement.id, { eduCustomTriggers: newTriggers });
-                                      }}
-                                      className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-1.5 text-[10px] text-white outline-none focus:border-purple-400"
-                                    >
-                                      <option value="">-- Pilih Objek 3D --</option>
-                                      {elements.filter(e => e.type === '3d_model' || e.type === '3d_shape' || e.type === 'group_folder').map(e => (
-                                        <option key={e.id} value={e.id}>{e.name}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  
-                                  {trigger.targetElementId && (
-                                    <div className="bg-purple-500/10 border border-purple-500/20 rounded p-1.5 flex items-center justify-between gap-2 mt-2">
-                                      <span className="text-[9px] text-purple-200 flex-1 leading-tight">Pilih objek ini lalu gunakan panel Timeline di bawah untuk membuat animasinya.</span>
-                                      <button 
-                                        onClick={() => {
-                                          setSelectedId(trigger.targetElementId);
-                                          if (setShowTimeline) setShowTimeline(true);
-                                        }}
-                                        className="bg-purple-500 hover:bg-purple-600 text-white text-[9px] px-2 py-1 rounded shadow"
-                                      >
-                                        Edit Animasi
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                            
-                            <div className="h-px bg-[#1a1b1e] my-4"></div>
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] text-gray-400 font-medium">Teks Penjelasan</label>
-                            <textarea
-                              value={selectedElement.hotspotText || ''}
-                              onChange={(e) => updateElement(selectedElement.id, { hotspotText: e.target.value })}
-                              className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2.5 text-xs text-white outline-none focus:border-pln-blue min-h-[80px]"
-                              placeholder="Masukkan teks saat hotspot diklik..."
-                            />
-                          </div>
-                        </div>
+                        <EduDashboardPanel
+                          panel={selectedElement}
+                          elements={elements}
+                          updateElement={updateElement}
+                          setSelectedId={setSelectedId}
+                          setShowTimeline={setShowTimeline}
+                        />
                       )}
+
 
                       {/* VFX Properties Display */}
                       {selectedElement.type === 'vfx_sparkles' && (

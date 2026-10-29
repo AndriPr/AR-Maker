@@ -136,8 +136,10 @@ export function LeftToolbar({
             rotation: [0, 0, 0], 
             scale: [1, 1, 1], 
             panelTitle: 'NAMA KOMPONEN',
+            eduGeneralInfo: { title: 'Informasi General', description: '' },
             eduComponents: [],
-            eduMaintenanceTasks: []
+            eduMaintenanceTasks: [],
+            eduCustomTriggers: []
           });
         }} 
         className="p-2 text-gray-400 hover:text-gray-200 border border-transparent rounded-lg transition-colors" 
