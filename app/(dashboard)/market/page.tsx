@@ -142,6 +142,8 @@ export default function MarketPage() {
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importedIds, setImportedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Cover yang gagal dimuat (link Unsplash mati / diblokir) -> tampilkan placeholder
+  const [failedCovers, setFailedCovers] = useState<string[]>([]);
   const searchQuery = useDashboardStore((s) => s.searchQuery);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'default' | 'name-asc' | 'name-desc'>('default');
@@ -331,11 +333,21 @@ export default function MarketPage() {
                     </model-viewer>
                   ) : (
                     <div className="w-full h-full relative p-2">
-                      <img 
-                        src={asset.cover} 
-                        alt={asset.name} 
-                        className="w-full h-full object-cover rounded-xl transition-transform duration-700 group-hover:scale-110"
-                      />
+                      {failedCovers.includes(asset.id) ? (
+                        <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-50 to-cyan-100 flex flex-col items-center justify-center gap-2 text-pln-blue">
+                          <Box size={40} strokeWidth={1.5} />
+                          <span className="text-[11px] font-semibold opacity-70">Arahkan kursor untuk preview 3D</span>
+                        </div>
+                      ) : (
+                        <img 
+                          src={asset.cover} 
+                          alt={asset.name} 
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={() => setFailedCovers((prev) => prev.includes(asset.id) ? prev : [...prev, asset.id])}
+                          className="w-full h-full object-cover rounded-xl transition-transform duration-700 group-hover:scale-110"
+                        />
+                      )}
                     </div>
                   )}
                 </div>

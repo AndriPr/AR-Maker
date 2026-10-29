@@ -71,9 +71,16 @@ export function TextElement({ element, mode }: { element: any, mode: 'translate'
     ? element.fontFamily 
     : "https://cdn.jsdelivr.net/npm/@fontsource/raleway/files/raleway-latin-400-normal.woff";
     
-  const fontUrl3D = element.fontFamily && !element.fontFamily.startsWith('http')
-    ? `https://cdn.jsdelivr.net/npm/three/examples/fonts/${element.fontFamily}_regular.typeface.json`
-    : `https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json`;
+  // Font 3D hanya valid untuk nama font bawaan three.js. Nilai lain (mis. "Roboto"
+  // atau URL .woff dari mode 2D) akan jadi 404 di CDN dan membuat JSON.parse error,
+  // jadi di sini dipaksa kembali ke helvetiker.
+  const THREE_FONTS = ['helvetiker', 'optimer', 'gentilis', 'droid_sans', 'droid_serif'];
+  const font3DName = element.fontFamily && THREE_FONTS.includes(element.fontFamily)
+    ? element.fontFamily
+    : 'helvetiker';
+  // Font droid_* ada di subfolder "droid/" pada paket three.
+  const fontPath3D = font3DName.startsWith('droid') ? `droid/${font3DName}` : font3DName;
+  const fontUrl3D = `https://cdn.jsdelivr.net/npm/three/examples/fonts/${fontPath3D}_regular.typeface.json`;
 
   const color = element.color || "#ffffff";
   const isOutline = element.textEffect === 'outline';
@@ -157,6 +164,3 @@ export function TextElement({ element, mode }: { element: any, mode: 'translate'
     </group>
   );
 }
-
-
-

@@ -259,10 +259,14 @@ export function RightPanel({
               <div className="p-4">
                 <div className="flex flex-col gap-3">
                   <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-3">
-                    <div className="text-[10px] font-bold text-cyan-300">MindAR Image Target</div>
+                    <div className="text-[10px] font-bold text-cyan-300">MindAR Image Tracking</div>
                     <p className="mt-1 text-[9px] leading-relaxed text-gray-400">
-                      Tidak memerlukan Map ID atau akun pihak ketiga. Marker dikompilasi menjadi file .mind saat proyek dipublikasikan.
+                      Marker dikompilasi otomatis saat Publish. Gunakan gambar tajam, kaya detail, dan minim pola berulang agar tracking stabil.
                     </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                    <div className={`w-2 h-2 rounded-full ${targetImageUrl ? 'bg-[#62E5FF] shadow-[0_0_8px_#62E5FF]' : 'bg-gray-600'}`}></div>
+                    {targetImageUrl ? 'Marker aktif' : 'Belum ada marker. Tambahkan Marker Image di panel kiri.'}
                   </div>
                   {targetImageUrl ? (
                     <div className="overflow-hidden rounded-lg border border-[#1A223A] bg-black/30">
@@ -1710,4 +1714,3 @@ export function RightPanel({
     </>
   );
 }
-
