@@ -138,10 +138,10 @@ export function EditorHeader({
         <button 
           onClick={() => window.dispatchEvent(new CustomEvent('export-glb'))} 
           className="flex items-center px-4 py-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 rounded-md shadow-sm transition-all"
-          title="Export as .glb for Native WebXR (AR)"
+          title="Export scene sebagai file GLB"
         >
           <Download size={14} className="mr-2" />
-          <span>Export WebXR</span>
+          <span>Export GLB</span>
         </button>
 
         <button onClick={handlePublish} disabled={saving || publishProgress !== null || activeRole === 'viewer'} className={`flex items-center px-4 py-1.5 text-xs font-bold text-white rounded-md shadow-sm transition-all disabled:opacity-50 ${(activeRole === 'editor') ? 'bg-orange-500 hover:bg-orange-600' : 'bg-pln-blue hover:bg-pln-blue-dark'}`}>

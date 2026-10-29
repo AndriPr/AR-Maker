@@ -30,7 +30,7 @@ export function WebcamTestModal({ onClose, projectId }: WebcamTestModalProps) {
         <iframe 
           src={`/ar-viewer/${projectId}`}
           className="w-full h-full border-0"
-          allow="camera; microphone; xr-spatial-tracking"
+          allow="camera"
         ></iframe>
       </div>
     </div>

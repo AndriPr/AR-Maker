@@ -211,10 +211,6 @@ interface EditorState {
   onNodesChange: (changes: any[]) => void;
   onEdgesChange: (changes: any[]) => void;
   
-  // Project Settings
-  trackingMode: 'image' | 'face' | 'cylinder';
-  multisetMapId: string;
-
   // Environment
   ambientLightIntensity: number;
   directionalLightIntensity: number;
@@ -265,8 +261,6 @@ interface EditorState {
   setIsSimulating: (val: boolean) => void;
   isScanningAR: boolean;
   setIsScanningAR: (val: boolean) => void;
-  setTrackingMode: (mode: 'image' | 'face' | 'cylinder') => void;
-  setMultisetMapId: (id: string) => void;
   setAmbientLightIntensity: (val: number) => void;
   setDirectionalLightIntensity: (val: number) => void;
   setEnvironmentMap: (map: 'none' | 'studio' | 'city' | 'sunset' | 'forest' | 'apartment') => void;
@@ -348,8 +342,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isOrthographic: false,
   isSimulating: false,
   isScanningAR: false,
-  trackingMode: 'image',
-  multisetMapId: '',
   ambientLightIntensity: 0.5,
   directionalLightIntensity: 1,
   environmentMap: 'none',
@@ -847,8 +839,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     isScanningAR: val // Set scanning to true when simulation starts
   }),
   setIsScanningAR: (val) => set({ isScanningAR: val }),
-  setTrackingMode: (mode) => set({ trackingMode: mode }),
-  setMultisetMapId: (id) => set({ multisetMapId: id }),
   setAmbientLightIntensity: (val) => set({ ambientLightIntensity: val }),
   setDirectionalLightIntensity: (val) => set({ directionalLightIntensity: val }),
   setEnvironmentMap: (map) => set({ environmentMap: map }),

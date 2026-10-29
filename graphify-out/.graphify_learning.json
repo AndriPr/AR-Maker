@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-10-29T13:44:37.053204+00:00",
+  "nodes": {
+    "app_ar_canvas_id_page": {
+      "code_fingerprint": "8546ccc9f3fd57792403d352bdda833f7de9fee6716261b3afc188ae0b0b5569",
+      "label": "ar-canvas/[id]/page.tsx",
+      "last": "2026-10-29T13:41:16.890878+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T13:41:16.890878+00:00",
+          "outcome": "useful",
+          "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
+        }
+      ],
+      "score": 0.999946474,
+      "source_file": "app/ar-canvas/[id]/page.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_ar_canvas_id_page_vpsmanager": {
+      "code_fingerprint": "8546ccc9f3fd57792403d352bdda833f7de9fee6716261b3afc188ae0b0b5569",
+      "label": "VPSManager()",
+      "last": "2026-10-29T13:41:16.890878+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T13:41:16.890878+00:00",
+          "outcome": "useful",
+          "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
+        }
+      ],
+      "score": 0.999946474,
+      "source_file": "app/ar-canvas/[id]/page.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_ar_viewer_id_page_arviewer": {
+      "code_fingerprint": "3d256cf3858d3ff1067940fea5580cf7dba7992eb78c3ab26fb491efe728f835",
+      "label": "ARViewer()",
+      "last": "2026-10-29T13:41:16.890878+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-29T13:41:16.890878+00:00",
+          "outcome": "useful",
+          "q": "Sekarang, projectnya menggunakan multiset tapi hasilnya buruk kan ya? sekiranya kamu punya ide ga yang bagus? mungkin seperti yang lebih bagus dari WEBXR, analisis dulu"
+        }
+      ],
+      "score": 0.999946474,
+      "source_file": "app/ar-viewer/[id]/page.tsx",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

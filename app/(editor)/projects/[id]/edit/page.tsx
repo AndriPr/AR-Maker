@@ -98,10 +98,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
   const setDirectionalLightIntensity = useEditorStore(state => state.setDirectionalLightIntensity);
   const environmentMap = useEditorStore(state => state.environmentMap);
   const setEnvironmentMap = useEditorStore(state => state.setEnvironmentMap);
-  const trackingMode = useEditorStore(state => state.trackingMode);
-  const setTrackingMode = useEditorStore(state => state.setTrackingMode);
-  const multisetMapId = useEditorStore(state => state.multisetMapId);
-  const setMultisetMapId = useEditorStore(state => state.setMultisetMapId);
   const scenes = useEditorStore(state => state.scenes);
   const setScenes = useEditorStore(state => state.setScenes);
   const currentSceneId = useEditorStore(state => state.currentSceneId);
@@ -235,9 +231,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
         if (projData.scene_data.elements) {
           setElements(projData.scene_data.elements);
         }
-        if (projData.scene_data.multiset_map_id) {
-          setMultisetMapId(projData.scene_data.multiset_map_id);
-        }
         if (projData.scene_data.scenes && projData.scene_data.scenes.length > 0) {
           setScenes(projData.scene_data.scenes);
           setCurrentSceneId(projData.scene_data.scenes[0].id);
@@ -273,7 +266,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
     if (!silent) setSaving(true);
     
     try {
-      const sceneData = { elements, scenes, nodes, edges, multiset_map_id: multisetMapId };
+      const sceneData = { elements, scenes, nodes, edges };
       const { error } = await supabase
         .from('ar_projects')
         .update({
@@ -368,30 +361,38 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgress("Memuat AR Compiler...");
       setPublishProgressPercent(5);
 
-      // 1. Load MindAR Compiler Script
-      await new Promise<void>((resolve, reject) => {
-        if ((window as any).MINDAR?.IMAGE?.Compiler) {
-          resolve();
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.5/dist/mindar-image.prod.js';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Gagal memuat Compiler"));
-        document.head.appendChild(script);
-      });
+      // 1. Load the same pinned MindAR version used by the public runtime.
+      if (!(window as any).MINDAR?.IMAGE?.Compiler) {
+        await import('mind-ar/dist/mindar-image.prod.js');
+      }
+      if (!(window as any).MINDAR?.IMAGE?.Compiler) {
+        throw new Error('MindAR Compiler gagal dimuat. Muat ulang halaman lalu coba lagi.');
+      }
 
       setPublishProgress("Mengunduh gambar marker...");
       setPublishProgressPercent(15);
 
       // 2. Fetch image as Blob to bypass canvas CORS
-      const res = await fetch(targetImageUrl);
+      const res = await fetch(targetImageUrl, { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error(`Gambar marker gagal diunduh (${res.status}). Pastikan file masih tersedia dan dapat diakses publik.`);
+      }
       const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) {
+        throw new Error('File marker bukan format gambar yang valid. Gunakan JPG, PNG, atau WebP.');
+      }
       const imgUrl = URL.createObjectURL(blob);
       
       const image = new Image();
       image.src = imgUrl;
-      await new Promise((resolve) => { image.onload = resolve; });
+      try {
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error('Browser gagal membaca gambar marker. Coba unggah ulang dalam format JPG atau PNG.'));
+        });
+      } finally {
+        URL.revokeObjectURL(imgUrl);
+      }
 
       // The compiler's TensorFlow.js feature extraction cost scales with
       // pixel count, not file size - a "light" (small KB) but high-resolution
@@ -413,7 +414,10 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
 
         const resized = new Image();
         resized.src = canvas.toDataURL('image/jpeg', 0.92);
-        await new Promise((resolve) => { resized.onload = resolve; });
+        await new Promise<void>((resolve, reject) => {
+          resized.onload = () => resolve();
+          resized.onerror = () => reject(new Error('Gagal mengoptimalkan resolusi marker.'));
+        });
         compileImage = resized;
       }
 
@@ -431,6 +435,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       const compiler = new (window as any).MINDAR.IMAGE.Compiler();
       const compileTimeoutMs = 90000;
       let rejectFromUnhandled: ((err: Error) => void) | null = null;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
       const unhandledHandler = (event: PromiseRejectionEvent) => {
         const reason = event.reason?.message || String(event.reason);
         rejectFromUnhandled?.(new Error(`Kompilasi marker gagal: ${reason}`));
@@ -443,16 +448,22 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
              // Compilation is the slowest step by far, so it owns the bulk of the bar (20-80%).
              setPublishProgressPercent(20 + Math.round((progress / 100) * 60));
           }),
-          new Promise((_, reject) => setTimeout(
-            () => reject(new Error(`Kompilasi marker timeout setelah ${compileTimeoutMs / 1000} detik. Coba gunakan gambar target dengan resolusi lebih kecil, atau reload halaman dan coba lagi.`)),
-            compileTimeoutMs
-          )),
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(
+              () => reject(new Error(`Kompilasi marker timeout setelah ${compileTimeoutMs / 1000} detik. Coba gunakan gambar target dengan resolusi lebih kecil, atau reload halaman dan coba lagi.`)),
+              compileTimeoutMs
+            );
+          }),
           new Promise((_, reject) => { rejectFromUnhandled = reject; }),
         ]);
       } finally {
+        if (timeoutId) clearTimeout(timeoutId);
         window.removeEventListener('unhandledrejection', unhandledHandler);
       }
       const exportedBuffer = await compiler.exportData();
+      if (!exportedBuffer || exportedBuffer.byteLength === 0) {
+        throw new Error('MindAR menghasilkan file marker kosong. Pilih gambar dengan detail visual yang lebih kaya.');
+      }
 
       setPublishProgress("Mengunggah file AR ke server...");
       setPublishProgressPercent(85);
@@ -466,22 +477,18 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           upsert: true
         });
         
-      if (uploadError) {
-         // Sometimes RLS blocks upload if bucket policy is strict. Fallback to default if error
-         console.warn("Upload .mind failed, possibly due to RLS. Using default marker. Error:", uploadError);
+      if (uploadError || !uploadData) {
+        throw new Error(`File marker gagal diunggah: ${uploadError?.message || 'server tidak mengembalikan data upload'}`);
       }
-      
-      let finalMindUrl = project.mind_file_url;
-      if (!uploadError && uploadData) {
-         const { data: publicUrlData } = supabase.storage.from('assets').getPublicUrl(fileName);
-         finalMindUrl = publicUrlData.publicUrl;
-      }
+      const { data: publicUrlData } = supabase.storage.from('assets').getPublicUrl(fileName);
+      const finalMindUrl = publicUrlData.publicUrl;
+      if (!finalMindUrl) throw new Error('URL publik marker tidak berhasil dibuat.');
 
       setPublishProgress("Menyimpan proyek...");
       setPublishProgressPercent(95);
 
       // 5. Update Database
-      const sceneData = { elements, scenes, nodes, edges, multiset_map_id: multisetMapId };
+      const sceneData = { elements, scenes, nodes, edges };
       const { error: finalError } = await supabase
         .from('ar_projects')
         .update({ 
@@ -492,7 +499,7 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           brand_logo_url: brandLogoUrl,
           // folder_name: folderName, // Temporarily disabled until DB is migrated
           status: 'published',
-          ...(finalMindUrl ? { mind_file_url: finalMindUrl } : {})
+          mind_file_url: finalMindUrl
         })
         .eq('id', project.id);
         
@@ -741,10 +748,6 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
           setTargetImageUrl={setTargetImageUrl}
           folderName={folderName}
           setFolderName={setFolderName}
-          trackingMode={trackingMode}
-          setTrackingMode={setTrackingMode}
-          multisetMapId={multisetMapId}
-          setMultisetMapId={setMultisetMapId}
           ambientLightIntensity={ambientLightIntensity}
           setAmbientLightIntensity={setAmbientLightIntensity}
           directionalLightIntensity={directionalLightIntensity}

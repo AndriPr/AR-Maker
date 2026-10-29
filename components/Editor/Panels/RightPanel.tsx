@@ -14,10 +14,6 @@ interface RightPanelProps {
   setTargetImageUrl: (url: string | null) => void;
   folderName: string;
   setFolderName: (name: string) => void;
-  trackingMode: 'image' | 'cylinder' | 'face';
-  setTrackingMode: (mode: 'image' | 'cylinder' | 'face') => void;
-  multisetMapId: string;
-  setMultisetMapId: (id: string) => void;
   ambientLightIntensity: number;
   setAmbientLightIntensity: (val: number) => void;
   directionalLightIntensity: number;
@@ -101,10 +97,6 @@ export function RightPanel({
   setTargetImageUrl,
   folderName,
   setFolderName,
-  trackingMode,
-  setTrackingMode,
-  multisetMapId,
-  setMultisetMapId,
   ambientLightIntensity,
   setAmbientLightIntensity,
   directionalLightIntensity,
@@ -221,31 +213,11 @@ export function RightPanel({
                       />
                     </div>
                     
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] text-gray-400">Mode Tracking (MultiSet Engine)</label>
-                      <select
-                        value={trackingMode}
-                        onChange={(e) => setTrackingMode(e.target.value as any)}
-                        className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue"
-                      >
-                        <option value="image">MultiSet - Object Tracking / Flat Image</option>
-                        <option value="cylinder">MultiSet - Area Target (VPS)</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 mt-2">
-                      <label className="text-[10px] text-gray-400">MultiSet Map ID / Object Code</label>
-                      <input 
-                        type="text" 
-                        value={multisetMapId}
-                        onChange={(e) => {
-                          setMultisetMapId(e.target.value);
-                          handleSave(true);
-                        }}
-                        className="w-full bg-[#1a1b1e] border border-[#2b2d31] rounded p-2 text-xs text-gray-200 outline-none focus:border-pln-blue transition-colors font-mono"
-                        placeholder="c4b1a..."
-                      />
-                      <p className="text-[9px] text-gray-500">Dapatkan Map ID dari dashboard akun MultiSet AI Anda.</p>
+                    <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-3">
+                      <div className="text-[10px] font-bold text-cyan-300">MindAR Image Tracking</div>
+                      <p className="mt-1 text-[9px] leading-relaxed text-gray-400">
+                        Marker dikompilasi otomatis saat Publish. Gunakan gambar tajam, kaya detail, dan minim pola berulang agar tracking stabil.
+                      </p>
                     </div>
                   </div>
                 </div>

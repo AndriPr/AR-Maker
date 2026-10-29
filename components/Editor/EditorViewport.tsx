@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as React from 'react';
 
-import { Grid, Html, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Select, Bvh } from '@react-three/drei';
+import { Grid, Environment, GizmoHelper, GizmoViewport, PerspectiveCamera, OrthographicCamera, Select, Bvh } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditorStore } from '@/lib/store';
 
@@ -91,7 +91,6 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
   const targetImageUrl = useEditorStore(state => state.targetImageUrl);
   const setPreviewAnimationData = useEditorStore(state => state.setPreviewAnimationData);
   const isOrthographic = useEditorStore(state => state.isOrthographic);
-  const trackingMode = useEditorStore(state => state.trackingMode);
   const setCurrentSceneId = useEditorStore(state => state.setCurrentSceneId);
 
   // Logic Engine Setup
@@ -223,18 +222,7 @@ export default function EditorViewport({ transformMode = 'translate', simulateMo
         
         <ProximitySensorEngine />
         <Suspense fallback={null}>
-            {trackingMode === 'image' && targetImageUrl && <TargetImage url={targetImageUrl} />}
-            {trackingMode === 'face' && (
-              <group position={[0, 1, 0]}>
-                <mesh>
-                  <sphereGeometry args={[1, 32, 32]} />
-                  <meshBasicMaterial color="#1e293b" wireframe />
-                </mesh>
-                <Html center position={[0, 0, 1.2]}>
-                  <div className="bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap">Face Mesh Dummy</div>
-                </Html>
-              </group>
-            )}
+            {targetImageUrl && <TargetImage url={targetImageUrl} />}
             
             {/* Render Root Elements Only (those without a parent) */}
             <SimulatorReveal isScanningAR={isScanningAR} simulateMode={simulateMode}>

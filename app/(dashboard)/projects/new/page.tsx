@@ -136,7 +136,7 @@ export default function NewProjectPage() {
         initialTargetImageUrl = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800';
         initialSceneData.elements = [
           { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'cylinder', name: 'Podium', position: [0, -1, 0], rotation: [0, 0, 0], scale: [2, 0.2, 2], color: '#34495e', sceneId: 'scene-1' },
-          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'box', name: 'Kotak Produk', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1.2, 1.8, 1.2], color: '#f1c40f', sceneId: 'scene-1' },
+          { id: crypto.randomUUID(), type: '3d_shape', shapeType: 'cube', name: 'Kotak Produk', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1.2, 1.8, 1.2], color: '#f1c40f', sceneId: 'scene-1' },
           { id: crypto.randomUUID(), type: '3d_text', name: 'Nama Produk', content: 'PRODUK SUPER', position: [0, 1.3, 0], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8], color: '#ffffff', sceneId: 'scene-1' },
           { id: crypto.randomUUID(), type: '3d_text', name: 'Harga', content: 'Rp 99.000', position: [0, 0.9, 0], rotation: [0, 0, 0], scale: [0.5, 0.5, 0.5], color: '#2ecc71', sceneId: 'scene-1' },
           { id: crypto.randomUUID(), type: 'ui_button', name: 'Beli Sekarang', buttonText: 'Beli Sekarang', actionTargetId: '', actionAnimation: '', position: [0, -1.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1], sceneId: 'scene-1' }
@@ -304,7 +304,7 @@ export default function NewProjectPage() {
               <div>
                 <h3 className={`font-bold text-lg mb-1 text-gray-500`}>Surface Tracking <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full ml-2">Segera Hadir</span></h3>
                 <p className="text-sm text-gray-400 leading-relaxed">
-                  Letakkan objek 3D di permukaan datar dunia nyata seperti lantai atau meja (WebXR).
+                  Letakkan objek 3D di permukaan datar dunia nyata seperti lantai atau meja (belum didukung oleh MindAR Image Tracking).
                 </p>
               </div>
             </label>

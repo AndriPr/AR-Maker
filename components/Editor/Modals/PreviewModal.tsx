@@ -20,7 +20,7 @@ export function PreviewModal({ onClose, onOpenWebcamTest, project }: PreviewModa
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <QrCode className="text-indigo-400" size={20} />
-            Preview WebXR
+            Preview MindAR
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-gray-800">
             <X size={20} />
