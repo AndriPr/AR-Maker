@@ -47,7 +47,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
-    "mind-ar": "^1.2.5",
     "shadcn": "^4.23.0",
     "tailwindcss": "^4",
     "typescript": "^5"

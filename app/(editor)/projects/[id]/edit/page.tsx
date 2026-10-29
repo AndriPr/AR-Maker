@@ -361,9 +361,47 @@ export default function AREditor({ params }: { params: Promise<{ id: string }> }
       setPublishProgress("Memuat AR Compiler...");
       setPublishProgressPercent(5);
 
-      // 1. Load the same pinned MindAR version used by the public runtime.
+      // 1. Load the browser-only compiler used by the public runtime. Keeping
+      // MindAR out of package.json avoids its optional native `canvas` build,
+      // which is not needed in the browser and fails on Vercel's Node runtime.
       if (!(window as any).MINDAR?.IMAGE?.Compiler) {
-        await import('mind-ar/dist/mindar-image.prod.js');
+        await new Promise<void>((resolve, reject) => {
+          const scriptId = 'mindar-image-compiler';
+          let existing = document.getElementById(scriptId) as HTMLScriptElement | null;
+          const onLoad = () => {
+            const loadedScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+            if (loadedScript) loadedScript.dataset.status = 'loaded';
+            resolve();
+          };
+          const onError = () => {
+            document.getElementById(scriptId)?.remove();
+            reject(new Error('MindAR Compiler gagal diunduh. Periksa koneksi internet lalu coba lagi.'));
+          };
+
+          if (existing) {
+            if (existing.dataset.status === 'loaded') {
+              existing.remove();
+              existing = null;
+            }
+          }
+
+          if (existing) {
+            existing.addEventListener('load', onLoad, { once: true });
+            existing.addEventListener('error', onError, { once: true });
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.id = scriptId;
+          script.type = 'module';
+          script.src = 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js';
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          script.dataset.status = 'loading';
+          script.addEventListener('load', onLoad, { once: true });
+          script.addEventListener('error', onError, { once: true });
+          document.head.appendChild(script);
+        });
       }
       if (!(window as any).MINDAR?.IMAGE?.Compiler) {
         throw new Error('MindAR Compiler gagal dimuat. Muat ulang halaman lalu coba lagi.');
