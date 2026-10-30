@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -261,7 +263,8 @@ function normalizeKeyframes(value: unknown): RuntimeKeyframe[] {
 
 function buildEducationPayload(
   elements: RuntimeElement[],
-  scenes: RuntimeScene[]
+  scenes: RuntimeScene[],
+  projectTitle = 'Panel Edukasi'
 ): EducationPayload {
   const initialSceneId = String(scenes[0]?.id ?? 'scene-1');
   const sceneIdFor = (element: RuntimeElement) => String(element.sceneId || initialSceneId);
@@ -271,7 +274,7 @@ function buildEducationPayload(
     .map((panel) => ({
       id: String(panel.id),
       sceneId: sceneIdFor(panel),
-      title: stringValue(panel.panelTitle || panel.name, 'Panel Edukasi'),
+      title: stringValue(panel.panelTitle || panel.name, projectTitle || 'Panel Edukasi'),
       generalTitle: stringValue(panel.eduGeneralInfo?.title, 'Informasi General'),
       description: stringValue(panel.eduGeneralInfo?.description || panel.data?.description),
       components: (Array.isArray(panel.eduComponents) ? panel.eduComponents : []).map((component, index) => ({
@@ -311,6 +314,28 @@ function buildEducationPayload(
         targetElementId: stringValue(trigger?.targetElementId),
       })).filter((trigger) => trigger.targetElementId),
     }));
+
+  if (panels.length === 0) {
+    const models = elements.filter((element) => ['3d_model', '3d_shape'].includes(element.type));
+    panels.push({
+      id: 'default-edu-panel',
+      sceneId: initialSceneId,
+      title: stringValue(projectTitle, 'Panel Edukasi'),
+      generalTitle: 'Informasi General',
+      description: 'Panel informasi dan panduan 3D interaktif. Pilih menu di atas untuk menjelajahi komponen dan prosedur perawatan.',
+      components: models.map((model, index) => ({
+        id: String(model.id),
+        name: stringValue(model.name, `Komponen ${index + 1}`),
+        description: stringValue(model.data?.description, 'Objek 3D perangkat'),
+        actionTargetId: String(model.id),
+        actionAnimation: model.availableAnimations?.[0] || undefined,
+        showTargetId: undefined,
+        hideTargetId: undefined,
+      })),
+      modules: [],
+      triggers: [],
+    });
+  }
 
   const objects = elements
     .filter((element) => (
@@ -398,9 +423,17 @@ function renderExperience(project: Record<string, unknown>): string {
     const actions = getClientActions(element, sceneIds);
     if (actions.length > 0) actionMap[element.id] = actions;
   }
-  const educationPayload = buildEducationPayload(elements, scenes);
+  const rawProjectTitle = typeof project.title === 'string' && project.title.trim() ? project.title.trim() : 'Panel Edukasi';
+  const educationPayload = buildEducationPayload(elements, scenes, rawProjectTitle);
   const educationObjectIds = new Set(educationPayload.objects.map((element) => element.id));
-  const hasEducationContent = educationPayload.panels.length > 0;
+  const hasEducationContent = true;
+
+  let eduRuntimeCss = '';
+  try {
+    eduRuntimeCss = fs.readFileSync(path.join(process.cwd(), 'public', 'ar-education-runtime.css'), 'utf8');
+  } catch {
+    // fallback if file not readable directly
+  }
 
   const renderElement = (element: RuntimeElement, visited: Set<string>): string => {
     if (visited.has(element.id)) return '';
@@ -492,17 +525,18 @@ function renderExperience(project: Record<string, unknown>): string {
       .brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 700; }
       #status { padding: 8px 11px; border-radius: 999px; color: #fff; background: #070b14b8; backdrop-filter: blur(12px); font-size: 11px; }
       #status::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 12px var(--brand); }
-      #start-overlay { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 50% 25%, #172554 0, #070b14 55%, #020409 100%); }
+      #start-overlay { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 50% 25%, #172554 0, #070b14 55%, #020409 100%); }
       #start-card { width: min(430px, 100%); padding: 30px; border: 1px solid #ffffff20; border-radius: 24px; text-align: center; background: #0f172acc; backdrop-filter: blur(16px); box-shadow: 0 28px 90px #000a; }
       #start-card h1 { margin: 0 0 8px; color: #fff; font-size: clamp(22px, 6vw, 30px); }
       #start-card p { margin: 0 0 22px; color: #aeb9ca; line-height: 1.55; }
       #start-button { width: 100%; border: 0; border-radius: 14px; padding: 14px 18px; color: #fff; background: var(--brand); font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 12px 30px color-mix(in srgb, var(--brand) 40%, transparent); }
       #start-button:disabled { cursor: wait; opacity: .65; }
       #retry-button { display: none; width: 100%; margin-top: 10px; border: 1px solid #ffffff2e; border-radius: 14px; padding: 12px 18px; color: #fff; background: #ffffff12; font: inherit; font-weight: 700; cursor: pointer; }
-      #hint { position: fixed; z-index: 8; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 9px 13px; border-radius: 999px; color: #dbeafe; background: #070b14b8; backdrop-filter: blur(12px); text-align: center; font-size: 11px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+      #hint { position: fixed; z-index: 9; left: 50%; bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px)); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 9px 13px; border-radius: 999px; color: #dbeafe; background: #070b14b8; backdrop-filter: blur(12px); text-align: center; font-size: 11px; opacity: 0; transition: opacity .25s; pointer-events: none; }
       #hint.visible { opacity: 1; }
     </style>
-    ${hasEducationContent ? '<link rel="stylesheet" href="/ar-education-runtime.css" />' : ''}
+    ${eduRuntimeCss ? `<style id="edu-runtime-inline-css">${eduRuntimeCss}</style>` : ''}
+    <link rel="stylesheet" href="/ar-education-runtime.css" />
   </head>
   <body>
     <div id="topbar">
@@ -510,17 +544,17 @@ function renderExperience(project: Record<string, unknown>): string {
       <div id="status">Siap</div>
     </div>
     <div id="hint">Arahkan kamera ke gambar marker</div>
-    ${hasEducationContent ? `<div id="edu-runtime" hidden>
+    <div id="edu-runtime">
       <button id="edu-dock" type="button" aria-controls="edu-sheet" aria-expanded="false">
         <span class="edu-dock-icon" aria-hidden="true">✦</span>
-        <span class="edu-dock-copy"><strong id="edu-dock-title">Panel Edukasi</strong><small id="edu-dock-meta">Buka informasi dan animasi</small></span>
+        <span class="edu-dock-copy"><strong id="edu-dock-title">${escapeHtml(educationPayload.panels[0]?.title || rawProjectTitle)}</strong><small id="edu-dock-meta">Buka informasi dan animasi</small></span>
         <span class="edu-dock-open" aria-hidden="true">Buka</span>
       </button>
       <div id="edu-backdrop" aria-hidden="true"></div>
       <section id="edu-sheet" role="dialog" aria-modal="true" aria-labelledby="edu-title" aria-hidden="true">
         <div class="edu-grabber" aria-hidden="true"></div>
         <header class="edu-header">
-          <div><span class="edu-eyebrow">MODE BELAJAR AR</span><h2 id="edu-title">Panel Edukasi</h2></div>
+          <div><span class="edu-eyebrow">MODE BELAJAR AR</span><h2 id="edu-title">${escapeHtml(educationPayload.panels[0]?.title || rawProjectTitle)}</h2></div>
           <button id="edu-close" class="edu-icon-button" type="button" aria-label="Tutup panel edukasi">×</button>
         </header>
         <nav id="edu-tabs" class="edu-tabs" aria-label="Menu edukasi">
@@ -531,7 +565,7 @@ function renderExperience(project: Record<string, unknown>): string {
         <div id="edu-content" class="edu-content" aria-live="polite"></div>
       </section>
       <div id="edu-toast" role="status" aria-live="polite"></div>
-    </div>` : ''}
+    </div>
     <div id="start-overlay">
       <main id="start-card">
         <h1>${projectTitle}</h1>
@@ -609,6 +643,12 @@ function renderExperience(project: Record<string, unknown>): string {
           overlay.style.display = 'none';
           hint.classList.add('visible');
           setStatus('Mencari marker');
+          window.dispatchEvent(new CustomEvent('ar-ready'));
+          const eduRuntime = document.getElementById('edu-runtime');
+          if (eduRuntime) {
+            eduRuntime.removeAttribute('hidden');
+            eduRuntime.hidden = false;
+          }
         });
         scene.addEventListener('arError', () => showError('Kamera tidak dapat digunakan. Pastikan izin kamera aktif dan halaman dibuka melalui HTTPS.'));
         target.addEventListener('targetFound', () => {

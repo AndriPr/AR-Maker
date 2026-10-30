@@ -36,11 +36,17 @@ export async function updateSession(request: NextRequest) {
 
   // The QR/share link must stay public so visitors can open the MindAR
   // experience without an account.
-  const isPublicArRoute = request.nextUrl.pathname.startsWith('/ar-viewer');
+  const isPublicArRoute = request.nextUrl.pathname.startsWith('/ar-viewer') ||
+    request.nextUrl.pathname.startsWith('/ar-canvas');
+
+  // Static files or public assets should never be redirected to login
+  const isPublicAsset =
+    request.nextUrl.pathname.startsWith('/ar-education-runtime') ||
+    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|json|mind|glb|gltf|mp3|wav|ogg|mp4|webm|woff|woff2|ttf)$/i.test(request.nextUrl.pathname);
 
   // Exclude root '/' because it might be a public landing page in some apps, but here '/' is My Projects dashboard.
   // Let's assume '/' is protected.
-  const isProtectedRoute = !isAuthRoute && !isPublicArRoute && !request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/_next');
+  const isProtectedRoute = !isAuthRoute && !isPublicArRoute && !isPublicAsset && !request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/_next');
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
