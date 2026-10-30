@@ -136,62 +136,8 @@ export function ARUserInterface() {
 
   return (
     <div className="absolute inset-0 z-[50] flex flex-col pointer-events-none">
-      {/* SCANNING RETICLE OVERLAY */}
-      <AnimatePresence>
-        {isScanningAR && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/70 backdrop-blur-md pointer-events-auto"
-          >
-            {/* Viewfinder box with corners */}
-            <div className={`relative w-64 h-64 rounded-3xl border border-white/15 bg-cyan-500/5 shadow-2xl flex items-center justify-center transition-all duration-300 ${markerLockedAnim ? 'border-emerald-400 scale-95 shadow-[0_0_30px_#10b98144]' : ''}`}>
-              <div className={`absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 rounded-tl-xl transition-colors ${markerLockedAnim ? 'border-emerald-400' : 'border-cyan-400'}`} />
-              <div className={`absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 rounded-tr-xl transition-colors ${markerLockedAnim ? 'border-emerald-400' : 'border-cyan-400'}`} />
-              <div className={`absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 rounded-bl-xl transition-colors ${markerLockedAnim ? 'border-emerald-400' : 'border-cyan-400'}`} />
-              <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 rounded-br-xl transition-colors ${markerLockedAnim ? 'border-emerald-400' : 'border-cyan-400'}`} />
-
-              {!markerLockedAnim ? (
-                <>
-                  <motion.div
-                    animate={{ top: ['10%', '90%'] }}
-                    transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-                    className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#00d2ff]"
-                  />
-                  <div className="flex flex-col items-center gap-2">
-                    <ScanLine size={48} className="text-cyan-400 animate-pulse" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Memindai Marker AR</span>
-                  </div>
-                </>
-              ) : (
-                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-2">
-                  <CheckCircle2 size={54} className="text-emerald-400" />
-                  <span className="text-xs font-bold text-emerald-300">Marker Terkunci!</span>
-                </motion.div>
-              )}
-            </div>
-
-            <p className="mt-6 text-center text-xs text-gray-300 font-medium">Arahkan kamera ke gambar marker target.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setMarkerLockedAnim(true);
-                setTimeout(() => {
-                  setIsScanningAR(false);
-                  setMarkerLockedAnim(false);
-                }, 400);
-              }}
-              className="mt-4 px-4 py-2 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition-colors"
-            >
-              Simulasikan Marker Terkunci ✓
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* DOCK & SHEET FOR EDU PANEL */}
-      {!isScanningAR && eduPanel && (
+      {eduPanel && (
         <div className="absolute inset-x-0 bottom-4 flex justify-center px-4">
           <AnimatePresence mode="wait">
             {activeView === 'closed' ? (
