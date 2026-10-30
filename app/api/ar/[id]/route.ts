@@ -196,6 +196,184 @@ function errorPage(title: string, message: string): string {
       main { width: min(520px, 100%); padding: 28px; border: 1px solid #263244; border-radius: 20px; background: #111827; box-shadow: 0 24px 70px #0008; }
       h1 { margin: 0 0 10px; font-size: 1.35rem; }
       p { margin: 0; color: #aeb9ca; }
+
+      /* AR Scanner Reticle HUD Overlay */
+      .scanner-viewfinder {
+        position: fixed;
+        inset: 0;
+        z-index: 9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      .scanner-viewfinder.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .scanner-reticle {
+        position: relative;
+        width: min(72vw, 290px);
+        height: min(72vw, 290px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 26px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--brand) 12%, transparent) 0%, transparent 72%);
+        box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.45);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+      }
+      .scanner-corner {
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        border-color: var(--brand);
+        border-style: solid;
+        filter: drop-shadow(0 0 8px var(--brand));
+      }
+      .corner-tl { top: -2px; left: -2px; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 14px; }
+      .corner-tr { top: -2px; right: -2px; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 14px; }
+      .corner-bl { bottom: -2px; left: -2px; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 14px; }
+      .corner-br { bottom: -2px; right: -2px; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 14px; }
+      
+      .scanner-laser {
+        position: absolute;
+        left: 5%;
+        right: 5%;
+        height: 2.5px;
+        background: linear-gradient(90deg, transparent, var(--brand) 30%, #ffffff 50%, var(--brand) 70%, transparent);
+        box-shadow: 0 0 16px var(--brand);
+        border-radius: 99px;
+        animation: scanLaser 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+      }
+      @keyframes scanLaser {
+        0% { top: 7%; opacity: 0.85; }
+        50% { opacity: 1; }
+        100% { top: 91%; opacity: 0.85; }
+      }
+      .scanner-center-cross {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+      }
+      .scanner-center-cross::before, .scanner-center-cross::after {
+        content: '';
+        position: absolute;
+        background: rgba(255, 255, 255, 0.4);
+      }
+      .scanner-center-cross::before { top: 0; bottom: 0; left: 7px; width: 2px; }
+      .scanner-center-cross::after { left: 0; right: 0; top: 7px; height: 2px; }
+
+      .scanner-guidance {
+        margin-top: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 18px;
+        border-radius: 999px;
+        background: rgba(7, 11, 20, 0.86);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(16px);
+        max-width: calc(100vw - 36px);
+        animation: pulsePrompt 2.5s ease-in-out infinite alternate;
+      }
+      @keyframes pulsePrompt {
+        from { transform: scale(1); }
+        to { transform: scale(1.02); }
+      }
+      .scanner-target-preview {
+        position: relative;
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        border-radius: 11px;
+        overflow: hidden;
+        border: 2px solid var(--brand);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--brand) 40%, transparent);
+        background: #000;
+      }
+      .scanner-target-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .scanner-guidance-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .scanner-guidance-text strong {
+        font-size: 11.5px;
+        color: #fff;
+        font-weight: 800;
+      }
+      .scanner-guidance-text span {
+        font-size: 10px;
+        color: #94a3b8;
+      }
+
+      .scanner-locked-badge {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.65);
+        opacity: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 22px;
+        border-radius: 999px;
+        background: rgba(16, 185, 129, 0.96);
+        color: #ffffff;
+        font-size: 13.5px;
+        font-weight: 800;
+        box-shadow: 0 14px 40px rgba(16, 185, 129, 0.5);
+        backdrop-filter: blur(14px);
+        transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+      }
+      .locked-icon {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.28);
+        font-size: 12px;
+      }
+
+      /* Locked & Fade out states */
+      .scanner-viewfinder.target-locked .scanner-reticle {
+        border-color: #10b981;
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+        transform: scale(0.95);
+      }
+      .scanner-viewfinder.target-locked .scanner-corner {
+        border-color: #10b981;
+        filter: drop-shadow(0 0 12px #10b981);
+      }
+      .scanner-viewfinder.target-locked .scanner-laser {
+        display: none;
+      }
+      .scanner-viewfinder.target-locked .scanner-guidance {
+        opacity: 0;
+        transform: translateY(12px);
+        transition: all 0.2s ease;
+      }
+      .scanner-viewfinder.target-locked .scanner-locked-badge {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      .scanner-viewfinder.fade-out {
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.45s ease, visibility 0.45s ease;
+      }
     </style>
   </head>
   <body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p></main></body>
@@ -358,6 +536,7 @@ function renderExperience(project: Record<string, unknown>): string {
   const scenes = storedScenes.length > 0 ? storedScenes : [{ id: 'scene-1', name: 'Scene 1' }];
   const sceneIds = new Set(scenes.map((scene) => String(scene.id)));
   const mindFileUrl = safeUrl(project.mind_file_url);
+  const targetImageUrl = safeUrl(project.target_image_url) || safeUrl((rawSceneData as any).targetImageUrl);
 
   if (!mindFileUrl) {
     return errorPage(
@@ -510,6 +689,31 @@ function renderExperience(project: Record<string, unknown>): string {
       <div id="status">Siap</div>
     </div>
     <div id="hint">Arahkan kamera ke gambar marker</div>
+    <!-- Modern AR Scanner Viewfinder Overlay -->
+    <div id="scanner-viewfinder" class="scanner-viewfinder" aria-hidden="true">
+      <div class="scanner-reticle">
+        <div class="scanner-corner corner-tl"></div>
+        <div class="scanner-corner corner-tr"></div>
+        <div class="scanner-corner corner-bl"></div>
+        <div class="scanner-corner corner-br"></div>
+        <div class="scanner-laser"></div>
+        <div class="scanner-center-cross"></div>
+      </div>
+      <div class="scanner-guidance">
+        ${targetImageUrl ? `
+        <div class="scanner-target-preview">
+          <img src="${escapeHtml(targetImageUrl)}" alt="Marker Target" />
+        </div>` : ''}
+        <div class="scanner-guidance-text">
+          <strong>Arahkan Kamera ke Marker</strong>
+          <span>Posisikan gambar marker di dalam bingkai kotak</span>
+        </div>
+      </div>
+      <div class="scanner-locked-badge">
+        <span class="locked-icon">✓</span>
+        <span>Marker Terkunci</span>
+      </div>
+    </div>
     ${hasEducationContent ? `<div id="edu-runtime" hidden>
       <button id="edu-dock" type="button" aria-controls="edu-sheet" aria-expanded="false">
         <span class="edu-dock-icon" aria-hidden="true">✦</span>
@@ -679,7 +883,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     });
     const { data: project, error } = await supabase
       .from('ar_projects')
-      .select('id, title, brand_color, brand_logo_url, mind_file_url, scene_data')
+      .select('id, title, brand_color, brand_logo_url, mind_file_url, target_image_url, scene_data')
       .eq('id', id)
       .single();
 

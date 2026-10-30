@@ -454,7 +454,7 @@
     content.innerHTML = `${moduleSelect}<article class="edu-step">
       <div class="edu-step-top"><div><span class="edu-step-kicker">${escapeHtml(lessonModule.title)}</span><div class="edu-card-title">Langkah ${state.stepIndex + 1} dari ${lessonModule.steps.length}</div></div><span class="edu-step-progress" data-step-progress-label>0%</span></div>
       <div class="edu-progress-track"><div class="edu-progress-bar" data-step-progress-bar style="width:0%"></div></div>
-      <div class="edu-step-body">${lessonModule.description ? `<p class="edu-copy" style="margin-bottom:12px">${escapeHtml(lessonModule.description)}</p>` : ''}<h4>${escapeHtml(step.title)}</h4><p>${escapeHtml(step.instruction || 'Ikuti petunjuk visual pada objek AR.')}</p>${step.voiceoverUrl ? '<button class="edu-button edu-voice" type="button" data-voiceover>♪ Putar narasi</button>' : ''}</div>
+      <div class="edu-step-body">${lessonModule.description ? `<p class="edu-copy" style="margin-bottom:12px">${escapeHtml(lessonModule.description)}</p>` : ''}<h4>${escapeHtml(step.title)}</h4><p>${escapeHtml(step.instruction || 'Ikuti petunjuk visual pada objek AR.')}</p><div style="display:flex;gap:8px;margin-top:12px;"><button class="edu-button" type="button" data-step-replay style="flex:1;">↺ Putar Animasi</button>${step.voiceoverUrl ? '<button class="edu-button edu-voice" type="button" data-voiceover style="flex:1;margin-top:0;">♪ Putar Narasi</button>' : ''}</div></div>
       <div class="edu-step-actions"><button class="edu-button" type="button" data-step-prev ${state.stepIndex === 0 ? 'disabled' : ''}>← Sebelumnya</button><button class="edu-button edu-primary" type="button" data-step-next>${state.stepIndex === lessonModule.steps.length - 1 ? 'Selesai' : 'Berikutnya →'}</button></div>
     </article>`;
   }
@@ -488,6 +488,10 @@
       }
     });
     content.querySelector('[data-voiceover]')?.addEventListener('click', () => playVoiceover(currentStep()?.voiceoverUrl));
+    content.querySelector('[data-step-replay]')?.addEventListener('click', () => {
+      startCurrentStep(true);
+      showToast('Memutar ulang animasi langkah...');
+    });
   }
 
   function render() {
@@ -544,6 +548,11 @@
 
   window.addEventListener('ar-scene-change', (event) => updateScene(event.detail?.sceneId));
   window.addEventListener('ar-play-animation', (event) => playClip(event.detail?.targetId, event.detail?.animationName));
+  window.addEventListener('ar-target-found', () => {
+    dock.classList.add('edu-dock-pulse');
+    setTimeout(() => dock.classList.remove('edu-dock-pulse'), 2000);
+    showToast('Marker terdeteksi! Buka panel edukasi di bawah.');
+  });
   scene?.addEventListener('arReady', () => {
     runtime.hidden = false;
     render();

@@ -154,3 +154,13 @@ body:has(#edu-runtime:not([hidden])) #hint { bottom: max(92px, calc(env(safe-are
 @media (prefers-reduced-motion: reduce) {
   #edu-sheet, #edu-backdrop, #edu-toast { transition: none; }
 }
+
+@keyframes dockPulse {
+  0% { transform: translateX(-50%) scale(1); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); }
+  50% { transform: translateX(-50%) scale(1.04); box-shadow: 0 0 32px var(--brand, #00d2ff); border-color: var(--brand, #00d2ff); }
+  100% { transform: translateX(-50%) scale(1); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); }
+}
+
+.edu-dock-pulse {
+  animation: dockPulse 1.2s ease-in-out 2;
+}
